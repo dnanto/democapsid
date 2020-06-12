@@ -1,62 +1,17 @@
 <!DOCTYPE html>
+<meta charset="UTF-8">
 <html>
 
-<body>
+<head>
+    <meta charset="utf-8">
+    <script src="capsid.js"></script>
+    <title>Capsid</title>
+</head>
 
+<body>
     <canvas id="canvas" width="1000" height="1000" style="border:1px solid #d3d3d3;">
         Your browser does not support the HTML canvas tag.
     </canvas>
-
-    <script>
-        function draw_regular_polygon(ctx, x, y, n, r, t = 0) {
-            ctx.beginPath();
-            // ctx.moveTo(0, 0);
-            // ctx.lineTo(x, y);
-            for (var i = 0; i <= n; i++) {
-                ctx.lineTo(
-                    x + r * Math.cos(t + i * 2 * Math.PI / n),
-                    y + r * Math.sin(t + i * 2 * Math.PI / n)
-                );
-            }
-            ctx.stroke();
-        }
-
-        var c = document.getElementById("canvas");
-        var ctx = c.getContext("2d");
-
-        var r = 30;
-        var x = 100, y = 500;
-        var w = 2 * r, h = Math.sqrt(3) * r;
-
-        var nc = 5, nr = 10;
-
-        // row[i], col[j]
-
-        var dx = 0.25 * w, dy = 0.5 * h;
-        // var i, j;
-
-        // i = 0, j = 0;
-        // draw_regular_polygon(ctx, x + j * 3 * dx, y + i * 2 * dy + ((j % 2 == 0) ? 0 : dy), 6, r);
-        // i = 0, j = 1;
-        // draw_regular_polygon(ctx, x + j * 3 * dx, y + i * 2 * dy + ((j % 2 == 0) ? 0 : dy), 6, r);
-        // i = 0, j = 2;
-        // draw_regular_polygon(ctx, x + j * 3 * dx, y + i * 2 * dy + ((j % 2 == 0) ? 0 : dy), 6, r);
-
-        // i = 1, j = 0;
-        // draw_regular_polygon(ctx, x + j * 3 * dx, y + i * 2 * dy + ((j % 2 == 0) ? 0 : dy), 6, r);
-        // i = 1, j = 1;
-        // draw_regular_polygon(ctx, x + j * 3 * dx, y + i * 2 * dy + ((j % 2 == 0) ? 0 : dy), 6, r);
-        // i = 1, j = 2;
-        // draw_regular_polygon(ctx, x + j * 3 * dx, y + i * 2 * dy + ((j % 2 == 0) ? 0 : dy), 6, r);
-
-        var h = 3, k = 3;
-        for (var e = 0; e <= h; e++)
-            draw_regular_polygon(ctx, x + e * 3 * dx, y - e * dy, 6, r);
-        for (var i = h - 1, e = h + 1; e <= h + k; i--, e++)
-            draw_regular_polygon(ctx, x + e * 3 * dx, y - i * dy, 6, r);
-
-    </script>
-
 </body>
 
 </html>
