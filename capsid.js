@@ -32,21 +32,23 @@ window.onload = function () {
     var c = document.getElementById("canvas");
     var ctx = c.getContext("2d");
 
-    var r = 100;
-    var t = deg2rad(0);
+    var R5 = 100;
+    var t = 250;
     var x = c.width / 2, y = c.height / 2;
 
     // rotate 5 -> 6
-    var edge = 2 * r * Math.sin(Math.PI / 5);
-    var inradius5 = edge / (2 * Math.tan(Math.PI / 5));
-    draw_regular_polygon(ctx, 5, x, y, r, t);
-    var inradius6 = edge * Math.cos(Math.PI / 6);
+    draw_regular_polygon(ctx, 5, x, y, R5, deg2rad(t));
+
+    var R6 = 2 * R5 * Math.sin(Math.PI / 5);
+    // note: R6 = edge length
+    // calc: 5-gon + 6-gon inradii
+    var r5r6 = R6 / (2 * Math.tan(Math.PI / 5)) + R6 * Math.cos(Math.PI / 6);
     draw_regular_polygon(
-        ctx, 6, 
-        x + ((inradius5 + inradius6) * Math.sin(deg2rad(54))), 
-        x + ((inradius5 + inradius6) * Math.cos(deg2rad(54))), 
-        edge, 
-        t + deg2rad(6)
+        ctx, 6,
+        x + r5r6 * Math.sin(deg2rad(54 - t)),
+        y + r5r6 * Math.cos(deg2rad(54 - t)),
+        R6,
+        deg2rad(6+t)
     );
 
     // rotate 6 -> 5
