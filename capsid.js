@@ -32,8 +32,7 @@ window.onload = function () {
     var c = document.getElementById("canvas");
     var ctx = c.getContext("2d");
 
-    
-    var x = c.width / 4, y = c.height / 4, t = 10;
+    var x = c.width / 4, y = c.height / 4, t = 0;
 
     // 5->6-gon
     var R5 = 50;
@@ -42,9 +41,22 @@ window.onload = function () {
     var R6 = 2 * R5 * Math.sin(Math.PI / 5);
     // note: R6 = edge length
     // calc: 5-gon + 6-gon inradii
-    var r5r6 = R6 / (2 * Math.tan(Math.PI / 5)) + R6 * Math.cos(Math.PI / 6);
+    var r5 = R6 / (2 * Math.tan(Math.PI / 5)), r6 = R6 * Math.cos(Math.PI / 6);
+    var r5r6 = r5 + r6;
     var f = 72 * 0;
-    x += r5r6 * Math.sin(deg2rad(54 - t + f));
+    x += r5r6 * Math.sin(deg2rad(54 - t + f)); 
     y += r5r6 * Math.cos(deg2rad(54 - t + f));
     draw_regular_polygon(ctx, 6, x, y, R6, deg2rad(6 + t - f));
+
+    x += 2 * r6 * Math.sin(deg2rad(54 - t + f)); 
+    y += 2 * r6 * Math.cos(deg2rad(54 - t + f));
+    draw_regular_polygon(ctx, 6, x, y, R6, deg2rad(6 + t - f));
+
+    x += r5r6 * Math.sin(deg2rad(54 - t + f)); 
+    y += r5r6 * Math.cos(deg2rad(54 - t + f));
+    draw_regular_polygon(ctx, 5, x, y, R5, deg2rad(36 + t - f));
+
+    x += 2 * r5 * Math.sin(deg2rad(18 - t + f)); 
+    y += 2 * r5 * Math.cos(deg2rad(18 - t + f));
+    draw_regular_polygon(ctx, 5, x, y, R5, deg2rad(72 + t - f));
 }
