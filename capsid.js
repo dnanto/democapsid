@@ -37,8 +37,17 @@ window.onload = function () {
     var x = c.width / 2, y = c.height / 2;
 
     // rotate 5 -> 6
+    var edge = 2 * r * Math.sin(Math.PI / 5);
+    var inradius5 = edge / (2 * Math.tan(Math.PI / 5));
     draw_regular_polygon(ctx, 5, x, y, r, t);
-    draw_regular_polygon(ctx, 6, x, y, 2 * r * Math.sin(Math.PI / 5), t + deg2rad(6));
+    var inradius6 = edge * Math.cos(Math.PI / 6);
+    draw_regular_polygon(
+        ctx, 6, 
+        x + ((inradius5 + inradius6) * Math.sin(deg2rad(54))), 
+        x + ((inradius5 + inradius6) * Math.cos(deg2rad(54))), 
+        edge, 
+        t + deg2rad(6)
+    );
 
     // rotate 6 -> 5
     // draw_regular_polygon(ctx, 6, x, y, 2 * r * Math.sin(Math.PI / 5));
