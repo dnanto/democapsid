@@ -2,23 +2,32 @@ function deg2rad(x) {
     return x * Math.PI / 180;
 }
 
-function draw_regular_polygon(ctx, n, x, y, r, t = 0) {
+function draw_regular_polygon(ctx, n, x, y, R, r, t = 0) {
     ctx.beginPath();
-    // encircle
+    // circumscribe
+    ctx.arc(x, y, R, 0, 2 * Math.PI);
+    // inscribe
     ctx.arc(x, y, r, 0, 2 * Math.PI);
-    // draw R'
+    // draw 0-degree radius
     ctx.lineTo(x, y);
     // draw edges
-    var coor = [0, 0];
     for (var i = 0; i <= n; i++) {
         ctx.lineTo(
-            x + r * Math.cos(t + i * 2 * Math.PI / n),
-            y + r * Math.sin(t + i * 2 * Math.PI / n)
+            x + R * Math.cos(t + i * 2 * Math.PI / n),
+            y + R * Math.sin(t + i * 2 * Math.PI / n)
         );
     }
     // draw R
+    for (var i = 0; i < n; i++) {
+        ctx.moveTo(x, y);
+        ctx.lineTo(
+            x + R * Math.cos(t + i * 2 * Math.PI / n),
+            y + R * Math.sin(t + i * 2 * Math.PI / n)
+        );
+    }
+    // draw r
     n *= 2;
-    for (var i = 0; i <= n; i++) {
+    for (var i = 0; i < n; i++) {
         ctx.moveTo(x, y);
         ctx.lineTo(
             x + r * Math.cos(t + i * 2 * Math.PI / n),
@@ -29,34 +38,68 @@ function draw_regular_polygon(ctx, n, x, y, r, t = 0) {
 }
 
 window.onload = function () {
-    var c = document.getElementById("canvas");
-    var ctx = c.getContext("2d");
-
-    var x = c.width / 4, y = c.height / 4, t = 0;
-
-    // 5->6-gon
-    var R5 = 50;
-    draw_regular_polygon(ctx, 5, x, y, R5, deg2rad(t));
-
+    var R5 = 100;
     var R6 = 2 * R5 * Math.sin(Math.PI / 5);
-    // note: R6 = edge length
-    // calc: 5-gon + 6-gon inradii
-    var r5 = R6 / (2 * Math.tan(Math.PI / 5)), r6 = R6 * Math.cos(Math.PI / 6);
-    var r5r6 = r5 + r6;
-    var f = 72 * 0;
-    x += r5r6 * Math.sin(deg2rad(54 - t + f)); 
-    y += r5r6 * Math.cos(deg2rad(54 - t + f));
-    draw_regular_polygon(ctx, 6, x, y, R6, deg2rad(6 + t - f));
+    var r5 = R6 / (2 * Math.tan(Math.PI / 5));
+    var r6 = R6 * Math.cos(Math.PI / 6);
 
-    x += 2 * r6 * Math.sin(deg2rad(54 - t + f)); 
-    y += 2 * r6 * Math.cos(deg2rad(54 - t + f));
-    draw_regular_polygon(ctx, 6, x, y, R6, deg2rad(6 + t - f));
+    // 5 -> 5
+    {
+        var c = document.getElementById("canvas_5-5");
+        var ctx = c.getContext("2d");
+        var x1 = c.width / 2, y1 = c.height / 2;
+        draw_regular_polygon(ctx, 5, x1, y1, R5, r5);
+        var x2 = x1 + 2 * r5 * Math.sin(deg2rad(54));
+        var y2 = y1 + 2 * r5 * Math.cos(deg2rad(54));
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        draw_regular_polygon(ctx, 5, x2, y2, R5, r5, deg2rad(36));
+    }
 
-    x += r5r6 * Math.sin(deg2rad(54 - t + f)); 
-    y += r5r6 * Math.cos(deg2rad(54 - t + f));
-    draw_regular_polygon(ctx, 5, x, y, R5, deg2rad(36 + t - f));
+    // 5 -> 6
+    {
+        var c = document.getElementById("canvas_5-6");
+        var ctx = c.getContext("2d");
+        var x1 = c.width / 2, y1 = c.height / 2;
+        draw_regular_polygon(ctx, 5, x1, y1, R5, r5);
+        var x2 = x1 + (r5 + r6) * Math.sin(deg2rad(54));
+        var y2 = y1 + (r5 + r6) * Math.cos(deg2rad(54));
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        draw_regular_polygon(ctx, 6, x2, y2, R6, r6, deg2rad(6));
+    }
 
-    x += 2 * r5 * Math.sin(deg2rad(18 - t + f)); 
-    y += 2 * r5 * Math.cos(deg2rad(18 - t + f));
-    draw_regular_polygon(ctx, 5, x, y, R5, deg2rad(72 + t - f));
+    // 6 -> 5
+    {
+        var c = document.getElementById("canvas_6-5");
+        var ctx = c.getContext("2d");
+        var x1 = c.width / 2, y1 = c.height / 2;
+        draw_regular_polygon(ctx, 6, x1, y1, R6, r6);
+        var x2 = x1 + (r5 + r6) * Math.sin(deg2rad(60));
+        var y2 = y1 + (r5 + r6) * Math.cos(deg2rad(60));
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        draw_regular_polygon(ctx, 5, x2, y2, R5, r5, deg2rad(30));
+    }
+
+    // 6 -> 6
+    {
+        var c = document.getElementById("canvas_6-6");
+        var ctx = c.getContext("2d");
+        var x1 = c.width / 2, y1 = c.height / 2;
+        draw_regular_polygon(ctx, 6, x1, y1, R6, r6);
+        var x2 = x1 + 2 * r6 * Math.sin(deg2rad(60));
+        var y2 = y1 + 2 * r6 * Math.cos(deg2rad(60));
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        draw_regular_polygon(ctx, 6, x2, y2, R6, r6, deg2rad(0));
+    }
 }
