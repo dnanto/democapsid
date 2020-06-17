@@ -3,11 +3,10 @@ function deg2rad(x) {
 }
 
 function draw_regular_polygon(ctx, n, x, y, R, r, t = 0) {
-    ctx.beginPath();
-    // circumscribe
-    ctx.arc(x, y, R, 0, 2 * Math.PI);
     // inscribe
     ctx.arc(x, y, r, 0, 2 * Math.PI);
+    // circumscribe
+    ctx.arc(x, y, R, 0, 2 * Math.PI);
     // draw 0-degree radius
     ctx.lineTo(x, y);
     // draw edges
@@ -34,6 +33,12 @@ function draw_regular_polygon(ctx, n, x, y, R, r, t = 0) {
             y + r * Math.sin(t + i * 2 * Math.PI / n)
         );
     }
+    // angle of triangle
+    ctx.moveTo(x, y);
+    ctx.arc(x, y, R / 4, 0, 2 * Math.PI / n + t);
+    // angle tilt
+    ctx.moveTo(x, y);
+    ctx.arc(x, y, R / 2, 0, t);
     ctx.stroke();
 }
 
@@ -53,8 +58,6 @@ window.onload = function () {
         var y2 = y1 + 2 * r5 * Math.sin(deg2rad(36));
         ctx.beginPath();
         ctx.moveTo(x1, y1);
-        ctx.arc(x1, y1, R5 / 4, 0, deg2rad(36));
-        ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
         draw_regular_polygon(ctx, 5, x2, y2, R5, r5, deg2rad(36));
@@ -69,8 +72,6 @@ window.onload = function () {
         var x2 = x1 + (r5 + r6) * Math.cos(deg2rad(36));
         var y2 = y1 + (r5 + r6) * Math.sin(deg2rad(36));
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.arc(x1, y1, R5 / 4, 0, deg2rad(36));
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
@@ -87,8 +88,6 @@ window.onload = function () {
         var y2 = y1 + (r5 + r6) * Math.sin(deg2rad(30));
         ctx.beginPath();
         ctx.moveTo(x1, y1);
-        ctx.arc(x1, y1, R6 / 4, 0, deg2rad(0));
-        ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
         draw_regular_polygon(ctx, 5, x2, y2, R5, r5, deg2rad(30));
@@ -103,8 +102,6 @@ window.onload = function () {
         var x2 = x1 + 2 * r6 * Math.cos(deg2rad(30));
         var y2 = y1 + 2 * r6 * Math.sin(deg2rad(30));
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.arc(x1, y1, R6 / 4, 0, deg2rad(30));
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
