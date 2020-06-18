@@ -65,7 +65,7 @@ function displacement(e, F, h, k, s, t, handedness) {
             y += (r6 + r6 + s) * Math.sin(rot2);
         }
     }
-    
+
     var rot1 = deg2rad(36 + t), rot2 = deg2rad(36 + t);
     if (k > 0) {
         rot1 = deg2rad(handedness * 30 + 6 + t);
@@ -76,20 +76,9 @@ function displacement(e, F, h, k, s, t, handedness) {
     return [x + (r5 + r + s) * Math.cos(rot1), y + (r5 + r + s) * Math.sin(rot1)];
 }
 
-window.onload = function () {
-    var F = 2, h = 2, k = 2;
-    var e = 25, s = 25, t = -30;
-    var handedness = dextro;
-
+function draw(ctx, x, y, e, F, h, k, s, t, handedness) {
+    var x1 = x, y1 = y;
     let [R5, r5, R6, r6] = edge2radii(e);
-
-    var c = document.getElementById("canvas");
-    var ctx = c.getContext("2d");
-
-    let [x1, y1] = displacement(e, F, h, k, s, t, handedness);
-    
-    x1 = (c.width - (x1 + R5)) / 2, y1 = (c.height - (y1 + R5)) / 2;
-    // var x1 = 0, y1 = 0;
 
     ctx.beginPath();
     draw_regular_polygon(ctx, 5, x1, y1, R5, r5, deg2rad(t));
@@ -141,4 +130,23 @@ window.onload = function () {
     ctx.beginPath();
     draw_regular_polygon(ctx, 5, x2, y2, R5, r5, rot2);
     ctx.stroke();
+}
+
+window.onload = function () {
+    var F = 2, h = 2, k = 2;
+    var e = 25, s = 25, t = -30;
+    var handedness = dextro;
+
+    document.getElementById("angle").addEventListener("input", function (ele) {
+        var c = document.getElementById("canvas");
+        var ctx = c.getContext("2d");
+        var t = ele.target.value;
+
+        let [x, y] = displacement(e, F, h, k, s, t, handedness);
+        let [R5, r5, R6, r6] = edge2radii(e);
+        x = (c.width - (x + R5)) / 2, y = (c.height - (y + R5)) / 2;
+
+        ctx.clearRect(0, 0, c.width, c.height);
+        draw(ctx, x, y, e, F, h, k, s, t, handedness);
+    });
 }
