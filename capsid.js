@@ -117,7 +117,7 @@ function draw(ctx, x, y, e, F, h, k, s, t, rota) {
     var rot1 = deg2rad(36 + t), rot2 = deg2rad(36 + t);
     if (k > 0) {
         rot1 = deg2rad(rota * 30 + 6 + t);
-        rot2 = deg2rad((rota == dextro) ? 24 : -24 + t);
+        rot2 = deg2rad(((rota == dextro) ? 24 : -24) + t);
     }
     var r = (h == 1 && k == 0) ? r5 : r6;
     x2 = x1 + (r5 + r + s) * Math.cos(rot1);
