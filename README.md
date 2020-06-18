@@ -1,6 +1,6 @@
 # demo
 
-- http://binf.gmu.edu/dnegron2/capsid.html
+- http://binf.gmu.edu/dnegron2/capsid/capsid.html
 
 # resources
 
