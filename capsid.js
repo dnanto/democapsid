@@ -1,4 +1,4 @@
-var dextro = 3, laevo = -1;
+var dextro = 3, levo = -1;
 
 function deg2rad(x) {
     return x * Math.PI / 180;
@@ -51,10 +51,10 @@ function edge2radii(e) {
     ]
 }
 
-function displacement(e, F, h, k, s, t, handedness) {
+function displacement(e, F, h, k, s, t, rota) {
     let [R5, r5, R6, r6] = edge2radii(e);
     var x = 0, y = 0;
-    var rot1 = deg2rad(36 + t), rot2 = deg2rad(handedness * 30 + 6 + t);
+    var rot1 = deg2rad(36 + t), rot2 = deg2rad(rota * 30 + 6 + t);
     for (let f = 0; f < F; f++) {
         for (let i = 0, r = f ? r6 : r5; i < h - ((f == F - 1) * !k); i++, r = r6) {
             x += (r + r6 + s) * Math.cos(rot1);
@@ -68,15 +68,15 @@ function displacement(e, F, h, k, s, t, handedness) {
 
     var rot1 = deg2rad(36 + t), rot2 = deg2rad(36 + t);
     if (k > 0) {
-        rot1 = deg2rad(handedness * 30 + 6 + t);
-        rot2 = deg2rad((handedness == dextro) ? 24 : -24 + t);
+        rot1 = deg2rad(rota * 30 + 6 + t);
+        rot2 = deg2rad((rota == dextro) ? 24 : -24 + t);
     }
     var r = (h == 1 && k == 0) ? r5 : r6;
 
     return [x + (r5 + r + s) * Math.cos(rot1), y + (r5 + r + s) * Math.sin(rot1)];
 }
 
-function draw(ctx, x, y, e, F, h, k, s, t, handedness) {
+function draw(ctx, x, y, e, F, h, k, s, t, rota) {
     var x1 = x, y1 = y;
     let [R5, r5, R6, r6] = edge2radii(e);
 
@@ -84,7 +84,7 @@ function draw(ctx, x, y, e, F, h, k, s, t, handedness) {
     draw_regular_polygon(ctx, 5, x1, y1, R5, r5, deg2rad(t));
     ctx.stroke();
 
-    var rot1 = deg2rad(36 + t), rot2 = deg2rad(handedness * 30 + 6 + t), rot3 = deg2rad(6 + t);
+    var rot1 = deg2rad(36 + t), rot2 = deg2rad(rota * 30 + 6 + t), rot3 = deg2rad(6 + t);
     for (let f = 0; f < F; f++) {
 
         for (let i = 0, r = f ? r6 : r5; i < h - ((f == F - 1) * !k); i++, r = r6) {
@@ -116,8 +116,8 @@ function draw(ctx, x, y, e, F, h, k, s, t, handedness) {
 
     var rot1 = deg2rad(36 + t), rot2 = deg2rad(36 + t);
     if (k > 0) {
-        rot1 = deg2rad(handedness * 30 + 6 + t);
-        rot2 = deg2rad((handedness == dextro) ? 24 : -24 + t);
+        rot1 = deg2rad(rota * 30 + 6 + t);
+        rot2 = deg2rad((rota == dextro) ? 24 : -24 + t);
     }
     var r = (h == 1 && k == 0) ? r5 : r6;
     x2 = x1 + (r5 + r + s) * Math.cos(rot1);
@@ -132,12 +132,12 @@ function draw(ctx, x, y, e, F, h, k, s, t, handedness) {
     ctx.stroke();
 }
 
-function draw_centered(c, e, F, h, k, s, t, handedness) {
+function draw_centered(c, e, F, h, k, s, t, rota) {
     let [R5, r5, R6, r6] = edge2radii(e);
     var ctx = c.getContext("2d");
-    let [x, y] = displacement(e, F, h, k, s, t, handedness);
+    let [x, y] = displacement(e, F, h, k, s, t, rota);
     x = (c.width - (x + R5)) / 2, y = (c.height - (y + R5)) / 2;
-    draw(ctx, x, y, e, F, h, k, s, t, handedness);
+    draw(ctx, x, y, e, F, h, k, s, t, rota);
 }
 
 function clear(c) {
@@ -153,39 +153,49 @@ window.onload = function () {
     var e = parseInt(document.getElementById("e").value);
     var s = parseInt(document.getElementById("s").value);
     var t = parseInt(document.getElementById("t").value);
-    var handedness = dextro;
+    var rota = dextro;
 
     var c = document.getElementById("canvas");
-    draw_centered(c, e, F, h, k, s, t, handedness);
+    draw_centered(c, e, F, h, k, s, t, rota);
 
     document.getElementById("F").addEventListener("input", function (ele) {
         F = parseInt(ele.target.value);
         clear(c);
-        draw_centered(c, e, F, h, k, s, t, handedness);
+        draw_centered(c, e, F, h, k, s, t, rota);
     });
     document.getElementById("h").addEventListener("input", function (ele) {
         h = parseInt(ele.target.value);
         clear(c);
-        draw_centered(c, e, F, h, k, s, t, handedness);
+        draw_centered(c, e, F, h, k, s, t, rota);
     });
     document.getElementById("k").addEventListener("input", function (ele) {
         k = parseInt(ele.target.value);
         clear(c);
-        draw_centered(c, e, F, h, k, s, t, handedness);
+        draw_centered(c, e, F, h, k, s, t, rota);
     });
     document.getElementById("e").addEventListener("input", function (ele) {
         e = parseInt(ele.target.value);
         clear(c);
-        draw_centered(c, e, F, h, k, s, t, handedness);
+        draw_centered(c, e, F, h, k, s, t, rota);
     });
     document.getElementById("s").addEventListener("input", function (ele) {
         s = parseInt(ele.target.value);
         clear(c);
-        draw_centered(c, e, F, h, k, s, t, handedness);
+        draw_centered(c, e, F, h, k, s, t, rota);
     });
     document.getElementById("t").addEventListener("input", function (ele) {
         t = parseInt(ele.target.value);
         clear(c);
-        draw_centered(c, e, F, h, k, s, t, handedness);
+        draw_centered(c, e, F, h, k, s, t, rota);
+    });    
+    document.getElementById("dextro").addEventListener("change", function (ele) {
+        rota = parseInt(ele.target.value);
+        clear(c);
+        draw_centered(c, e, F, h, k, s, t, rota);
+    });
+    document.getElementById("levo").addEventListener("change", function (ele) {
+        rota = parseInt(ele.target.value);
+        clear(c);
+        draw_centered(c, e, F, h, k, s, t, rota);
     });
 }
