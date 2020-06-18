@@ -43,12 +43,12 @@ function draw_regular_polygon(ctx, n, x, y, R, r, t = 0) {
 }
 
 window.onload = function () {
-    var F = 1, h = 5, k = 0;
+    var F = 2, h = 3, k = 2;
     var t = 0;
     var dextro = 3, laevo = -1;
-    var handedness = laevo;
+    var handedness = dextro;
 
-    var R5 = 75;
+    var R5 = 50;
     var R6 = 2 * R5 * Math.sin(Math.PI / 5);
     var r5 = R6 / (2 * Math.tan(Math.PI / 5));
     var r6 = R6 * Math.cos(Math.PI / 6);
@@ -58,53 +58,43 @@ window.onload = function () {
     var x1 = R5, y1 = R5;
     draw_regular_polygon(ctx, 5, x1, y1, R5, r5, deg2rad(t));
 
-    var d = r5 + r6, a1 = 36, a2 = 6;
+    var rot = deg2rad(handedness * 30 + 6 + t), rot1 = deg2rad(36 + t), rot2 = deg2rad(6 + t);
     for (let f = 0; f < F; f++) {
 
-        for (let i = 0; i < h - ((f == F - 1) * (k == 0)); i++) {
-            x2 = x1 + d * Math.cos(deg2rad(a1 + t));
-            y2 = y1 + d * Math.sin(deg2rad(a1 + t));
+        for (let i = 0, r = r5; i < h - ((f == F - 1) * (k == 0)); i++, r = r6) {
+            x2 = x1 + (r + r6) * Math.cos(rot1);
+            y2 = y1 + (r + r6) * Math.sin(rot1);
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.stroke();
-            draw_regular_polygon(ctx, 6, x2, y2, R6, r6, deg2rad(a2 + t));
+            draw_regular_polygon(ctx, 6, x2, y2, R6, r6, rot2);
             x1 = x2, y1 = y2;
-            d = 2 * r6;
         }
 
-        a1 = 30, a2 = 6;
         for (let j = 0; j < k - (f == F - 1); j++) {
-            x2 = x1 + d * Math.cos(deg2rad(handedness * a1 + a2 + t));
-            y2 = y1 + d * Math.sin(deg2rad(handedness * a1 + a2 + t));
+            x2 = x1 + 2 * r6 * Math.cos(rot);
+            y2 = y1 + 2 * r6 * Math.sin(rot);
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.stroke();
-            draw_regular_polygon(ctx, 6, x2, y2, R6, r6, deg2rad(a2 + t));
+            draw_regular_polygon(ctx, 6, x2, y2, R6, r6, rot2);
             x1 = x2, y1 = y2;
         }
-        a1 = 36, a2 = 6;
     }
 
-    d = r5 + r6;
+    var rot1 = deg2rad(36 + t), rot2 = deg2rad(36 + t);
     if (k > 0) {
-        a1 = 30;
-        x2 = x1 + d * Math.cos(deg2rad(handedness * 30 + 6 + t));
-        y2 = y1 + d * Math.sin(deg2rad(handedness * 30 + 6 + t));
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-        draw_regular_polygon(ctx, 5, x2, y2, R5, r5, deg2rad((handedness == dextro) ? 24 : -24 + t));
-        x1 = x2, y1 = y2;
-    } else {
-        x2 = x1 + d * Math.cos(deg2rad(36 + t));
-        y2 = y1 + d * Math.sin(deg2rad(36 + t));
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-        draw_regular_polygon(ctx, 5, x2, y2, R5, r5, deg2rad(36 + t));
+        rot1 = deg2rad(handedness * 30 + 6 + t);
+        rot2 = deg2rad((handedness == dextro) ? 24 : -24 + t);
     }
+
+    x2 = x1 + (r5 + r6) * Math.cos(rot1);
+    y2 = y1 + (r5 + r6) * Math.sin(rot1);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    draw_regular_polygon(ctx, 5, x2, y2, R5, r5, rot2);
 }
