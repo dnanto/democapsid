@@ -136,7 +136,7 @@ function draw_centered(c, e, F, h, k, s, t, rota) {
     let [R5, r5, R6, r6] = edge2radii(e);
     var ctx = c.getContext("2d");
     let [x, y] = displacement(e, F, h, k, s, t, rota);
-    x = (c.width - (x + R5)) / 2, y = (c.height - (y + R5)) / 2;
+    x = (c.width - x) / 2, y = (c.height - y) / 2;
     draw(ctx, x, y, e, F, h, k, s, t, rota);
 }
 
