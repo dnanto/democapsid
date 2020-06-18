@@ -132,21 +132,60 @@ function draw(ctx, x, y, e, F, h, k, s, t, handedness) {
     ctx.stroke();
 }
 
+function draw_centered(c, e, F, h, k, s, t, handedness) {
+    let [R5, r5, R6, r6] = edge2radii(e);
+    var ctx = c.getContext("2d");
+    let [x, y] = displacement(e, F, h, k, s, t, handedness);
+    x = (c.width - (x + R5)) / 2, y = (c.height - (y + R5)) / 2;
+    draw(ctx, x, y, e, F, h, k, s, t, handedness);
+}
+
+function clear(c) {
+    var ctx = c.getContext("2d");
+    console.log("hey");
+    ctx.clearRect(0, 0, c.width, c.height);
+}
+
 window.onload = function () {
-    var F = 2, h = 2, k = 2;
-    var e = 25, s = 25, t = -30;
+    var F = parseInt(document.getElementById("F").value);
+    var h = parseInt(document.getElementById("h").value);
+    var k = parseInt(document.getElementById("k").value);
+    var e = parseInt(document.getElementById("e").value);
+    var s = parseInt(document.getElementById("s").value);
+    var t = parseInt(document.getElementById("t").value);
     var handedness = dextro;
 
-    document.getElementById("angle").addEventListener("input", function (ele) {
-        var c = document.getElementById("canvas");
-        var ctx = c.getContext("2d");
-        var t = ele.target.value;
+    var c = document.getElementById("canvas");
+    draw_centered(c, e, F, h, k, s, t, handedness);
 
-        let [x, y] = displacement(e, F, h, k, s, t, handedness);
-        let [R5, r5, R6, r6] = edge2radii(e);
-        x = (c.width - (x + R5)) / 2, y = (c.height - (y + R5)) / 2;
-
-        ctx.clearRect(0, 0, c.width, c.height);
-        draw(ctx, x, y, e, F, h, k, s, t, handedness);
+    document.getElementById("F").addEventListener("input", function (ele) {
+        F = parseInt(ele.target.value);
+        clear(c);
+        draw_centered(c, e, F, h, k, s, t, handedness);
+    });
+    document.getElementById("h").addEventListener("input", function (ele) {
+        h = parseInt(ele.target.value);
+        clear(c);
+        draw_centered(c, e, F, h, k, s, t, handedness);
+    });
+    document.getElementById("k").addEventListener("input", function (ele) {
+        k = parseInt(ele.target.value);
+        clear(c);
+        draw_centered(c, e, F, h, k, s, t, handedness);
+    });
+    document.getElementById("e").addEventListener("input", function (ele) {
+        e = parseInt(ele.target.value);
+        clear(c);
+        draw_centered(c, e, F, h, k, s, t, handedness);
+    });
+    document.getElementById("s").addEventListener("input", function (ele) {
+        s = parseInt(ele.target.value);
+        clear(c);
+        draw_centered(c, e, F, h, k, s, t, handedness);
+    });
+    document.getElementById("t").addEventListener("input", function (ele) {
+        t = parseInt(ele.target.value);
+        clear(c);
+        draw_centered(c, e, F, h, k, s, t, handedness);
     });
 }

@@ -11,9 +11,14 @@
 <body>
     <p>Caspar-Klug Theory</p>
     <div>
-        <label>angle: </label><input type="number" name="angle" id="angle" step="1" value="0">
+        <label>F: </label><input type="number" name="F" id="F" step="1" value="2", min="0">
+        <label>h: </label><input type="number" name="h" id="h" step="1" value="2", min="1">
+        <label>k: </label><input type="number" name="k" id="k" step="1" value="2", min="0">
+        <label>edge: </label><input type="number" name="e" id="e" step="1" value="25", min="0">
+        <label>space: </label><input type="number" name="s" id="s" step="1" value="25" min="0">
+        <label>angle: </label><input type="number" name="t" id="t" step="1" value="-30">
     </div>
-    <canvas id="canvas" width="1000" height="500" style="border:1px solid #d3d3d3;">
+    <canvas id="canvas" width="1100" height="500" style="border:1px solid #d3d3d3;">
         Your browser does not support the HTML canvas tag.
     </canvas>
 </body>
