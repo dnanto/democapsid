@@ -39,12 +39,11 @@ function draw_regular_polygon(ctx, n, x, y, R, r, t = 0) {
     // angle tilt
     ctx.moveTo(x, y);
     ctx.arc(x, y, R / 2, 0, t);
-    ctx.stroke();
 }
 
 window.onload = function () {
-    var F = 1, h = 1, k = 0;
-    var t = 0;
+    var F = 3, h = 2, k = 1;
+    var s = 25, t = 0;
     var dextro = 3, laevo = -1;
     var handedness = dextro;
 
@@ -56,30 +55,36 @@ window.onload = function () {
     var c = document.getElementById("canvas");
     var ctx = c.getContext("2d");
     var x1 = R5, y1 = R5;
+    ctx.beginPath();
     draw_regular_polygon(ctx, 5, x1, y1, R5, r5, deg2rad(t));
+    ctx.stroke();
 
     var rot1 = deg2rad(36 + t), rot2 = deg2rad(6 + t), rot3 = deg2rad(handedness * 30 + 6 + t);
     for (let f = 0; f < F; f++) {
 
-        for (let i = 0, r = r5; i < h - ((f == F - 1) * (k == 0)); i++, r = r6) {
-            x2 = x1 + (r + r6) * Math.cos(rot1);
-            y2 = y1 + (r + r6) * Math.sin(rot1);
+        for (let i = 0, r = f ? r6 : r5; i < h - ((f == F - 1) * !k); i++, r = r6) {
+            x2 = x1 + (r + r6 + s) * Math.cos(rot1);
+            y2 = y1 + (r + r6 + s) * Math.sin(rot1);
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.stroke();
+            ctx.beginPath();
             draw_regular_polygon(ctx, 6, x2, y2, R6, r6, rot2);
+            ctx.stroke()
             x1 = x2, y1 = y2;
         }
 
         for (let j = 0; j < k - (f == F - 1); j++) {
-            x2 = x1 + 2 * r6 * Math.cos(rot3);
-            y2 = y1 + 2 * r6 * Math.sin(rot3);
+            x2 = x1 + (r6 + r6 + s) * Math.cos(rot3);
+            y2 = y1 + (r6 + r6 + s) * Math.sin(rot3);
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.stroke();
+            ctx.beginPath();
             draw_regular_polygon(ctx, 6, x2, y2, R6, r6, rot2);
+            ctx.stroke();
             x1 = x2, y1 = y2;
         }
     }
@@ -90,11 +95,14 @@ window.onload = function () {
         rot2 = deg2rad((handedness == dextro) ? 24 : -24 + t);
     }
 
-    x2 = x1 + (r5 + ((h == 1 && k == 0) ? r5 : r6)) * Math.cos(rot1);
-    y2 = y1 + (r5 + ((h == 1 && k == 0) ? r5 : r6)) * Math.sin(rot1);
+    var r = (h == 1 && k == 0) ? r5 : r6;
+    x2 = x1 + (r5 + r + s) * Math.cos(rot1);
+    y2 = y1 + (r5 + r + s) * Math.sin(rot1);
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
+    ctx.beginPath();
     draw_regular_polygon(ctx, 5, x2, y2, R5, r5, rot2);
+    ctx.stroke();
 }
