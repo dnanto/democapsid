@@ -2,7 +2,7 @@ paper.install(window);
 
 window.onload = function () {
     paper.setup("myCanvas");
-    var [h, k, R] = [5, 0, 50];
+    var [h, k, R] = [5, 8, 25];
     let n = h + k + 1;
 
     let p = Array.from(walk(0, k, h, k, R));
@@ -14,20 +14,18 @@ window.onload = function () {
         var hex = f.intersect(e);
         hex.strokeColor = "black";
         hex.strokeWidth = 2;
-        hex.fillColor = (hex.contains(p[0]) || hex.contains(p[1]) || hex.contains(p[2])) ? "lightblue" : "lightgrey";
+        hex.fillColor = (
+            (hex.contains(p[0]) || hex.contains(p[1]) || hex.contains(p[2])) ? "lightblue" : "lightgrey"
+        );
         g.push(hex);
     }
     f.strokeWidth = 2;
     g.push(f);
-    // var c1 = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
-}
-
-function centroid(triangle) {
-    var segments = triangle.segments;
-    var vertex = segments[0].point;
-    var opposite = segments[1].point - (segments[1].point - segments[2].point) / 2;
-    var c = vertex + (opposite - vertex) * 2 / 3;
-    return c;
+    g = new Group(g);
+    var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
+    console.log(c.subtract(p[0]).angle);
+    g.rotate(90 - c.subtract(p[0]).angle, c)
+    g.position = view.center;
 }
 
 function onResize(event) {
