@@ -2,6 +2,8 @@
 
 - http://binf.gmu.edu/dnegron2/capsid/capsid.html
 
+![screenshot.png](screenshot.png)
+
 # resources
 
 - https://viralzone.expasy.org/8577
