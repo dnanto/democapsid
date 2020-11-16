@@ -3,14 +3,15 @@ let params = [
     "F", "h", "k", "R",
     "levo", "dextro",
     "penfill", "hexfill",
-    "hexoutl", "fctoutl"
+    "hexoutl", "fctoutl",
+    "hexline", "fctline"
 ];
 
 paper.install(window);
 
 window.onload = function () {
     paper.setup("canvas");
-    draw(1, 5, 0, 25, 1, "#ADD8E6", "#90EE90", "#000000", "#808080");
+    draw(1, 5, 0, 25, 1, "#ADD8E6", "#90EE90", "#000000", "#808080", 2, 2);
     params.forEach(function (e) {
         document.getElementById(e).addEventListener("change", redraw);
     });
@@ -18,7 +19,7 @@ window.onload = function () {
 
 function redraw(event) {
     net.remove();
-    var [F, h, k, R, r, pf, hf, ho, fo] = [
+    var [F, h, k, R, r, pf, hf, ho, fo, hl, fl] = [
         parseInt(document.getElementById("F").value),
         parseInt(document.getElementById("h").value),
         parseInt(document.getElementById("k").value),
@@ -27,12 +28,14 @@ function redraw(event) {
         document.getElementById("penfill").value,
         document.getElementById("hexfill").value,
         document.getElementById("hexoutl").value,
-        document.getElementById("fctoutl").value
+        document.getElementById("fctoutl").value,
+        parseInt(document.getElementById("hexline").value),
+        parseInt(document.getElementById("fctline").value)
     ];
-    draw(F, h, k, R, r, pf, hf, ho, fo);
+    draw(F, h, k, R, r, pf, hf, ho, fo, hl, fl);
 }
 
-function draw(F, h, k, R, r, pf, hf, ho, fo) {
+function draw(F, h, k, R, r, pf, hf, ho, fo, hl, fl) {
     let n = h + k + 1;
 
     let p = Array.from(walk(0, k, h, k, R));
@@ -43,13 +46,13 @@ function draw(F, h, k, R, r, pf, hf, ho, fo) {
     for (var e of grid(n, n, R)) {
         var hex = f.intersect(e);
         hex.strokeColor = ho;
-        hex.strokeWidth = 2;
+        hex.strokeWidth = hl;
         hex.fillColor = (
             (hex.contains(p[0]) || hex.contains(p[1]) || hex.contains(p[2])) ? pf : hf
         );
         f1.push(hex);
     }
-    f.strokeWidth = 2;
+    f.strokeWidth = fl;
     f.strokeColor = fo;
     f1.push(f);
 
