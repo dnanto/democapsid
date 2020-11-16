@@ -1,8 +1,38 @@
+var net;
+let params = [
+    "F", "h", "k", "R",
+    "levo", "dextro",
+    "penfill", "hexfill",
+    "hexoutl", "fctoutl"
+];
+
 paper.install(window);
 
 window.onload = function () {
-    paper.setup("myCanvas");
-    var [h, k, R] = [5, 0, 15];
+    paper.setup("canvas");
+    draw(1, 5, 0, 25, 1, "#ADD8E6", "#90EE90", "#000000", "#808080");
+    params.forEach(function (e) {
+        document.getElementById(e).addEventListener("change", redraw);
+    });
+}
+
+function redraw(event) {
+    net.remove();
+    var [F, h, k, R, r, pf, hf, ho, fo] = [
+        parseInt(document.getElementById("F").value),
+        parseInt(document.getElementById("h").value),
+        parseInt(document.getElementById("k").value),
+        parseInt(document.getElementById("R").value),
+        document.getElementById("levo").checked ? 1 : -1,
+        document.getElementById("penfill").value,
+        document.getElementById("hexfill").value,
+        document.getElementById("hexoutl").value,
+        document.getElementById("fctoutl").value
+    ];
+    draw(F, h, k, R, r, pf, hf, ho, fo);
+}
+
+function draw(F, h, k, R, r, pf, hf, ho, fo) {
     let n = h + k + 1;
 
     let p = Array.from(walk(0, k, h, k, R));
@@ -12,19 +42,22 @@ window.onload = function () {
     var f1 = [];
     for (var e of grid(n, n, R)) {
         var hex = f.intersect(e);
-        hex.strokeColor = "black";
+        hex.strokeColor = ho;
         hex.strokeWidth = 2;
         hex.fillColor = (
-            (hex.contains(p[0]) || hex.contains(p[1]) || hex.contains(p[2])) ? "lightblue" : "lightgrey"
+            (hex.contains(p[0]) || hex.contains(p[1]) || hex.contains(p[2])) ? pf : hf
         );
         f1.push(hex);
     }
     f.strokeWidth = 2;
+    f.strokeColor = fo;
     f1.push(f);
 
     f1 = new Group(f1);
     var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
     f1.rotate(90 - c.subtract(p[0]).angle, c)
+    f1.scale(r, 1);
+
     var f2 = f1.clone();
     f2.rotate(300, f1.bounds.bottomRight);
     var f3 = f1.clone();
@@ -42,12 +75,8 @@ window.onload = function () {
     var c5 = c1.clone();
     c5.position.x += 4 * f1.bounds.width;
 
-    var net = new Group([c1, c2, c3, c4, c5]);
+    net = new Group([c1, c2, c3, c4, c5]);
     net.position = view.center;
-}
-
-function onResize(event) {
-    path.position = view.center;
 }
 
 function coor(i, j, w, h) {
