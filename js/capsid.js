@@ -1,6 +1,6 @@
 var net;
 let params = [
-    "F", "h", "k", "R",
+    "h", "k", "R",
     "levo", "dextro",
     "penfill", "hexfill",
     "hexoutl", "fctoutl",
@@ -11,7 +11,7 @@ paper.install(window);
 
 window.onload = function () {
     paper.setup("canvas");
-    draw(1, 5, 0, 25, 1, "#ADD8E6", "#90EE90", "#000000", "#808080", 2, 2);
+    draw(5, 0, 25, 1, "#ADD8E6", "#90EE90", "#000000", "#808080", 2, 2);
     params.forEach(function (e) {
         document.getElementById(e).addEventListener("change", redraw);
     });
@@ -19,8 +19,7 @@ window.onload = function () {
 
 function redraw(event) {
     net.remove();
-    var [F, h, k, R, r, pf, hf, ho, fo, hl, fl] = [
-        parseInt(document.getElementById("F").value),
+    var [h, k, R, r, pf, hf, ho, fo, hl, fl] = [
         parseInt(document.getElementById("h").value),
         parseInt(document.getElementById("k").value),
         parseInt(document.getElementById("R").value),
@@ -32,10 +31,10 @@ function redraw(event) {
         parseInt(document.getElementById("hexline").value),
         parseInt(document.getElementById("fctline").value)
     ];
-    draw(F, h, k, R, r, pf, hf, ho, fo, hl, fl);
+    draw(h, k, R, r, pf, hf, ho, fo, hl, fl);
 }
 
-function draw(F, h, k, R, r, pf, hf, ho, fo, hl, fl) {
+function draw(h, k, R, r, pf, hf, ho, fo, hl, fl) {
     let n = h + k + 1;
 
     let p = Array.from(walk(0, k, h, k, R));
