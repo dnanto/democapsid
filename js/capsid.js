@@ -11,14 +11,14 @@ paper.install(window);
 
 window.onload = function () {
     paper.setup("canvas");
-    draw(5, 0, 25, 1, "#ADD8E6", "#90EE90", "#000000", "#808080", 2, 2);
+    redraw();
     params.forEach(function (e) {
         document.getElementById(e).addEventListener("change", redraw);
     });
 }
 
-function redraw(event) {
-    net.remove();
+function redraw() {
+    if (net !== undefined) net.remove();
     var [h, k, R, r, pf, hf, ho, fo, hl, fl] = [
         parseInt(document.getElementById("h").value),
         parseInt(document.getElementById("k").value),
@@ -31,7 +31,17 @@ function redraw(event) {
         parseInt(document.getElementById("hexline").value),
         parseInt(document.getElementById("fctline").value)
     ];
+    tnumber(h, k);
     draw(h, k, R, r, pf, hf, ho, fo, hl, fl);
+}
+
+function tnumber(h, k) {
+    var T = h * h + h * k + k * k;
+    var html = `
+        &nbsp;&nbsp;=&nbsp;${h}<sup>2</sup>&nbsp;+&nbsp;(${h})(${k})&nbsp;+&nbsp;${k}<sup>2</sup><br>
+        &nbsp;&nbsp;=&nbsp;${T}
+    `;
+    document.getElementById("tnumber").innerHTML = html;
 }
 
 function draw(h, k, R, r, pf, hf, ho, fo, hl, fl) {
