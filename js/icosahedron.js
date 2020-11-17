@@ -100,12 +100,13 @@ class RegularIcosahedron {
             [v[0], v[1], v[2]], [v[3], v[2], v[1]], [v[3], v[4], v[5]], [v[3], v[8], v[4]],
             [v[0], v[6], v[7]], [v[0], v[9], v[6]], [v[4], v[10], v[11]], [v[6], v[11], v[10]],
             [v[2], v[5], v[9]], [v[11], v[9], v[5]], [v[1], v[7], v[8]], [v[10], v[8], v[7]],
-            [v[3], v[5], v[2]], [v[3], v[1], v[8]], [v[0], v[2], v[9]], [v[0], v[7], v[1]], [v[6], v[9], v[11]],
-            [v[6], v[10], v[7]], [v[4], v[11], v[5]], [v[4], v[8], v[10]]
+            [v[3], v[5], v[2]], [v[3], v[1], v[8]], [v[0], v[2], v[9]], [v[0], v[7], v[1]],
+            [v[6], v[9], v[11]], [v[6], v[10], v[7]], [v[4], v[11], v[5]], [v[4], v[8], v[10]]
         ];
     }
 }
 
+const [h, k, R, r] = [5, 1, 15, 1];
 let camera = new Camera();
 let solid = new RegularIcosahedron(500);
 
@@ -127,12 +128,7 @@ function* grid(nr, nc, R) {
             yield new Path.RegularPolygon(coor(i, j, w, h), 6, R);
 }
 
-function draw() {
-    var g = new Group(solid.faces(camera.P).map(e => new Path(e)));
-    g.strokeColor = "black";
-    g.position = view.center;
-
-    let [h, k, R] = [2, 0, 25];
+function face(h, k, R, r) {
     let n = h + k + 1;
 
     let p = Array.from(walk(0, k, h, k, R));
@@ -154,10 +150,20 @@ function draw() {
     face = new Group(face);
     var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
     face.rotate(30 - c.subtract(p[0]).angle, c);
+    f.scale(r, 1);
+
+    return face;
+}
+
+function draw() {
+    var g = new Group(solid.faces(camera.P).map(e => new Path(e)));
+    g.position = view.center;
+
+    var f = face(h, k, R, r);
 
     var A = [
-        [face.bounds.topLeft.x, face.bounds.topRight.x, face.bounds.bottomCenter.x],
-        [face.bounds.topLeft.y, face.bounds.topRight.y, face.bounds.bottomCenter.y],
+        [f.bounds.topLeft.x, f.bounds.topRight.x, f.bounds.bottomCenter.x],
+        [f.bounds.topLeft.y, f.bounds.topRight.y, f.bounds.bottomCenter.y],
         [1, 1, 1]
     ];
 
@@ -168,15 +174,15 @@ function draw() {
             [1, 1, 1]
         ];
         var tx = Matrix.mul(B, Matrix.inv(A));
-        face.clone().transform(new paper.Matrix(
+        f.clone().transform(new paper.Matrix(
             tx[0][0], tx[1][0],
             tx[0][1], tx[1][1],
             tx[0][2], tx[1][2]
         ));
-        g.addChild(face);
     });
 
-    face.remove();
+    f.remove();
+    g.remove();
 }
 
 paper.install(window);
