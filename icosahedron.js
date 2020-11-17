@@ -98,9 +98,20 @@ paper.install(window);
 window.onload = function () {
     paper.setup("canvas");
 
+    view.onFrame = function (event) {
+        if (event.count % 5 === 0) {
+            project.clear();
+            θ = (θ + 0.05) % 360;
+            ψ = (ψ + 0.05) % 360;
+            φ = (φ + 0.05) % 360;
+            draw();
+        }
+    };
+}
+
+function draw() {
     calcR();
     calcP();
-    console.log(P)
     var v = verts.map(v => mmult(P, v.map(e => [e]))).map(e => [e[0][0], e[1][0]]);
 
     var faces = [
@@ -166,16 +177,15 @@ window.onload = function () {
         ];
         var tx = mmult(B, inv(A));
         face.clone().transform(new Matrix(
-            tx[0][0], tx[1][0], tx[0][1],
-            tx[1][1], tx[0][2], tx[1][2]
+            tx[0][0], tx[1][0],
+            tx[0][1], tx[1][1],
+            tx[0][2], tx[1][2]
         ));
+        g.addChild(face);
     });
 
+
     face.remove();
-}
-
-function draw() {
-
 }
 
 function coor(i, j, w, h) {
