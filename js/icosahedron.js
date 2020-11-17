@@ -141,7 +141,7 @@ function draw() {
     g.strokeColor = "black";
     g.position = view.center;
 
-    let [h, k, R] = [5, 0, 25];
+    let [h, k, R] = [2, 0, 25];
     let n = h + k + 1;
 
     let p = Array.from(walk(0, k, h, k, R));
@@ -161,7 +161,8 @@ function draw() {
     face.push(f);
 
     face = new Group(face);
-    face.position = view.center;
+    var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
+    face.rotate(30 - c.subtract(p[0]).angle, c);
 
     var A = [
         [face.bounds.topLeft.x, face.bounds.topRight.x, face.bounds.bottomCenter.x],
@@ -183,7 +184,6 @@ function draw() {
         ));
         g.addChild(face);
     });
-
 
     face.remove();
 }

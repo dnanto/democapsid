@@ -67,7 +67,7 @@ function draw(h, k, R, r, pf, hf, ho, fo, hl, fl) {
 
     f1 = new Group(f1);
     var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
-    f1.rotate(90 - c.subtract(p[0]).angle, c)
+    f1.rotate(90 - c.subtract(p[0]).angle, c);
     f1.scale(r, 1);
 
     var f2 = f1.clone();
