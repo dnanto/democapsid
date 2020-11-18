@@ -1,6 +1,5 @@
 let opt;
 let camera;
-let icosahedron;
 
 class Matrix {
     static mul(A, B) {
@@ -147,7 +146,7 @@ function tNumber() {
 }
 
 function drawFace(angle) {
-    const [h, k, R] = [opt.h, opt.k, opt.R];
+    const [h, k, R] = [opt.h, opt.k, opt.R2];
     const n = h + k + 1;
 
     const p = Array.from(walk(0, k, h, k, R));
@@ -158,14 +157,16 @@ function drawFace(angle) {
     for (var e of grid(n, n, R)) {
         var hex = f.intersect(e);
         hex.strokeColor = opt.hexoutl;
+        hex.strokeWidth = opt.hexline;
         hex.fillColor = (
             (hex.contains(p[0]) || hex.contains(p[1]) || hex.contains(p[2])) ?
-                opt.penfill :
-                opt.hexfill
+                (opt.penfill + Number(opt.penalph).toString(16).padStart(2, "0")) :
+                (opt.hexfill + Number(opt.hexalph).toString(16).padStart(2, "0"))
         );
         g.push(hex);
     }
     f.strokeColor = opt.fctoutl;
+    f.strokeWidth = opt.fctline;
     g.push(f);
 
     g = new Group(g);
@@ -201,7 +202,8 @@ function drawNet() {
 }
 
 function drawSolid() {
-    var g = new Group(icosahedron.faces2D(camera.P).map(e => new Path(e)));
+    var ico = new RegularIcosahedron(opt.R3);
+    var g = new Group(ico.faces2D(camera.P).map(e => new Path(e)));
     g.position = view.center;
 
     var f = drawFace(30);
@@ -235,14 +237,17 @@ function redraw() {
     opt = {
         h: parseInt(document.getElementById("h").value),
         k: parseInt(document.getElementById("k").value),
-        R: parseInt(document.getElementById("R").value),
         solid: document.getElementById("solid").checked,
         net: document.getElementById("net").checked,
+        levo: document.getElementById("levo").checked,
+        dextro: document.getElementById("dextro").checked,
+        R2: parseInt(document.getElementById("R2").value),
+        R3: parseInt(document.getElementById("R3").value),
         θ: document.getElementById("θ").value,
         ψ: document.getElementById("ψ").value,
         φ: document.getElementById("φ").value,
-        levo: document.getElementById("levo").checked,
-        dextro: document.getElementById("dextro").checked,
+        penalph: document.getElementById("penalph").value,
+        hexalph: document.getElementById("hexalph").value,
         penfill: document.getElementById("penfill").value,
         hexfill: document.getElementById("hexfill").value,
         hexoutl: document.getElementById("hexoutl").value,
@@ -264,7 +269,6 @@ paper.install(window);
 window.onload = function () {
     paper.setup("canvas");
     camera = new Camera();
-    icosahedron = new RegularIcosahedron(500);
     redraw();
     Object.keys(opt).forEach(e =>
         document.getElementById(e).addEventListener("change", redraw)
