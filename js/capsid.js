@@ -278,7 +278,7 @@ window.onload = function () {
         if (opt.solid && event.count % interval === 0) {
             ["θ", "ψ", "φ"].forEach(e =>
                 document.getElementById(e).value = (
-                    parseFloat(document.getElementById(e).value) + 0.05 % 360
+                    (parseFloat(document.getElementById(e).value) + 0.05) % 360
                 )
             );
             redraw();
