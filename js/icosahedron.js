@@ -36,7 +36,7 @@ class Matrix {
 
 class Camera {
     constructor() {
-        [this.θ, this.ψ, this.φ] = [0, 0, 0];
+        [this.θ, this.ψ, this.φ] = [30, 5, 10];
         this.R = [
             [1, 0, 0],
             [0, 1, 0],
@@ -90,23 +90,32 @@ class RegularIcosahedron {
         ];
     }
 
+    iter() {
+        return [
+            [0, 1, 2], [3, 2, 1], [3, 4, 5], [3, 8, 4], [0, 6, 7],
+            [0, 9, 6], [4, 10, 11], [6, 11, 10], [2, 5, 9], [11, 9, 5],
+            [1, 7, 8], [10, 8, 7], [3, 5, 2], [3, 1, 8], [0, 2, 9],
+            [0, 7, 1], [6, 9, 11], [6, 10, 7], [4, 11, 5], [4, 8, 10]
+        ]
+    }
+
     verts(P) {
-        return this.coordinates.map(v => Matrix.mul(P, v.map(e => [e]))).map(e => [e[0][0], e[1][0]]);
+        return this.coordinates.map(v => Matrix.mul(P, v.map(e => [e])));
     }
 
     faces(P) {
-        var v = this.verts(P);
-        return [
-            [v[0], v[1], v[2]], [v[3], v[2], v[1]], [v[3], v[4], v[5]], [v[3], v[8], v[4]],
-            [v[0], v[6], v[7]], [v[0], v[9], v[6]], [v[4], v[10], v[11]], [v[6], v[11], v[10]],
-            [v[2], v[5], v[9]], [v[11], v[9], v[5]], [v[1], v[7], v[8]], [v[10], v[8], v[7]],
-            [v[3], v[5], v[2]], [v[3], v[1], v[8]], [v[0], v[2], v[9]], [v[0], v[7], v[1]],
-            [v[6], v[9], v[11]], [v[6], v[10], v[7]], [v[4], v[11], v[5]], [v[4], v[8], v[10]]
-        ];
+        var p3 = this.verts(P);
+        var p2 = p3.map(e => [e[0][0], e[1][0]]);
+        return this.iter()
+            .sort((a, b) =>
+                Math.min(p3[a[0]][2], p3[a[1]][2], p3[a[2]][2]) -
+                Math.min(p3[b[0]][2], p3[b[1]][2], p3[b[2]][2])
+            )
+            .map(e => [p2[e[0]], p2[e[1]], p2[e[2]]]);
     }
 }
 
-const [h, k, R, r] = [5, 1, 15, 1];
+const [h, k, R, r] = [2, 1, 15, 1];
 let camera = new Camera();
 let solid = new RegularIcosahedron(500);
 
@@ -135,24 +144,24 @@ function face(h, k, R, r) {
     let f = new Path(p);
     f.closed = true;
 
-    var face = [];
+    var g = [];
     for (var e of grid(n, n, R)) {
         var hex = f.intersect(e);
         hex.strokeColor = "black";
         hex.fillColor = (
-            (hex.contains(p[0]) || hex.contains(p[1]) || hex.contains(p[2])) ? "#ADD8E640" : "#90EE9040"
+            (hex.contains(p[0]) || hex.contains(p[1]) || hex.contains(p[2])) ? "#ADD8E6" : "#90EE90"
         );
-        face.push(hex);
+        g.push(hex);
     }
     f.strokeColor = "black";
-    face.push(f);
+    g.push(f);
 
-    face = new Group(face);
+    g = new Group(g);
     var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
-    face.rotate(30 - c.subtract(p[0]).angle, c);
+    g.rotate(30 - c.subtract(p[0]).angle, c);
     f.scale(r, 1);
 
-    return face;
+    return g;
 }
 
 function draw() {
@@ -192,12 +201,13 @@ window.onload = function () {
 
     view.onFrame = function (event) {
         if (event.count % 5 === 0) {
+            // if (event.count === 1) {
             project.clear();
             camera.θ = (camera.θ + 0.05) % 360;
             camera.ψ = (camera.ψ + 0.05) % 360;
             camera.φ = (camera.φ + 0.05) % 360;
             camera.update();
             draw();
-        }
-    };
+        };
+    }
 }
