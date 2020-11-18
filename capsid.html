@@ -10,33 +10,25 @@
             font-family: monospace;
         }
 
-        .split {
-            height: 100%;
-            position: fixed;
-            z-index: 1;
-            top: 0;
-            overflow-x: hidden;
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 0px 0px;
+            grid-template-areas:
+                "options view view view"
+                "options view view view"
+                "options view view view";
         }
 
-        .left {
-            left: 0;
-            width: 15%;
-            background-color: #80808040;
-            padding: 1%;
+        .options {
+            grid-area: options;
+            background-color: lightgray;
+            padding: 10%;
         }
 
-        .right {
-            right: 0;
-            width: 90%;
-        }
-
-        input {
-            display: inline-block;
-            width: 100%;
-        }
-
-        input[type=color] {
-            width: 100%;
+        .view {
+            grid-area: view;
         }
 
         canvas[resize] {
@@ -48,74 +40,78 @@
 </head>
 
 <body>
-    <div class="split left">
-        <strong>
-            <p>Caspar-Klug Theory</p>
-            <p><a href="https://github.com/dnanto/capsid">GitHub</a></p>
-        </strong>
-        <br><br>
+    <div class="grid-container">
+        <div class="options">
+            <strong>
+                <p>Caspar-Klug Theory</p>
+                <p><a href="https://github.com/dnanto/capsid">GitHub</a></p>
+            </strong>
+            <br><br>
 
-        <label for="h">h&nbsp;=</label><input type="number" name="h" id="h" step="1" value="5" min="0">
-        <br>
-        <label for="k">k&nbsp;=</label><input type="number" name="k" id="k" step="1" value="0" min="0">
-        <div>T&nbsp;=&nbsp;h<sup>2</sup>&nbsp;+&nbsp;hk&nbsp;+&nbsp;k<sup>2</sup></div>
-        <div id="tnumber"></div>
-        <br><br>
+            <label for="h">h&nbsp;=&nbsp;</label><input type="number" name="h" id="h" step="1" value="5" min="0">
+            <br>
+            <label for="k">k&nbsp;=&nbsp;</label><input type="number" name="k" id="k" step="1" value="0" min="0">
+            <div>T&nbsp;=&nbsp;h<sup>2</sup>&nbsp;+&nbsp;hk&nbsp;+&nbsp;k<sup>2</sup></div>
+            <div id="tnumber"></div>
+            <br><br>
 
-        <label for="topology">solid/net:</label>
-        <input type="radio" name="topology" id="solid" checked>
-        <input type="radio" name="topology" id="net">
-        <br><br>
+            <label for="topology">solid/net&nbsp;&nbsp;:</label>
+            <input type="radio" name="topology" id="solid" checked>
+            <input type="radio" name="topology" id="net">
+            <br><br>
 
-        <label for="rotation">levo/dextro:</label>
-        <input type="radio" name="rotation" id="levo" checked>
-        <input type="radio" name="rotation" id="dextro">
-        <br><br>
+            <label for="rotation">levo/dextro:</label>
+            <input type="radio" name="rotation" id="levo" checked>
+            <input type="radio" name="rotation" id="dextro">
+            <br><br>
 
-        <label for="R">R2:</label>
-        <input type="number" name="R2" id="R2" step="1" value="25" min="0">
-        <br>
-        <label for="R">R3:</label>
-        <input type="number" name="R3" id="R3" step="1" value="500" min="0">
-        <br><br>
+            <label for="R">R2:</label>
+            <input type="number" name="R2" id="R2" step="1" value="25" min="0">
+            <br>
+            <label for="R">R3:</label>
+            <input type="number" name="R3" id="R3" step="1" value="500" min="0">
+            <br><br>
 
-        <label for="θ">θ&nbsp;=</label><input type="number" name="θ" id="θ" step="any" value="0" min="0">
-        <br>
-        <label for="ψ">ψ&nbsp;=</label><input type="number" name="ψ" id="ψ" step="any" value="0" min="0">
-        <br>
-        <label for="φ">φ&nbsp;=</label><input type="number" name="φ" id="φ" step="any" value="0" min="0">
-        <br><br>
+            <label for="θ">θ&nbsp;=&nbsp;</label><input type="number" name="θ" id="θ" step="any" value="0" min="0">
+            <br>
+            <label for="ψ">ψ&nbsp;=&nbsp;</label><input type="number" name="ψ" id="ψ" step="any" value="0" min="0">
+            <br>
+            <label for="φ">φ&nbsp;=&nbsp;</label><input type="number" name="φ" id="φ" step="any" value="0" min="0">
+            <br><br>
 
-        <label for="interval">interval:</label>
-        <br>
-        <input type="number" id="interval" value="5" min="0">
-        <br><br>
+            <label for="interval">interval:</label>
+            <input type="number" id="interval" value="5" min="0">
+            <br><br>
 
-        <label for="hexline">monomer line size:</label>
-        <input type="number" name="hexline" id="hexline" step="1" value="2" min="0">
-        <br>
-        <label for="fctline">facet line size:</label>
-        <input type="number" name="fctline" id="fctline" step="1" value="2" min="0">
-        <br>
-        <label for="penalph">pentamer fill alpha:</label>
-        <input type="number" name="penalph" id="penalph" step="1" value="255" min="0" max="255">
-        <br>
-        <label for="hexalph">hexamer fill alpha:</label>
-        <input type="number" name="hexalph" id="hexalph" step="1" value="255" min="0" max="255">
-        <br>
-        <label for="penfill">pentamer fill color:</label>
-        <input type="color" id="penfill" name="penfill" value="#ADD8E6">
-        <label for="hexfill">hexamer fill color:</label>
-        <input type="color" id="hexfill" name="hexfill" value="#90EE90">
-        <label for="hexoutl">hexamer line color:</label>
-        <input type="color" id="hexoutl" name="hexoutl" value="#000000">
-        <label for="fctoutl">facet line color:</label>
-        <input type="color" id="fctoutl" name="fctoutl" value="#808080">
-    </div>
-    <div class="split right">
-        <canvas id="canvas" resize>
-            Your browser does not support the HTML canvas tag.
-        </canvas>
+            <label for="hexline">monomer line size&nbsp;&nbsp;:</label>
+            <input type="number" name="hexline" id="hexline" step="1" value="2" min="0">
+            <br>
+            <label for="fctline">facet line size&nbsp;&nbsp;&nbsp;&nbsp;:</label>
+            <input type="number" name="fctline" id="fctline" step="1" value="2" min="0">
+            <br>
+            <label for="penalph">pentamer fill alpha:</label>
+            <input type="number" name="penalph" id="penalph" step="1" value="255" min="0" max="255">
+            <br>
+            <label for="hexalph">hexamer fill alpha&nbsp;:</label>
+            <input type="number" name="hexalph" id="hexalph" step="1" value="255" min="0" max="255">
+            <br>
+            <label for="penfill">pentamer fill color:</label>
+            <input type="color" id="penfill" name="penfill" value="#ADD8E6">
+            <br>
+            <label for="hexfill">hexamer fill color&nbsp;:</label>
+            <input type="color" id="hexfill" name="hexfill" value="#90EE90">
+            <br>
+            <label for="hexoutl">hexamer line color&nbsp;:</label>
+            <input type="color" id="hexoutl" name="hexoutl" value="#000000">
+            <br>
+            <label for="fctoutl">facet line color&nbsp;&nbsp;&nbsp;:</label>
+            <input type="color" id="fctoutl" name="fctoutl" value="#808080">
+        </div>
+        <div class="view">
+            <canvas id="canvas" resize>
+                Your browser does not support the HTML canvas tag.
+            </canvas>
+        </div>
     </div>
 </body>
 
