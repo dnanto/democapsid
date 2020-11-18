@@ -12,4 +12,4 @@
 
 # note
 
-- Paper.js is distributed under the permissive MIT License
+- [paperjs/Paper.js](https://github.com/paperjs/paper.js/blob/develop/LICENSE.txt)
