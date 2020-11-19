@@ -1,7 +1,17 @@
 let opt;
 let camera;
 
+/**
+ * @class Matrix math.
+ */
 class Matrix {
+
+    /**
+     * Matrix multiplication.
+     * @param {Array} A The m x n matrix.
+     * @param {Array} B The n x p matrix.
+     * @return {Array} The m x p matrix.
+     */
     static mul(A, B) {
         const [m, n, p] = [A.length, A[0].length, B[0].length];
         var C = new Array(m);
@@ -14,7 +24,12 @@ class Matrix {
         return C;
     }
 
-    static det(A) {
+    /**
+     * Calculate the 3x3 determinant.
+     * @param {Array} A The 3x3 matrix.
+     * @return {Number} The determinant;
+     */
+    static det3(A) {
         return (
             A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) -
             A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) +
@@ -22,13 +37,18 @@ class Matrix {
         );
     }
 
+    /**
+     * Calculate the 3x3 inverse.
+     * @param {Array} A The 3x3 matrix.
+     * @return {Number} The inverse;
+     */
     static inv(A) {
         const [a, b, c, d, e, f, g, h, i] = [
             A[0][0], A[0][1], A[0][2],
             A[1][0], A[1][1], A[1][2],
             A[2][0], A[2][1], A[2][2]
         ]
-        const dA = this.det(A);
+        const dA = this.det3(A);
         return [
             [(e * i - f * h) / dA, -(b * i - c * h) / dA, (b * f - c * e) / dA],
             [-(d * i - f * g) / dA, (a * i - c * g) / dA, -(a * f - c * d) / dA],
@@ -37,20 +57,32 @@ class Matrix {
     }
 }
 
+/**
+ * @class Camera math.
+ */
 class Camera {
+
+    /**
+     * @constructor
+     */
     constructor() {
+        // axis rotation degrees
         [this.θ, this.ψ, this.φ] = [0, 0, 0];
+        // rotation
         this.R = [
             [1, 0, 0],
             [0, 1, 0],
             [0, 0, 1]
         ];
+        // calibration
         this.K = [
             [1, 0, 0],
             [0, 1, 0],
             [0, 0, 1]
         ];
+        // translation
         this.C = [0, 0, 0];
+        // camera matrix
         this.P = [
             [0, 0, 0, 0],
             [0, 0, 0, 0],
@@ -59,7 +91,11 @@ class Camera {
         this.update();
     }
 
+    /**
+     * Update the camera matrix.
+     */
     update() {
+        // rotation
         const [sinθ, sinψ, sinφ, cosθ, cosψ, cosφ] = [
             Math.sin(this.θ), Math.sin(this.ψ), Math.sin(this.φ),
             Math.cos(this.θ), Math.cos(this.ψ), Math.cos(this.φ)
@@ -73,16 +109,26 @@ class Camera {
         this.R[2][0] = -sinψ;
         this.R[2][1] = cosψ * sinφ;
         this.R[2][2] = cosψ * cosφ;
+        // translation
         const IC = [
             [1, 0, 0, -this.C[0]],
             [0, 1, 0, -this.C[1]],
             [0, 0, 1, -this.C[2]]
         ];
+        // calculate camera matrix
         this.P = Matrix.mul(Matrix.mul(this.K, this.R), IC);
     }
 };
 
+/**
+ * Regular Icosahedron math.
+ */
 class RegularIcosahedron {
+
+    /**
+     * @constructor
+     * @param {Number} R The radius. 
+     */
     constructor(R) {
         const phi = (1 + Math.sqrt(5)) / 2;
         const [a, b] = [0.5 * R, 1 / (2 * phi) * R];
@@ -93,7 +139,11 @@ class RegularIcosahedron {
         ];
     }
 
-    iter() {
+    /**
+     * Iterate the faces.
+     * @return {Array} The face coordinate vertex indexe tuples. 
+     */
+    iterFaces() {
         return [
             [0, 1, 2], [3, 2, 1], [3, 4, 5], [3, 8, 4], [0, 6, 7],
             [0, 9, 6], [4, 10, 11], [6, 11, 10], [2, 5, 9], [11, 9, 5],
@@ -102,15 +152,18 @@ class RegularIcosahedron {
         ]
     }
 
-    verts3D(P) {
-        return this.coordinates.map(v => Matrix.mul(P, v.map(e => [e])));
-    }
-
+    /**
+     * Calculate the 2D face projections.
+     * @param {Array} P The camera matrix.
+     */
     faces2D(P) {
-        var p3 = this.verts3D(P);
+        // vertexes in 3-space
+        var p3 = this.coordinates.map(v => Matrix.mul(P, v.map(e => [e])));
+        // vertexes in 2-space
         var p2 = p3.map(e => [e[0][0], e[1][0]]);
-        return this.iter()
+        return this.iterFaces()
             .sort((a, b) =>
+                // sort faces by z-order
                 Math.min(p3[a[0]][2], p3[a[1]][2], p3[a[2]][2]) -
                 Math.min(p3[b[0]][2], p3[b[1]][2], p3[b[2]][2])
             )
@@ -118,10 +171,12 @@ class RegularIcosahedron {
     }
 }
 
+// map hexagon grid row/col to cartesian coordinates
 function coor(i, j, w, h) {
     return [0.5 * w + j * w + 0.5 * w * i, 0.5 * h + 0.75 * h * i];
 }
 
+// Caspar-Klug walk (levo)
 function* walk(c, r, h, k, R) {
     const [width, height] = [Math.sqrt(3) * R, 2 * R];
     yield new Point(coor(r, c, width, height));
@@ -129,6 +184,7 @@ function* walk(c, r, h, k, R) {
     yield new Point(coor(r - k, c + k + h, width, height));
 }
 
+// generate hexagonal grid
 function* grid(nr, nc, R) {
     const [w, h] = [Math.sqrt(3) * R, 2 * R];
     for (var i = 0; i < nr; i++)
@@ -136,6 +192,7 @@ function* grid(nr, nc, R) {
             yield new Path.RegularPolygon(coor(i, j, w, h), 6, R);
 }
 
+// compute/render T number
 function tNumber() {
     const [h, k] = [opt.h, opt.k];
     document.getElementById("tnumber").innerHTML = "&nbsp;&nbsp;=&nbsp;";
@@ -145,14 +202,17 @@ function tNumber() {
     document.getElementById("tnumber").innerHTML += `${h * h + h * k + k * k}`;
 }
 
+// draw master triangle
 function drawFace(angle) {
     const [h, k, R] = [opt.h, opt.k, opt.R2];
     const n = h + k + 1;
 
+    // face points
     const p = Array.from(walk(0, k, h, k, R));
     const f = new Path(p);
     f.closed = true;
 
+    // computer intersection of triangle with hexagonal grid
     var g = [];
     for (var e of grid(n, n, R)) {
         var hex = f.intersect(e);
@@ -168,18 +228,22 @@ function drawFace(angle) {
     f.strokeColor = opt.fctoutl;
     f.strokeWidth = opt.fctline;
     g.push(f);
-
     g = new Group(g);
+
+    // rotate face around centroid
     var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
     g.rotate(angle - c.subtract(p[0]).angle, c);
+    // flip according to levo/dextro
     g.scale(opt.levo ? -1 : 1, 1);
 
     return g;
 }
 
+// draw the icosahedron net
 function drawNet() {
     var f1 = drawFace(90);
 
+    // render first column by rotating
     var f2 = f1.clone();
     f2.rotate(300, f1.bounds.bottomRight);
     var f3 = f1.clone();
@@ -187,6 +251,7 @@ function drawNet() {
     var f4 = f3.clone();
     f4.rotate(300, f3.bounds.bottomRight);
 
+    // copy row and shift over 5 times
     var c1 = new Group([f1, f2, f3, f4]);
     var c2 = c1.clone();
     c2.position.x += f1.bounds.width;
@@ -201,26 +266,29 @@ function drawNet() {
     net.position = view.center;
 }
 
+// draw the icosahedron solid
 function drawSolid() {
+    // group icosahedron as list of face triangles
     var ico = new RegularIcosahedron(opt.R3);
     var g = new Group(ico.faces2D(camera.P).map(e => new Path(e)));
     g.position = view.center;
 
+    // draw master triangle
     var f = drawFace(30);
 
-    var A = [
+    // affine transform each triangle to the 2D projection of icosahedron face
+    var A = Matrix.inv([
         [f.bounds.topLeft.x, f.bounds.topRight.x, f.bounds.bottomCenter.x],
         [f.bounds.topLeft.y, f.bounds.topRight.y, f.bounds.bottomCenter.y],
         [1, 1, 1]
-    ];
-
+    ]);
     g.children.map(e => {
         var B = [
             [e.segments[0].point.x, e.segments[1].point.x, e.segments[2].point.x],
             [e.segments[0].point.y, e.segments[1].point.y, e.segments[2].point.y],
             [1, 1, 1]
         ];
-        var tx = Matrix.mul(B, Matrix.inv(A));
+        var tx = Matrix.mul(B, A);
         f.clone().transform(new paper.Matrix(
             tx[0][0], tx[1][0],
             tx[0][1], tx[1][1],
