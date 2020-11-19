@@ -1,6 +1,6 @@
 # demo
 
-- http://binf.gmu.edu/dnegron2/capsid/capsid.html
+- https://dnanto.github.io/capsid/capsid.html
 
 ![screenshot.png](screenshot.png)
 
