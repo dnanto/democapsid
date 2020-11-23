@@ -201,33 +201,64 @@ class DualTriHex extends Hex {
     }
 
     unit() {
+        var hex = new Path.RegularPolygon([0, 0], 6, this.R);
+        hex.fillColor = "orange";
+
+        const dx = this.r / 2;
+        const dy = this.r / 2 / root3;
+
         var rhm1 = [];
         var [x, y] = [0, 0];
         rhm1.push([x, y]);
-        y += this.R / 2 * root3 / 6 + this.r / 2;
+        x -= dx;
+        y += dy;
         rhm1.push([x, y]);
-        x += this.R / 2;
-        y -= this.R / 2 * root3 / 3;
+        y += 2 * dy;
         rhm1.push([x, y]);
-        y -= this.R / 2 * root3 / 6 + this.r / 2;
+        x += dx;
+        y -= dy;
         rhm1.push([x, y]);
         rhm1 = new Path(rhm1);
         rhm1.closed = true;
         rhm1.fillColor = "grey"
 
-        var hex = new Path.RegularPolygon(rhm1.bounds.topRight, 6, 2 * this.R * root3 / 3);
-        hex.fillColor = "orange";
         return new Group([
             hex,
             rhm1,
-            rhm1.clone().rotate(60, [x, y]),
-            rhm1.clone().rotate(120, [x, y]),
-            rhm1.clone().rotate(180, [x, y]),
-            rhm1.clone().rotate(240, [x, y]),
-            rhm1.clone().rotate(300, [x, y])
+            rhm1.clone().rotate(60, [0, 0]),
+            rhm1.clone().rotate(120, [0, 0]),
+            rhm1.clone().rotate(180, [0, 0]),
+            rhm1.clone().rotate(240, [0, 0]),
+            rhm1.clone().rotate(300, [0, 0])
         ]);
+    }
+}
 
+class DualRhombiTriHex extends Hex {
+    constructor(R) {
+        super(R);
+    }
 
+    unit() {
+        var line = new Path([[0, 0], [0, this.r]]);
+        var path = new Path([
+            [0, 0],
+            line.rotate(30, [0, 0]).bounds.bottomLeft,
+            [0, this.R],
+            line.rotate(-60, [0, 0]).bounds.bottomRight
+        ]);
+        path.closed = true;
+        path.fillColor = "orange";
+        line.remove();
+
+        return new Group([
+            path,
+            path.clone().rotate(60, [0, 0]),
+            path.clone().rotate(120, [0, 0]),
+            path.clone().rotate(180, [0, 0]),
+            path.clone().rotate(240, [0, 0]),
+            path.clone().rotate(300, [0, 0])
+        ]);
     }
 }
 
@@ -294,22 +325,23 @@ function drawIco(face, camera) {
 function draw(camera) {
     const [h, k, R] = [5, 0, 50];
 
-    var hex = new Hex(R);
+    // var hex = new Hex(R);
     // var hex = new TriHex(R);
     // var hex = new SnubHex(R);
     // var hex = new RhombiTriHex(R);
-    var hex = new DualTriHex(R);
+    // var hex = new DualTriHex(R);
+    var hex = new DualRhombiTriHex(R);
 
-    var face = hex.face(h, k, R);
+    var face = hex.face2(h, k, R);
 
     // var net = calcNet(face);
     // net.position = view.center;
 
-    var ico = drawIco(face, camera);
-    ico.position = view.position;
+    // var ico = drawIco(face, camera);
+    // ico.position = view.position;
 
     face.strokeColor = "black";
     face.position = view.center;
-    face.remove();
+    // face.remove();
 }
 
