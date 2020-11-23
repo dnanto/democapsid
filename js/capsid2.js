@@ -18,7 +18,7 @@ class Hex {
     unit() {
         var hex = new Path.RegularPolygon(this.coor(0, 0, this.dx, this.dy), 6, this.R);
         hex.fillColor = "grey";
-        return new Group(hex);
+        return [hex];
     }
 
     // map hexagon grid row/col to cartesian coordinates
@@ -28,7 +28,7 @@ class Hex {
 
     // generate hexagonal grid
     * grid(nr, nc) {
-        const u = this.unit(this.R);
+        const u = new Group(this.unit(this.R));
         for (var i = 0; i < nr; i++) {
             for (var j = 0; j < nc - Math.floor(i / 2); j++) {
                 var v = u.clone();
@@ -80,34 +80,6 @@ class Hex {
         return g;
     }
 
-    face2(h, k) {
-        const n = h + k + 1;
-
-        var p = this.walk(h, k, 0, k);
-        var f = new Path(p);
-        f.closed = true;
-        f.strokeColor = "black";
-        // f.fillColor = "grey";
-
-        // computer intersection of triangle with hexagonal grid
-        var g = [];
-        for (var u of this.grid(n, n)) {
-            for (var i = 0; i < u.children.length; i++) {
-                g.push(u.children[i]);
-                // var x = f.intersect(u.children[i]);
-                // x.fillColor = u.children[i].fillColor;
-                // g.push(x);
-            }
-            // u.remove();
-        }
-        f.remove();
-        var g = new Group(g);
-
-        // var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
-        // g.rotate(90 - c.subtract(p[0]).angle, c);
-
-        return g;
-    }
 }
 
 class TriHex extends Hex {
@@ -128,7 +100,7 @@ class TriHex extends Hex {
         var tri2 = tri1.clone().rotate(-180, tri1.bounds.bottomLeft)
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.fillColor = "grey";
-        return new Group([tri1, tri2, hex]);
+        return [tri1, tri2, hex];
     }
 
 }
@@ -148,16 +120,21 @@ class SnubHex extends Hex {
     unit() {
         var tri1 = new Path.RegularPolygon([0, -4 / 3 * this.r], 3, 2 * this.r / 3);
         tri1.fillColor = "red";
-        var tri2 = tri1.clone().rotate(-60, tri1.bounds.bottomLeft);
-        var tri3 = tri1.clone().rotate(-120, tri1.bounds.bottomLeft);
-        var tri4 = tri1.clone().rotate(-180, tri1.bounds.bottomLeft);
-        var tri5 = tri4.clone().rotate(-60, tri4.bounds.bottomCenter);
-        var tri6 = tri4.clone().rotate(-120, tri4.bounds.bottomCenter);
-        var tri7 = tri4.clone().rotate(-180, tri4.bounds.bottomCenter);
-        var tri8 = tri7.clone().rotate(-60, tri7.bounds.bottomRight);
+        var tri2 = tri1.clone().rotate(-180, tri1.bounds.bottomLeft);
+        var tri3 = tri2.clone().rotate(-180, tri2.bounds.bottomCenter);
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.fillColor = "grey";
-        return new Group([tri1, tri2, tri3, tri4, tri5, tri6, tri7, tri8, hex]);
+        return [
+            tri1,
+            tri1.clone().rotate(-60, tri1.bounds.bottomLeft),
+            tri1.clone().rotate(-120, tri1.bounds.bottomLeft),
+            tri2,
+            tri2.clone().rotate(-60, tri2.bounds.bottomCenter),
+            tri2.clone().rotate(-120, tri2.bounds.bottomCenter),
+            tri2.clone().rotate(-180, tri2.bounds.bottomCenter),
+            tri3.clone().rotate(-60, tri3.bounds.bottomRight),
+            hex
+        ];
     }
 }
 
@@ -176,61 +153,61 @@ class RhombiTriHex extends Hex {
         var hex = new Path.RegularPolygon([0, 0], 6, this.R);
         hex.fillColor = "grey";
 
-        var sqr1 = new Path.RegularPolygon([0, 0], 4, Math.sqrt(2 * this.R * this.R) / 2);
-        sqr1.fillColor = "orange";
-        sqr1.bounds.x = hex.bounds.left - sqr1.bounds.width;
-        var sqr2 = sqr1.clone().rotate(150, sqr1.bounds.topRight);
-        var sqr3 = sqr1.clone().rotate(-150, sqr1.bounds.bottomRight);
+        var sqr = new Path.RegularPolygon([0, 0], 4, Math.sqrt(2 * this.R * this.R) / 2);
+        sqr.fillColor = "orange";
+        sqr.bounds.x = hex.bounds.left - sqr.bounds.width;
 
         var tri1 = new Path.RegularPolygon([0, 0], 3, this.R * root3 / 3).rotate(180);
         tri1.fillColor = "red";
         tri1.position.y = hex.bounds.top - this.R * root3 / 2 / 2;
         var tri2 = tri1.clone().rotate(180);
-        tri2.position = sqr1.position;
-        tri2.bounds.bottom = sqr1.bounds.top;
-        return new Group([sqr1, sqr2, sqr3, tri1, tri2, hex]);
+        tri2.position = sqr.position;
+        tri2.bounds.bottom = sqr.bounds.top;
+
+        return [
+            sqr,
+            sqr.clone().rotate(150, sqr.bounds.topRight),
+            sqr.clone().rotate(-150, sqr.bounds.bottomRight),
+            tri1,
+            tri2,
+            hex
+        ];
     }
 }
 
 class DualTriHex extends Hex {
     constructor(R) {
         super(R);
-        this.dx = 2 * R;
-        this.dy = 2 * (this.R / 2 * root3 / 6 + this.r / 2 + this.R / 2 * root3 / 3);
-        this.ddx = 12 * ((this.R / 2 * root3 / 6 + this.r / 2) / 2 * root3 / 6);
+        this.dx = 4 * R;
+        this.dy = 4 * R * root3 / 2;
+        this.ddx = 2 * R;
     }
 
     unit() {
-        var hex = new Path.RegularPolygon([0, 0], 6, this.R);
-        hex.fillColor = "orange";
+        const tri_radius = this.R * root3 / 3;
+        const tri_inradius = this.R * root3 / 6;
 
-        const dx = this.r / 2;
-        const dy = this.r / 2 / root3;
-
-        var rhm1 = [];
-        var [x, y] = [0, 0];
-        rhm1.push([x, y]);
-        x -= dx;
-        y += dy;
-        rhm1.push([x, y]);
-        y += 2 * dy;
-        rhm1.push([x, y]);
-        x += dx;
-        y -= dy;
-        rhm1.push([x, y]);
-        rhm1 = new Path(rhm1);
-        rhm1.closed = true;
-        rhm1.fillColor = "grey"
-
-        return new Group([
-            hex,
-            rhm1,
-            rhm1.clone().rotate(60, [0, 0]),
-            rhm1.clone().rotate(120, [0, 0]),
-            rhm1.clone().rotate(180, [0, 0]),
-            rhm1.clone().rotate(240, [0, 0]),
-            rhm1.clone().rotate(300, [0, 0])
+        var path = new Path([
+            [0, 0],
+            [0, -this.r - tri_inradius],
+            [-this.R, -2 * this.r],
+            [-this.R, -tri_radius]
         ]);
+        path.closed = true;
+        path.fillColor = "green";
+
+        var hex = new Path.RegularPolygon([0, 0], 6, this.R * 4 / root3);
+        hex.fillColor = "yellow";
+
+        return [
+            hex,
+            path,
+            path.clone().rotate(-60, [0, 0]),
+            path.clone().rotate(-120, [0, 0]),
+            path.clone().rotate(-180, [0, 0]),
+            path.clone().rotate(-240, [0, 0]),
+            path.clone().rotate(-300, [0, 0])
+        ];
     }
 }
 
@@ -251,14 +228,50 @@ class DualRhombiTriHex extends Hex {
         path.fillColor = "orange";
         line.remove();
 
-        return new Group([
+        return [
             path,
             path.clone().rotate(60, [0, 0]),
             path.clone().rotate(120, [0, 0]),
             path.clone().rotate(180, [0, 0]),
             path.clone().rotate(240, [0, 0]),
             path.clone().rotate(300, [0, 0])
+        ];
+    }
+}
+
+class DualSnubHex extends Hex {
+    constructor(R) {
+        super(R);
+        this.dx = 2 * (R + R * root3 / 6);
+        this.dy = 2.5 * R;
+        this.ddy = 0.5 * R;
+    }
+
+    unit() {
+        var hex = new Path.RegularPolygon([0, 0], 6, this.R);
+
+        const tri_radius = this.R * root3 / 3;
+        const tri_inradius = this.R * root3 / 6;
+
+        var path = new Path([
+            [0, 0],
+            [-tri_radius, -this.R],
+            [-tri_inradius, -1.5 * this.R],
+            [tri_inradius, -1.5 * this.R],
+            [tri_radius, -this.R],
         ]);
+        path.closed = true;
+        path.fillColor = "green";
+
+        return [
+            hex,
+            path,
+            path.clone().rotate(60, [0, 0]),
+            path.clone().rotate(120, [0, 0]),
+            path.clone().rotate(180, [0, 0]),
+            path.clone().rotate(240, [0, 0]),
+            path.clone().rotate(300, [0, 0])
+        ];
     }
 }
 
@@ -323,25 +336,26 @@ function drawIco(face, camera) {
 }
 
 function draw(camera) {
-    const [h, k, R] = [5, 0, 50];
+    const [h, k, R] = [5, 5, 50];
 
     // var hex = new Hex(R);
     // var hex = new TriHex(R);
     // var hex = new SnubHex(R);
-    // var hex = new RhombiTriHex(R);
+    var hex = new RhombiTriHex(R);
     // var hex = new DualTriHex(R);
-    var hex = new DualRhombiTriHex(R);
+    // var hex = new DualRhombiTriHex(R);
+    // var hex = new DualSnubHex(R);
 
-    var face = hex.face2(h, k, R);
+    var face = hex.face(h, k, R);
 
     // var net = calcNet(face);
     // net.position = view.center;
 
-    // var ico = drawIco(face, camera);
-    // ico.position = view.position;
+    var ico = drawIco(face, camera);
+    ico.position = view.position;
 
     face.strokeColor = "black";
     face.position = view.center;
-    // face.remove();
+    face.remove();
 }
 
