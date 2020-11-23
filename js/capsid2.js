@@ -18,7 +18,6 @@ class Hex {
     unit() {
         var hex = new Path.RegularPolygon(this.coor(0, 0, this.dx, this.dy), 6, this.R);
         hex.fillColor = "grey";
-        hex.opacity = 0.5;
         return new Group(hex);
     }
 
@@ -61,7 +60,6 @@ class Hex {
         f.closed = true;
         f.strokeColor = "black";
         // f.fillColor = "grey";
-        f.opacity = 0.5;
 
         // computer intersection of triangle with hexagonal grid
         var g = [];
@@ -81,8 +79,36 @@ class Hex {
 
         return g;
     }
-}
 
+    face2(h, k) {
+        const n = h + k + 1;
+
+        var p = this.walk(h, k, 0, k);
+        var f = new Path(p);
+        f.closed = true;
+        f.strokeColor = "black";
+        // f.fillColor = "grey";
+
+        // computer intersection of triangle with hexagonal grid
+        var g = [];
+        for (var u of this.grid(n, n)) {
+            for (var i = 0; i < u.children.length; i++) {
+                g.push(u.children[i]);
+                // var x = f.intersect(u.children[i]);
+                // x.fillColor = u.children[i].fillColor;
+                // g.push(x);
+            }
+            // u.remove();
+        }
+        f.remove();
+        var g = new Group(g);
+
+        // var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
+        // g.rotate(90 - c.subtract(p[0]).angle, c);
+
+        return g;
+    }
+}
 
 class TriHex extends Hex {
 
@@ -99,11 +125,9 @@ class TriHex extends Hex {
     unit() {
         var tri1 = new Path.RegularPolygon([0, -4 / 3 * this.r], 3, 2 * this.r / 3);
         tri1.fillColor = "red";
-        tri1.opacity = 0.5;
         var tri2 = tri1.clone().rotate(-180, tri1.bounds.bottomLeft)
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.fillColor = "grey";
-        hex.opacity = 0.5;
         return new Group([tri1, tri2, hex]);
     }
 
@@ -124,7 +148,6 @@ class SnubHex extends Hex {
     unit() {
         var tri1 = new Path.RegularPolygon([0, -4 / 3 * this.r], 3, 2 * this.r / 3);
         tri1.fillColor = "red";
-        tri1.opacity = 0.5;
         var tri2 = tri1.clone().rotate(-60, tri1.bounds.bottomLeft);
         var tri3 = tri1.clone().rotate(-120, tri1.bounds.bottomLeft);
         var tri4 = tri1.clone().rotate(-180, tri1.bounds.bottomLeft);
@@ -134,7 +157,6 @@ class SnubHex extends Hex {
         var tri8 = tri7.clone().rotate(-60, tri7.bounds.bottomRight);
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.fillColor = "grey";
-        hex.opacity = 0.5;
         return new Group([tri1, tri2, tri3, tri4, tri5, tri6, tri7, tri8, hex]);
     }
 }
@@ -153,11 +175,9 @@ class RhombiTriHex extends Hex {
     unit() {
         var hex = new Path.RegularPolygon([0, 0], 6, this.R);
         hex.fillColor = "grey";
-        hex.opacity = 0.50;
 
         var sqr1 = new Path.RegularPolygon([0, 0], 4, Math.sqrt(2 * this.R * this.R) / 2);
         sqr1.fillColor = "orange";
-        sqr1.opacity = 0.50;
         sqr1.bounds.x = hex.bounds.left - sqr1.bounds.width;
         var sqr2 = sqr1.clone().rotate(150, sqr1.bounds.topRight);
         var sqr3 = sqr1.clone().rotate(-150, sqr1.bounds.bottomRight);
@@ -169,6 +189,45 @@ class RhombiTriHex extends Hex {
         tri2.position = sqr1.position;
         tri2.bounds.bottom = sqr1.bounds.top;
         return new Group([sqr1, sqr2, sqr3, tri1, tri2, hex]);
+    }
+}
+
+class DualTriHex extends Hex {
+    constructor(R) {
+        super(R);
+        this.dx = 2 * R;
+        this.dy = 2 * (this.R / 2 * root3 / 6 + this.r / 2 + this.R / 2 * root3 / 3);
+        this.ddx = 12 * ((this.R / 2 * root3 / 6 + this.r / 2) / 2 * root3 / 6);
+    }
+
+    unit() {
+        var rhm1 = [];
+        var [x, y] = [0, 0];
+        rhm1.push([x, y]);
+        y += this.R / 2 * root3 / 6 + this.r / 2;
+        rhm1.push([x, y]);
+        x += this.R / 2;
+        y -= this.R / 2 * root3 / 3;
+        rhm1.push([x, y]);
+        y -= this.R / 2 * root3 / 6 + this.r / 2;
+        rhm1.push([x, y]);
+        rhm1 = new Path(rhm1);
+        rhm1.closed = true;
+        rhm1.fillColor = "grey"
+
+        var hex = new Path.RegularPolygon(rhm1.bounds.topRight, 6, 2 * this.R * root3 / 3);
+        hex.fillColor = "orange";
+        return new Group([
+            hex,
+            rhm1,
+            rhm1.clone().rotate(60, [x, y]),
+            rhm1.clone().rotate(120, [x, y]),
+            rhm1.clone().rotate(180, [x, y]),
+            rhm1.clone().rotate(240, [x, y]),
+            rhm1.clone().rotate(300, [x, y])
+        ]);
+
+
     }
 }
 
@@ -199,15 +258,58 @@ function calcNet(face) {
     return net;
 }
 
-function draw() {
-    const [h, k, R] = [5, 0, 20];
-    // var hex = new Hex(R);
+function drawIco(face, camera) {
+    // group icosahedron as list of face triangles
+    var ico = new RegularIcosahedron(500);
+    var faces = ico.faces(camera.P);
+    var g = new Group(faces.map(e => new Path(e.map(e => e.slice(0, 2)))));
+
+    // affine transform each triangle to the 2D projection of icosahedron face
+    var A = Matrix.inv3([
+        [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],
+        [face.bounds.topCenter.y, face.bounds.bottomLeft.y, face.bounds.bottomRight.y],
+        [1, 1, 1]
+    ]);
+
+    faces = new Group(faces.map((e, i) => {
+        var B = [
+            [e[0][0] + view.center.x, e[1][0] + view.center.x, e[2][0] + view.center.x],
+            [e[0][1] + view.center.y, e[1][1] + view.center.y, e[2][1] + view.center.y],
+            [1, 1, 1]
+        ];
+        var tx = Matrix.mul(B, A);
+        var g = face.clone().transform(new paper.Matrix(
+            tx[0][0], tx[1][0],
+            tx[0][1], tx[1][1],
+            tx[0][2], tx[1][2]
+        ));
+        g.bringToFront();
+    }));
+
+    g.remove();
+
+    return faces;
+}
+
+function draw(camera) {
+    const [h, k, R] = [5, 0, 50];
+
+    var hex = new Hex(R);
     // var hex = new TriHex(R);
     // var hex = new SnubHex(R);
-    var hex = new RhombiTriHex(R);
+    // var hex = new RhombiTriHex(R);
+    var hex = new DualTriHex(R);
+
     var face = hex.face(h, k, R);
-    // face.rotate(60);
-    var net = calcNet(face);
-    net.position = view.center;
+
+    // var net = calcNet(face);
+    // net.position = view.center;
+
+    var ico = drawIco(face, camera);
+    ico.position = view.position;
+
+    face.strokeColor = "black";
+    face.position = view.center;
     face.remove();
 }
+
