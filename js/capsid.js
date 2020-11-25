@@ -201,7 +201,7 @@ class Hex {
     * grid(nr, nc) {
         const u = new Group(this.unit(this.R));
         for (var i = 0; i < nr; i++) {
-            for (var j = 0; j < nc - Math.floor(i / 2); j++) {
+            for (var j = 0; j < nc; j++) {
                 var v = u.clone();
                 v.position = new Point(this.coor(i, j));
                 yield v;
