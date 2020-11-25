@@ -5,37 +5,8 @@
 <head>
     <script type="text/javascript" src="js/lib/paper-core.min.js"></script>
     <script type="text/javascript" src="js/capsid.js"></script>
-    <style>
-        * {
-            font-family: monospace;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr 1fr;
-            gap: 0px 0px;
-            grid-template-areas:
-                "options view view view"
-                "options view view view"
-                "options view view view";
-        }
-
-        .options {
-            grid-area: options;
-            background-color: lightgray;
-            padding: 10%;
-        }
-
-        .view {
-            grid-area: view;
-        }
-
-        canvas[resize] {
-            width: 100%;
-            height: 100%;
-        }
-    </style>
+    <script type="text/javascript" src="js/app.js"></script>
+    <link rel="stylesheet" href="css/app.css">
     <title>capsid</title>
 </head>
 
@@ -48,66 +19,108 @@
             </strong>
             <br><br>
 
-            <label for="h">h&nbsp;=&nbsp;</label><input type="number" name="h" id="h" step="1" value="2" min="0">
+            <label for="h">h&nbsp;=&nbsp;</label><input type="number" id="h" step="1" value="2" min="0">
             <br>
-            <label for="k">k&nbsp;=&nbsp;</label><input type="number" name="k" id="k" step="1" value="1" min="0">
+            <label for="k">k&nbsp;=&nbsp;</label><input type="number" id="k" step="1" value="1" min="0">
             <div>T&nbsp;=&nbsp;h<sup>2</sup>&nbsp;+&nbsp;hk&nbsp;+&nbsp;k<sup>2</sup></div>
             <div id="tnumber"></div>
             <br><br>
 
-            <label for="topology">solid/net&nbsp;&nbsp;:</label>
-            <input type="radio" name="topology" id="solid" checked>
-            <input type="radio" name="topology" id="net">
+            <label for="geometry">geometry:</label>
+            <select id="geometry">
+                <option value="Hex">Hex</option>
+                <option value="TriHex">TriHex</option>
+                <option value="SnubHex">SnubHex</option>
+                <option value="RhombiTriHex">RhombiTriHex</option>
+                <option value="DualTriHex">DualTriHex</option>
+                <option value="DualSnubHex">DualSnubHex</option>
+                <option value="DualRhombiTriHex">DualRhombiTriHex</option>
+            </select>
             <br><br>
 
-            <label for="rotation">levo/dextro:</label>
+            <label for="topology">ico/net/face:</label>
+            <input type="radio" name="topology" id="ico" value="ico" checked>
+            <input type="radio" name="topology" id="net" value="net">
+            <input type="radio" name="topology" id="face" value="face">
+            <br><br>
+
+            <label for="rotation">levo/dextro&nbsp;:</label>
             <input type="radio" name="rotation" id="levo" checked>
             <input type="radio" name="rotation" id="dextro">
             <br><br>
 
-            <label for="R">R2:</label>
-            <input type="number" name="R2" id="R2" step="1" value="25" min="0">
-            <br>
-            <label for="R">R3:</label>
-            <input type="number" name="R3" id="R3" step="1" value="500" min="0">
-            <br><br>
+            <div class="rowinput">
+                <label for="R">R2:</label>
+                <input type="number" id="R2" step="any" value="25" min="0">
+                <label for="R">R3:</label>
+                <input type="number" id="R3" step="any" value="500" min="0">
+                <br><br>
+            </div>
 
-            <label for="θ">θ:&nbsp;</label><input type="number" name="θ" id="θ" step="any" value="0">
-            <br>
-            <label for="ψ">ψ:&nbsp;</label><input type="number" name="ψ" id="ψ" step="any" value="0">
-            <br>
-            <label for="φ">φ:&nbsp;</label><input type="number" name="φ" id="φ" step="any" value="0">
-            <br><br>
+            <div class="rowinput">
+                <label for="θ">θ&nbsp;:&nbsp;</label><input type="number" id="θ" step="any" value="0">
+                <label for="ψ">ψ&nbsp;:&nbsp;</label><input type="number" id="ψ" step="any" value="0">
+                <label for="φ">φ&nbsp;:&nbsp;</label><input type="number" id="φ" step="any" value="0">
+                <br><br>
+            </div>
 
             <label for="interval">interval:</label>
             <input type="number" id="interval" value="1" min="0">
             <br><br>
 
-            <label for="hexline">monomer line size&nbsp;&nbsp;:</label>
-            <input type="number" name="hexline" id="hexline" step="any" value="1" min="0">
+            <label for="face.color">line color:</label>
+            <input type="color" id="line.color" step="any" value="1" min="0">
             <br>
-            <label for="fctline">facet line size&nbsp;&nbsp;&nbsp;&nbsp;:</label>
-            <input type="number" name="fctline" id="fctline" step="any" value="1" min="0">
-            <br><br>
+            <label for="line.alpha">line alpha:</label>
+            <input type="number" id="line.alpha" step="any" value="255" min="0" max="255">
+            <br>
+            <label for="line.size">line size&nbsp;:</label>
+            <input type="number" id="line.size" step="any" value="1" min="0">
+            <br>
+            <br>
 
-            <label for="penalph">pentamer fill alpha:</label>
-            <input type="number" name="penalph" id="penalph" step="1" value="255" min="0" max="255">
-            <br>
-            <label for="hexalph">hexamer fill alpha&nbsp;:</label>
-            <input type="number" name="hexalph" id="hexalph" step="1" value="200" min="0" max="255">
-            <br><br>
-
-            <label for="penfill">pentamer fill color:</label>
-            <input type="color" id="penfill" name="penfill" value="#ADD8E6">
-            <br>
-            <label for="hexfill">hexamer fill color&nbsp;:</label>
-            <input type="color" id="hexfill" name="hexfill" value="#90EE90">
-            <br>
-            <label for="hexoutl">hexamer line color&nbsp;:</label>
-            <input type="color" id="hexoutl" name="hexoutl" value="#000000">
-            <br>
-            <label for="fctoutl">facet line color&nbsp;&nbsp;&nbsp;:</label>
-            <input type="color" id="fctoutl" name="fctoutl" value="#808080">
+            <table class="tg" role="presentation">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Hexamer<br></th>
+                        <th>Pentamer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>
+                            <input type="color" value="#01665e">
+                            <input type="number" step="any" value="255" min="0" max="255">
+                        </td>
+                        <td>
+                            <input type="color" value="#5ab4ac">
+                            <input type="number" step="any" value="255" min="0" max="255">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>
+                            <input type="color" value="#c7eae5">
+                            <input type="number" step="any" value="255" min="0" max="255">
+                        </td>
+                        <td>
+                            <input type="color" value="#f6e8c3">
+                            <input type="number" step="any" value="255" min="0" max="255">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>
+                            <input type="color" value="#d8b365">
+                            <input type="number" step="any" value="255" min="0" max="255"></td>
+                        <td>
+                            <input type="color" value="#8c510a">
+                            <input type="number" step="any" value="255" min="0" max="255"></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
         <div class="view">
             <canvas id="canvas" resize>
