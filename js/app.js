@@ -14,12 +14,24 @@ function tNumber() {
         `${h}<sup>2</sup>&nbsp;+&nbsp;` +
         `(${h})(${k})&nbsp;+&nbsp;` +
         `${k}<sup>2</sup><br>&nbsp;&nbsp;=&nbsp;` +
-        `${h * h + h * k + k * k}`
-        ;
+        `${h * h + h * k + k * k}`;
 }
 
 function parseAlpha(value) {
     return Number(value).toString(16).padStart(2, "0");
+}
+
+function exportSVG() {
+    var link = document.createElement("a");
+    link.download = "capsid.svg";
+    link.href = "" +
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(paper.project.exportSVG({
+            "options.bounds": "content",
+            asString: true,
+            "options.matchShapes": true
+        }));
+    link.click();
 }
 
 function updateCam() {
@@ -143,6 +155,8 @@ window.onload = function () {
         .forEach(e => e.addEventListener("change", updateCam));
     ["h", "k", "geometry", "levo", "dextro", "ico", "net", "face", "R2", "R3", "θ", "ψ", "φ"]
         .map(eid).forEach(e => e.addEventListener("change", redraw));
+
+    eid("export").addEventListener("click", exportSVG);
 
     tNumber();
     drawHex();

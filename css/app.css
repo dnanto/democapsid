@@ -27,17 +27,13 @@ input[type=color], input[type=number] {
     width: 20%;
 }
 
-select {
-    width: 100%;
-}
-
 table {
     width: 100%;
     text-align: center;
 }
 
 table input[type=color] {
-    width: 60%;
+    width: 50%;
 }
 
 table input[type=number] {
