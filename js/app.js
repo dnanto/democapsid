@@ -104,11 +104,6 @@ function drawFace() {
         }
     }
     face = hex.face(opt.h, opt.k, style);
-    if (eid("raster").checked) {
-        var rasterized = face.rasterize();
-        face.remove();
-        face = rasterized;
-    }
 }
 
 function redraw(ele) {
@@ -144,9 +139,6 @@ window.onload = function () {
         eid(e).addEventListener("change", getOpt)
     );
 
-    ["svg", "raster"]
-        .map(eid)
-        .forEach(e => e.addEventListener("change", drawFace));
     ["geometry", "R2"]
         .map(eid)
         .forEach(e => e.addEventListener("change", drawHex));
@@ -161,11 +153,11 @@ window.onload = function () {
     ["θ", "ψ", "φ"]
         .map(eid)
         .forEach(e => e.addEventListener("change", updateCam));
-    []
-        .concat(["h", "k", "svg", "raster", "geometry"])
-        .concat(["levo", "dextro", "ico", "net", "face"])
-        .concat(["R2", "R3", "θ", "ψ", "φ"])
-        .map(eid).forEach(e => e.addEventListener("change", redraw));
+    ["h", "k", "geometry", "levo", "dextro", "ico", "net", "face", "R2", "R3", "θ", "ψ", "φ"]
+        .map(eid)
+        .concat(Array.from(document.querySelectorAll("[id^='line']")))
+        .concat(Array.from(document.querySelectorAll(".tg > * > * > * > input")))
+        .forEach(e => e.addEventListener("change", redraw));
 
     eid("export").addEventListener("click", exportSVG);
 

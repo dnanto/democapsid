@@ -183,7 +183,7 @@ class Hex {
     }
 
     unit() {
-        var hex = new Path.RegularPolygon(this.coor(0, 0, this.dx, this.dy), 6, this.R);
+        var hex = new Path.RegularPolygon([0, 0], 6, this.R);
         hex.name = "mer-1";
         return [hex];
     }
@@ -408,9 +408,10 @@ class DualTriHex extends Hex {
 class DualSnubHex extends Hex {
     constructor(R) {
         super(R);
-        this.dx = 2 * (R + R * root3 / 6);
-        this.dy = 2.5 * R;
-        this.ddy = 0.5 * R;
+        this.dx = 2.5 * R;
+        this.dy = 2 * this.r + 2 * (this.R * root3 / 3) - this.R * root3 / 6;
+        this.ddx = 0.5 * R;
+        this.ddy = this.r;
     }
 
     unit() {
@@ -419,11 +420,11 @@ class DualSnubHex extends Hex {
 
         var path = new Path([
             [0, 0],
-            [-tri_radius, -this.R],
-            [-tri_inradius, -1.5 * this.R],
-            [tri_inradius, -1.5 * this.R],
-            [tri_radius, -this.R],
-        ]);
+            [0, -(this.r + tri_inradius)],
+            [0.5 * this.R, -(this.r + tri_radius)],
+            [this.R, -(this.r + tri_inradius)],
+            [this.R, -tri_radius]
+        ])
         path.closed = true;
         path.name = "mer-1";
 
