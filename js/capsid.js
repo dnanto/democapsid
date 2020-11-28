@@ -378,30 +378,49 @@ class DualTriHex extends Hex {
     }
 
     unit() {
-        const tri_radius = this.R * root3 / 3;
-        const tri_inradius = this.R * root3 / 6;
+        const tri_rad = this.R * root3 / 3;
+        const tri_inr = this.R * root3 / 6;
 
-        var path = new Path([
+        var path1 = new Path([
             [0, 0],
-            [0, -this.r - tri_inradius],
+            [0, -this.r - tri_inr],
             [-this.R, -2 * this.r],
-            [-this.R, -tri_radius]
+            [-this.R, -tri_rad]
         ]);
-        path.closed = true;
-        path.name = "mer-1";
+        path1.closed = true;
+        path1.name = "mer-1";
 
-        var hex = new Path.RegularPolygon([0, 0], 6, this.R * 4 / root3);
-        hex.name = "mer-2";
+        var path2 = path1.clone().rotate(-60, path1.bounds.topLeft);
+        path2.name = "mer-2";
+        var path3 = path1.clone().rotate(-300, path1.bounds.topLeft);
+        path3.name = "mer-2";
+        var path4 = path3.clone().rotate(-240, path3.bounds.bottomLeft);
+        path4.name = "mer-2";
+        var path5 = path4.clone().rotate(-240, path4.bounds.bottomRight);
+        path5.name = "mer-2";
+        var path6 = path5.clone().rotate(-240, path5.bounds.rightCenter);
+        path6.name = "mer-2";
+        var path7 = path2.clone().rotate(240, path2.bounds.rightCenter)
+        path7.name = "mer-2";
 
         return [
-            hex,
-            path,
-            path.clone().rotate(-60, [0, 0]),
-            path.clone().rotate(-120, [0, 0]),
-            path.clone().rotate(-180, [0, 0]),
-            path.clone().rotate(-240, [0, 0]),
-            path.clone().rotate(-300, [0, 0])
+            path1,
+            path1.clone().rotate(-60, [0, 0]),
+            path1.clone().rotate(-120, [0, 0]),
+            path1.clone().rotate(-180, [0, 0]),
+            path1.clone().rotate(-240, [0, 0]),
+            path1.clone().rotate(-300, [0, 0]),
+            path2,
+            path3,
+            path4,
+            path5,
+            path6,
+            path7
         ];
+    }
+
+    circumradius() {
+        return this.R + this.R * root3 / 2;
     }
 }
 
@@ -415,15 +434,15 @@ class DualSnubHex extends Hex {
     }
 
     unit() {
-        const tri_radius = this.R * root3 / 3;
-        const tri_inradius = this.R * root3 / 6;
+        const tri_rad = this.R * root3 / 3;
+        const tri_inr = this.R * root3 / 6;
 
         var path = new Path([
             [0, 0],
-            [0, -(this.r + tri_inradius)],
-            [0.5 * this.R, -(this.r + tri_radius)],
-            [this.R, -(this.r + tri_inradius)],
-            [this.R, -tri_radius]
+            [0, -(this.r + tri_inr)],
+            [0.5 * this.R, -(this.r + tri_rad)],
+            [this.R, -(this.r + tri_inr)],
+            [this.R, -tri_rad]
         ])
         path.closed = true;
         path.name = "mer-1";
