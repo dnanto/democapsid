@@ -154,7 +154,7 @@ class RegularIcosahedron {
     }
 
     /**
-     * Calculate the 2D face projections.
+     * Calculate the 3D face projections.
      * @param {Array} P The camera matrix.
      */
     static faces(R, P) {
@@ -514,7 +514,7 @@ function drawNet(face) {
     return net;
 }
 
-function drawIco(face, R, P) {
+function drawIco(face, R, F, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
     const A = Matrix.inv3([
         [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],
@@ -522,19 +522,37 @@ function drawIco(face, R, P) {
         [1, 1, 1]
     ]);
 
-    return new Group(RegularIcosahedron.faces(R, P).map(e => {
-        const B = [
-            [e[0][0], e[1][0], e[2][0]],
-            [e[0][1], e[1][1], e[2][1]],
-            [1, 1, 1]
-        ];
-        const M = Matrix.mul(B, A);
-        return face.clone().transform(
-            new paper.Matrix(
-                M[0][0], M[1][0],
-                M[0][1], M[1][1],
-                M[0][2], M[1][2]
-            )
-        );
-    }));
+    var fibers = [];
+    if (F > 0) {
+        var p1 = RegularIcosahedron.verts(R, P).map(e => [e[0][0], e[1][0], e[2][0]]);
+        var p2 = RegularIcosahedron.verts(F, P).map(e => [e[0][0], e[1][0], e[2][0]]);
+        var fibers = p1.map((_, i) => [p1[i], p2[i]]);
+    }
+
+    return new Group(
+        RegularIcosahedron.faces(R, P).concat(fibers)
+            .sort((a, b) => Math.min(...a.map(a => a[2])) - Math.min(...b.map(b => b[2]))).map(e => {
+                if (e.length == 3) {
+                    const B = [
+                        [e[0][0], e[1][0], e[2][0]],
+                        [e[0][1], e[1][1], e[2][1]],
+                        [1, 1, 1]
+                    ];
+                    const M = Matrix.mul(B, A);
+                    return face.clone().transform(
+                        new paper.Matrix(
+                            M[0][0], M[1][0],
+                            M[0][1], M[1][1],
+                            M[0][2], M[1][2]
+                        )
+                    );
+                } else {
+                    var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
+                    fiber.style = opt["fib.mer"];
+                    var knob = new Path.Circle([e[1][0], e[1][1]], opt["knb.mer"].R);
+                    knob.style = opt["knb.mer"]["style"];
+                    return new Group([fiber, knob]);
+                }
+            })
+    );
 }

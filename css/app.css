@@ -24,7 +24,7 @@ input {
 }
 
 input[type=color], input[type=number] {
-    width: 20%;
+    width: 19%;
 }
 
 table {

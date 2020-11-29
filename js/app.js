@@ -55,6 +55,7 @@ function getOpt() {
         dextro: eid("dextro").checked,
         R2: parseFloat(eid("R2").value),
         R3: parseFloat(eid("R3").value),
+        F: parseFloat(eid("F").value),
         θ: parseFloat(eid("θ").value),
         ψ: parseFloat(eid("ψ").value),
         φ: parseFloat(eid("φ").value),
@@ -87,11 +88,11 @@ function drawHex() {
     }
 }
 
-function drawFace() {
+function getFaceStyle() {
     var style = {
         "face": {
-            strokeColor: eid("line.color").value + parseAlpha(eid("line.alpha").value),
-            strokeWidth: parseFloat(eid("line.size").value)
+            strokeColor: eid("face.color").value + parseAlpha(eid("face.alpha").value),
+            strokeWidth: parseFloat(eid("face.size").value)
         },
         "levo": opt.levo
     }
@@ -102,8 +103,25 @@ function drawFace() {
         style["pen.mer-" + i] = {
             fillColor: getMer(i, 2, 1).value + parseAlpha(getMer(i, 2, 2).value),
         }
+    };
+    return style;
+}
+
+function drawFace() {
+    face = hex.face(opt.h, opt.k, getFaceStyle());
+}
+
+function getIcoStyle() {
+    return {
+        "fib.mer": {
+            strokeColor: eid("fib.color").value + parseAlpha(eid("fib.alpha").value),
+            strokeWidth: parseFloat(eid("fib.size").value)
+        },
+        "knb.mer": {
+            R: parseFloat(eid("knb.size").value),
+            "style": { fillColor: eid("knb.color").value + parseAlpha(eid("knb.alpha").value) }
+        }
     }
-    face = hex.face(opt.h, opt.k, style);
 }
 
 function redraw(ele) {
@@ -113,7 +131,7 @@ function redraw(ele) {
         if (e.checked) {
             switch (e.value) {
                 case "ico":
-                    obj = drawIco(face, opt.R3, cam.P);
+                    obj = drawIco(face, opt.R3, opt.F, cam.P, getIcoStyle());
                     break;
                 case "net":
                     obj = drawNet(face);
@@ -147,15 +165,17 @@ window.onload = function () {
         .forEach(e => e.addEventListener("change", tNumber));
     ["h", "k", "geometry", "levo", "dextro", "R2"]
         .map(eid)
-        .concat(Array.from(document.querySelectorAll("[id^='line']")))
+        .concat(Array.from(document.querySelectorAll("[id^='face.']")))
         .concat(Array.from(document.querySelectorAll(".tg > * > * > * > input")))
         .forEach(e => e.addEventListener("change", drawFace));
     ["θ", "ψ", "φ"]
         .map(eid)
         .forEach(e => e.addEventListener("change", updateCam));
-    ["h", "k", "geometry", "levo", "dextro", "ico", "net", "face", "R2", "R3", "θ", "ψ", "φ"]
+    ["h", "k", "geometry", "levo", "dextro", "ico", "net", "face", "R2", "R3", "F", "θ", "ψ", "φ"]
         .map(eid)
-        .concat(Array.from(document.querySelectorAll("[id^='line']")))
+        .concat(Array.from(document.querySelectorAll("[id^='face.']")))
+        .concat(Array.from(document.querySelectorAll("[id^='fib.']")))
+        .concat(Array.from(document.querySelectorAll("[id^='knb.']")))
         .concat(Array.from(document.querySelectorAll(".tg > * > * > * > input")))
         .forEach(e => e.addEventListener("change", redraw));
 
