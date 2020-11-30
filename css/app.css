@@ -16,7 +16,7 @@
 .options {
     grid-area: options;
     background-color: lightgray;
-    padding: 10%;
+    padding: 5%;
 }
 
 input {
@@ -24,7 +24,7 @@ input {
 }
 
 input[type=color], input[type=number] {
-    width: 19%;
+    width: 20%;
 }
 
 table {
