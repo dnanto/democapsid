@@ -20,3 +20,18 @@
 # note
 
 - [paperjs/Paper.js](https://github.com/paperjs/paper.js/blob/develop/LICENSE.txt)
+
+# cite
+
+Paper is in progress, in the meantime, please cite as:
+```
+@misc{negronDnantoCapsid2020,
+  title = {Dnanto/Capsid},
+  author = {Negr{\'o}n, Daniel A.},
+  year = {2020},
+  month = dec,
+  abstract = {Render class I viral capsids in the browser and export SVG.},
+  copyright = {MIT License         ,                 MIT License},
+  keywords = {3d,capsid,caspar-klug,icosahedron,perspective,svg,virus}
+}
+```
