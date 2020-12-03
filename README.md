@@ -6,9 +6,7 @@
 
 # paper
 
-https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1
-
-```
+- Plese cite the preprint on [bioRxiv](https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1).
 
 # note
 
