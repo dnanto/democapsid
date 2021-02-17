@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html lang="en">
+
+<head>
+    <title>capsid</title>
+    <script type="text/javascript" src="js/lib/paper-core.min.js"></script>
+    <script type="text/javascript">
+        paper.install(window);
+
+        const root3 = Math.sqrt(3);
+
+        function* grid(nr, nc, R) {
+            const r = root3 / 2 * R;
+            const d = 2 * r;
+            const dx = d;
+            const dy = 1.5 * R;
+            const ddx = r;
+            const hex = new Group(new Path.RegularPolygon([0, 0], 6, R));
+            for (var i = 0; i < nr; i++) {
+                for (var j = 0; j < nc; j++) {
+                    var mer = hex.clone();
+                    mer.position = new Point([i * dx + j * ddx, j * dy]);
+                    yield mer;
+                }
+            }
+            hex.remove();
+        }
+
+        window.onload = function () {
+            paper.setup("canvas");
+            const nr = 5;
+            const nc = 5;
+            const h = 1;
+            const k = 2;
+            const K = 4;
+            const R = 10;
+            const r = root3 / 2 * R;
+            const d = 2 * r;
+
+            var hvec = new Point(d * h, 0);
+            var kvec = new Point(d * k, 0).rotate(60);
+            var Kvec = new Point(d * K, 0).rotate(120);
+
+            // var hpath = new Path.Line(hvec);
+            // hpath.strokeColor = "black";
+            // var kpath = new Path.Line(kvec);
+            // kpath.strokeColor = "black";
+
+            // isometric
+            // var xvec = hvec.add(kvec);
+            // var T = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+            // T.closePath();
+            // var G = new Group(Array.from(grid(nr, nc, R)).concat([T]));
+
+            // 5-symmetry
+            // var xvec = hvec.add(kvec);
+            // var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+            // T1.closePath();
+            // var yvec = kvec.add(Kvec);
+            // var T2 = new Path([0, 0], yvec, xvec);
+            // T2.closePath();
+            // var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2]));
+
+            // 3-symmetry
+            // var xvec = hvec.add(kvec);
+            // var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+            // T1.closePath();
+            // var yvec = kvec.add(Kvec);
+            // var T2 = new Path([0, 0], yvec, xvec);
+            // T2.closePath();
+            // var T3 = T1.clone().rotate(-60, [0, 0]);
+            // var zvec = xvec.clone().rotate(120);
+            // var T4 = new Path([0, 0], zvec, yvec);
+            // T4.closePath();
+            // var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4]));
+
+            // 2-symmetry
+            var xvec = hvec.add(kvec);
+            var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+            T1.closePath();
+            var yvec = kvec.add(Kvec);
+            var T2 = new Path([0, 0], yvec, xvec);
+            T2.closePath();
+            var T3 = T1.clone().rotate(60, xvec);
+            var zvec = xvec.clone().rotate(120);
+            var T4 = new Path([0, 0], zvec, yvec);
+            T4.closePath();
+            var T5 = T2.clone().translate(xvec);
+            var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4, T5]));
+
+            G.strokeColor = "black";
+            G.position = view.center;
+        }
+    </script>
+</head>
+
+<body>
+    <canvas id="canvas" resize>
+        Your browser does not support the HTML canvas tag.
+    </canvas>
+</body>
+
+</html>
