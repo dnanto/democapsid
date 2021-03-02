@@ -41,6 +41,10 @@
             var kvec = new Point(d * k, 0).rotate(60);
             var Kvec = new Point(d * K, 0).rotate(120);
 
+            var xvec = hvec.add(kvec);
+            var yvec = kvec.add(Kvec);
+            var zvec = xvec.clone().rotate(120);
+
             // isometric
             {
                 paper.setup("canvas1");
@@ -48,7 +52,6 @@
                 const nr = [0, h + k];
                 const nc = [-h, k];
 
-                var xvec = hvec.add(kvec);
                 var T = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
                 T.closePath();
                 T = new Group(Array.from(grid(nr, nc, R)).map(e => T.intersect(e)));
@@ -62,7 +65,6 @@
                 const nr = [0, h + k];
                 const nc = [-h, k];
 
-                var xvec = hvec.add(kvec);
                 var T = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
                 T.closePath();
                 T = new Group(Array.from(grid(nr, nc, R)).map(e => T.intersect(e))).rotate(-xvec.angle);
@@ -93,11 +95,9 @@
 
                 const nr = [-K, h + k];
                 const nc = [-h, k + K];
-                var xvec = hvec.add(kvec);
                 var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
                 T1.closePath();
                 var x = T1.clone().rotate(-xvec.angle);
-                var yvec = kvec.add(Kvec);
                 var T2 = new Path([0, 0], yvec, xvec);
                 T2.closePath();
                 var g = Array.from(grid(nr, nc, R));
@@ -111,11 +111,9 @@
 
                 const nr = [-K, h + k];
                 const nc = [-h, k + K];
-                var xvec = hvec.add(kvec);
                 var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
                 T1.closePath();
                 var x = T1.clone().rotate(-xvec.angle);
-                var yvec = kvec.add(Kvec);
                 var T2 = new Path([0, 0], yvec, xvec);
                 T2.closePath();
                 var g = Array.from(grid(nr, nc, R));
@@ -156,15 +154,12 @@
                 const nr = [-h - K, h + k];
                 const nc = [-h - k, k + K];
 
-                var xvec = hvec.add(kvec);
 
                 var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
                 T1.closePath();
-                var yvec = kvec.add(Kvec);
                 var T2 = new Path([0, 0], yvec, xvec);
                 T2.closePath();
                 var T3 = T1.clone().rotate(-60, [0, 0]);
-                var zvec = xvec.clone().rotate(120);
                 var T4 = new Path([0, 0], zvec, yvec);
                 T4.closePath();
 
@@ -177,15 +172,12 @@
                 const nr = [-h - K, h + k];
                 const nc = [-h - k, k + K];
 
-                var xvec = hvec.add(kvec);
 
                 var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
                 T1.closePath();
-                var yvec = kvec.add(Kvec);
                 var T2 = new Path([0, 0], yvec, xvec);
                 T2.closePath();
                 var T3 = T1.clone().rotate(-60, [0, 0]);
-                var zvec = xvec.clone().rotate(120);
                 var T4 = new Path([0, 0], zvec, yvec);
                 T4.closePath();
 
@@ -209,7 +201,6 @@
                     ;
                 console.log(q[0]);
 
-                // const dx = q[2].point.x- 
                 G = new Group(
                     G,
                     G.clone().scale(-1, -1, q[0].point).translate(q[2].point.subtract(q[0].point))
@@ -222,12 +213,26 @@
             // 2-symmetry
             {
                 paper.setup("canvas7");
-                const nr = [-h - K, h + k + 1];
-                const nc = [-h - k, k + K + 1];
-                var xvec = hvec.add(kvec);
+                const nr = [-(h + k + K), h + k + K];
+                const nc = [-(h + k + K), h + k + K];
                 var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
                 T1.closePath();
-                var yvec = kvec.add(Kvec);
+                var T2 = new Path([0, 0], yvec, xvec);
+                T2.closePath();
+                var T3 = T1.clone().rotate(60, xvec);
+                var T4 = new Path([0, 0], zvec, yvec);
+                T4.closePath();
+                var T5 = T2.clone().translate(xvec);
+                var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4, T5])).scale(1, -1).rotate(-90);;
+                G.strokeColor = "black";
+                G.position = view.center;
+            }
+            {
+                paper.setup("canvas8");
+                const nr = [-h - K, h + k + 1];
+                const nc = [-h - k, k + K + 1];
+                var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+                T1.closePath();
                 var T2 = new Path([0, 0], yvec, xvec);
                 T2.closePath();
                 var T3 = T1.clone().rotate(60, xvec);
@@ -235,7 +240,31 @@
                 var T4 = new Path([0, 0], zvec, yvec);
                 T4.closePath();
                 var T5 = T2.clone().translate(xvec);
-                var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4, T5]));
+                T5.name = "T5";
+                var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4, T5])).scale(1, -1).rotate(-90);
+
+                // console.log(G.children.filter(e => e.name == "T1"))
+                const p1 = [
+                    T1.segments.map(e => e.point.x).reduce((a, b) => a + b) / 3,
+                    T1.segments.map(e => e.point.y).reduce((a, b) => a + b) / 3,
+                ];
+                const p2 = T1.segments[0].point.add(T1.segments[2].point).divide(2);
+                var G2 = G.clone().scale(-1, -1, p1).translate(p2.subtract(p1).multiply(2));
+                var x = G2.children.filter(e => e.name == "T5 1");
+                G = new Group(
+                    G,
+                    G2,
+                    new Path.Circle(p1, 5),
+                    new Path.Circle(p2, 5),
+                    new Path.Circle(T5.segments[1].point, 5),
+                    new Path.Circle(x[0].segments[0].point, 5)
+                );
+
+                G = new Group([
+                    G,
+                    G.clone().translate(x[0].segments[0].point.subtract(T5.segments[1].point))
+                ]);
+
                 G.strokeColor = "black";
                 G.position = view.center;
             }
