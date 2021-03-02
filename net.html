@@ -4,99 +4,271 @@
 
 <head>
     <title>capsid</title>
+    <style>
+        canvas {
+            height: 250px;
+            width: 500px;
+            border: 1px solid blue;
+        }
+    </style>
     <script type="text/javascript" src="js/lib/paper-core.min.js"></script>
     <script type="text/javascript">
         paper.install(window);
 
         const root3 = Math.sqrt(3);
 
-        function* grid(nr, nc, R) {
+        function* grid(xr, xc, R) {
             const r = root3 / 2 * R;
             const d = 2 * r;
             const dx = d;
             const dy = 1.5 * R;
             const ddx = r;
-            const hex = new Group(new Path.RegularPolygon([0, 0], 6, R));
-            for (var i = 0; i < nr; i++) {
-                for (var j = 0; j < nc; j++) {
-                    var mer = hex.clone();
-                    mer.position = new Point([i * dx + j * ddx, j * dy]);
-                    yield mer;
-                }
-            }
-            hex.remove();
+            for (var i = xr[0]; i <= xr[1]; i++)
+                for (var j = xc[0]; j <= xc[1]; j++)
+                    yield new Path.RegularPolygon([i * dx + j * ddx, j * dy], 6, R);
         }
 
         window.onload = function () {
-            paper.setup("canvas");
-            const nr = 5;
-            const nc = 5;
             const h = 1;
-            const k = 2;
-            const K = 4;
+            const k = 1;
+            const K = 2;
             const R = 10;
             const r = root3 / 2 * R;
             const d = 2 * r;
+            const D = 2 * R;
 
             var hvec = new Point(d * h, 0);
             var kvec = new Point(d * k, 0).rotate(60);
             var Kvec = new Point(d * K, 0).rotate(120);
 
-            // var hpath = new Path.Line(hvec);
-            // hpath.strokeColor = "black";
-            // var kpath = new Path.Line(kvec);
-            // kpath.strokeColor = "black";
-
             // isometric
-            // var xvec = hvec.add(kvec);
-            // var T = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
-            // T.closePath();
-            // var G = new Group(Array.from(grid(nr, nc, R)).concat([T]));
+            {
+                paper.setup("canvas1");
+
+                const nr = [0, h + k];
+                const nc = [-h, k];
+
+                var xvec = hvec.add(kvec);
+                var T = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+                T.closePath();
+                T = new Group(Array.from(grid(nr, nc, R)).map(e => T.intersect(e)));
+
+                T.strokeColor = "black";
+                T.position = view.center;
+            }
+            {
+                paper.setup("canvas2");
+
+                const nr = [0, h + k];
+                const nc = [-h, k];
+
+                var xvec = hvec.add(kvec);
+                var T = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+                T.closePath();
+                T = new Group(Array.from(grid(nr, nc, R)).map(e => T.intersect(e))).rotate(-xvec.angle);
+
+                var obj = [
+                    T,
+                    T.clone().rotate(300, T.bounds.bottomRight),
+                    T.clone().rotate(240, T.bounds.bottomRight)
+                ];
+                obj.push(obj[2].clone().rotate(300, obj[2].bounds.bottomRight));
+                obj = new Group(obj);
+                obj = [
+                    obj,
+                    obj.clone().translate(T.bounds.width, 0),
+                    obj.clone().translate(T.bounds.width * 2, 0),
+                    obj.clone().translate(T.bounds.width * 3, 0),
+                    obj.clone().translate(T.bounds.width * 4, 0)
+                ]
+                var G = new Group(obj);
+
+                G.strokeColor = "black";
+                G.position = view.center;
+            }
 
             // 5-symmetry
-            // var xvec = hvec.add(kvec);
-            // var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
-            // T1.closePath();
-            // var yvec = kvec.add(Kvec);
-            // var T2 = new Path([0, 0], yvec, xvec);
-            // T2.closePath();
-            // var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2]));
+            {
+                paper.setup("canvas3");
+
+                const nr = [-K, h + k];
+                const nc = [-h, k + K];
+                var xvec = hvec.add(kvec);
+                var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+                T1.closePath();
+                var x = T1.clone().rotate(-xvec.angle);
+                var yvec = kvec.add(Kvec);
+                var T2 = new Path([0, 0], yvec, xvec);
+                T2.closePath();
+                var g = Array.from(grid(nr, nc, R));
+                var G = new Group(g.map(e => T1.intersect(e)).concat(g.map(e => T2.intersect(e))));
+
+                G.strokeColor = "black";
+                G.position = view.center;
+            }
+            {
+                paper.setup("canvas4");
+
+                const nr = [-K, h + k];
+                const nc = [-h, k + K];
+                var xvec = hvec.add(kvec);
+                var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+                T1.closePath();
+                var x = T1.clone().rotate(-xvec.angle);
+                var yvec = kvec.add(Kvec);
+                var T2 = new Path([0, 0], yvec, xvec);
+                T2.closePath();
+                var g = Array.from(grid(nr, nc, R));
+                var G1 = new Group(g.map(e => T1.intersect(e)).concat(g.map(e => T2.intersect(e))));
+                var G2 = G1.clone().scale(-1, -1)
+
+                var dx = 0;
+                if (k > K)
+                    dx = (k - K) * r;
+                if (k > h)
+                    dx -= (k - h) * r;
+                G = new Group([
+                    G1,
+                    G2.translate(dx, T1.bounds.height)
+                ]).rotate(-xvec.angle);
+
+                const a = h * d;
+                const b = k * d;
+                dx = Math.sqrt(
+                    Math.pow(a, 2) + Math.pow(b, 2) - 2 * a * b * Math.cos(120 * Math.PI / 180)
+                );
+
+                G = new Group([
+                    G,
+                    G.clone().translate(dx, 0),
+                    G.clone().translate(dx * 2, 0),
+                    G.clone().translate(dx * 3, 0),
+                    G.clone().translate(dx * 4, 0)
+                ]);
+
+                G.strokeColor = "black";
+                G.position = view.center;
+            }
 
             // 3-symmetry
-            // var xvec = hvec.add(kvec);
-            // var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
-            // T1.closePath();
-            // var yvec = kvec.add(Kvec);
-            // var T2 = new Path([0, 0], yvec, xvec);
-            // T2.closePath();
-            // var T3 = T1.clone().rotate(-60, [0, 0]);
-            // var zvec = xvec.clone().rotate(120);
-            // var T4 = new Path([0, 0], zvec, yvec);
-            // T4.closePath();
-            // var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4]));
+            {
+                paper.setup("canvas5");
+                const nr = [-h - K, h + k];
+                const nc = [-h - k, k + K];
+
+                var xvec = hvec.add(kvec);
+
+                var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+                T1.closePath();
+                var yvec = kvec.add(Kvec);
+                var T2 = new Path([0, 0], yvec, xvec);
+                T2.closePath();
+                var T3 = T1.clone().rotate(-60, [0, 0]);
+                var zvec = xvec.clone().rotate(120);
+                var T4 = new Path([0, 0], zvec, yvec);
+                T4.closePath();
+
+                var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4]));
+                G.strokeColor = "black";
+                G.position = view.center;
+            }
+            {
+                paper.setup("canvas6");
+                const nr = [-h - K, h + k];
+                const nc = [-h - k, k + K];
+
+                var xvec = hvec.add(kvec);
+
+                var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+                T1.closePath();
+                var yvec = kvec.add(Kvec);
+                var T2 = new Path([0, 0], yvec, xvec);
+                T2.closePath();
+                var T3 = T1.clone().rotate(-60, [0, 0]);
+                var zvec = xvec.clone().rotate(120);
+                var T4 = new Path([0, 0], zvec, yvec);
+                T4.closePath();
+
+                const p = [
+                    T3.segments.map(e => e.point.x).reduce((a, b) => a + b) / 3,
+                    T3.segments.map(e => e.point.y).reduce((a, b) => a + b) / 3,
+                ];
+                console.log(p)
+
+                var G = new Group([T1, T2, T3, T4]);
+                G = new Group([
+                    G,
+                    G.clone().rotate(120, p),
+                    G.clone().rotate(240, p)
+                ]);
+
+                var q = G.children
+                    .map(e => e.children)
+                    .flat().map(e => e.segments)
+                    .flat().sort((a, b) => b.point.x - a.point.x)
+                    ;
+                console.log(q[0]);
+
+                // const dx = q[2].point.x- 
+                G = new Group(
+                    G,
+                    G.clone().scale(-1, -1, q[0].point).translate(q[2].point.subtract(q[0].point))
+                );
+
+                G.strokeColor = "black";
+                G.position = view.center;
+            }
 
             // 2-symmetry
-            var xvec = hvec.add(kvec);
-            var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
-            T1.closePath();
-            var yvec = kvec.add(Kvec);
-            var T2 = new Path([0, 0], yvec, xvec);
-            T2.closePath();
-            var T3 = T1.clone().rotate(60, xvec);
-            var zvec = xvec.clone().rotate(120);
-            var T4 = new Path([0, 0], zvec, yvec);
-            T4.closePath();
-            var T5 = T2.clone().translate(xvec);
-            var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4, T5]));
-
-            G.strokeColor = "black";
-            G.position = view.center;
+            {
+                paper.setup("canvas7");
+                const nr = [-h - K, h + k + 1];
+                const nc = [-h - k, k + K + 1];
+                var xvec = hvec.add(kvec);
+                var T1 = new Path([[0, 0], xvec, xvec.rotate(-60, [0, 0])]);
+                T1.closePath();
+                var yvec = kvec.add(Kvec);
+                var T2 = new Path([0, 0], yvec, xvec);
+                T2.closePath();
+                var T3 = T1.clone().rotate(60, xvec);
+                var zvec = xvec.clone().rotate(120);
+                var T4 = new Path([0, 0], zvec, yvec);
+                T4.closePath();
+                var T5 = T2.clone().translate(xvec);
+                var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4, T5]));
+                G.strokeColor = "black";
+                G.position = view.center;
+            }
         }
     </script>
 </head>
 
 <body>
-    <canvas id="canvas" resize>
+    <canvas id="canvas1" resize>
+        Your browser does not support the HTML canvas tag.
+    </canvas>
+    <canvas id="canvas2" resize>
+        Your browser does not support the HTML canvas tag.
+    </canvas>
+    <br>
+    <canvas id="canvas3" resize>
+        Your browser does not support the HTML canvas tag.
+    </canvas>
+    <canvas id="canvas4" resize>
+        Your browser does not support the HTML canvas tag.
+    </canvas>
+    <br>
+    <canvas id="canvas5" resize>
+        Your browser does not support the HTML canvas tag.
+    </canvas>
+    <canvas id="canvas6" resize>
+        Your browser does not support the HTML canvas tag.
+    </canvas>
+    <br>
+    <canvas id="canvas7" resize>
+        Your browser does not support the HTML canvas tag.
+    </canvas>
+    <canvas id="canvas8" resize>
         Your browser does not support the HTML canvas tag.
     </canvas>
 </body>
