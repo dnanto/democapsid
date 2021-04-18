@@ -146,9 +146,18 @@ class RegularIcosahedron {
         const phi = (1 + Math.sqrt(5)) / 2;
         const [a, b] = [0.5 * R, 1 / (2 * phi) * R];
         const coordinates = [
-            [0, b, -a, 1], [b, a, 0, 1], [-b, a, 0, 1], [0, b, a, 1],
-            [0, -b, a, 1], [-a, 0, b, 1], [0, -b, -a, 1], [a, 0, -b, 1],
-            [a, 0, b, 1], [-a, 0, -b, 1], [b, -a, 0, 1], [-b, -a, 0, 1]
+            [0, b, -a, 1],
+            [b * .5, a, 0, 1],
+            [-b * .5, a, 0, 1],
+            [0, b, a, 1],
+            [0, -b, a, 1],
+            [-a, 0, b, 1],
+            [0, -b, -a, 1],
+            [a, 0, -b, 1],
+            [a, 0, b, 1],
+            [-a, 0, -b, 1],
+            [b * .5, -a, 0, 1],
+            [-b * .5, -a, 0, 1]
         ];
         return coordinates.map(v => Matrix.mul(P, v.map(e => [e])));
     }
