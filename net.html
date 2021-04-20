@@ -7,7 +7,7 @@
     <style>
         canvas {
             height: 250px;
-            width: 500px;
+            width: 575px;
             border: 1px solid blue;
         }
     </style>
@@ -17,34 +17,75 @@
 
         const root3 = Math.sqrt(3);
 
-        function* grid(xr, xc, R) {
-            const r = root3 / 2 * R;
-            const d = 2 * r;
-            const dx = d;
-            const dy = 1.5 * R;
-            const ddx = r;
-            for (var i = xr[0]; i <= xr[1]; i++)
-                for (var j = xc[0]; j <= xc[1]; j++)
-                    yield new Path.RegularPolygon([i * dx + j * ddx, j * dy], 6, R);
+        class Hex {
+
+            constructor(R) {
+                this.R = R;
+                this.r = root3 / 2 * R;
+                this.dx = 2 * this.r;
+                this.dy = 1.5 * this.R;
+                this.ddx = this.r;
+                this.ddy = 0;
+                this.fx = 0;
+                this.fy = 0;
+            }
+
+            unit() {
+                var hex = new Path.RegularPolygon([0, 0], 6, this.R);
+                hex.name = "mer-1";
+                return [hex];
+            }
+
+            inradius() {
+                return this.r;
+            }
+
+            circumradius() {
+                return this.R;
+            }
+
+            // map hexagon grid row/col to cartesian coordinates
+            coor(i, j) {
+                return [i * this.dx + j * this.ddx, j * this.dy + i * this.ddy];
+            }
+
+            * grid(xc, xr) {
+                const u = new Group(this.unit(this.R));
+                for (var i = xc[0]; i <= xc[1]; i++) {
+                    for (var j = xr[0]; j <= xr[1]; j++) {
+                        var v = u.clone();
+                        v.position = new Point(this.coor(i, j));
+                        yield v;
+                    }
+                }
+            }
+
         }
 
-        function* grid2(G, R) {
-            const r = root3 / 2 * R;
-            const d = 2 * r;
-            const D = 2 * R;
-            const dx = d;
-            const dy = 1.5 * R;
-            const ddx = r;
+        function intersect_grid(T, G, v, opt) {
+            return G.map(e => {
+                return e.children.map(f => {
+                    var x = T.intersect(f);
+                    var t = v.some(y => x.contains(y)) ? "pen" : "hex";
+                    x.fillColor = opt["fill." + t];
+                    return x;
+                });
+            })
+        }
 
-            var i1 = Math.ceil(2 * G.bounds.left / d);
-            var i2 = Math.ceil((Math.abs(G.bounds.left) + G.bounds.right) / d);
-            var j1 = Math.ceil(2 * G.bounds.top / D);
-            var j2 = Math.floor(G.bounds.height / D);
-            console.log([i1, i2, j1, j2]);
-
-            for (var i = i1; i <= i2; i++)
-                for (var j = j1; j < j2; j++)
-                    yield new Path.RegularPolygon([i * dx + j * ddx, j * dy], 6, R);
+        function exportSVG(e) {
+            var num = e.target.id.charAt(e.target.id.length - 1);
+            var link = document.createElement("a");
+            console.log(paper.projects)
+            link.download = "capsid-" + num + ".svg";
+            link.href = "" +
+                "data:image/svg+xml;utf8," +
+                encodeURIComponent(paper.projects[parseInt(num) - 1].exportSVG({
+                    "options.bounds": "content",
+                    asString: true,
+                    "options.matchShapes": true
+                }));
+            link.click();
         }
 
         function draw() {
@@ -55,45 +96,56 @@
             const K = parseInt(document.getElementById("K").value);
             const R = parseInt(document.getElementById("R").value);
 
-            const r = root3 / 2 * R;
+            const unit = new Hex(R);
+
+            const r = unit.r;
             const d = 2 * r;
-            const D = 2 * R;
+            const D = 2 * unit.R;
 
-            var hvec = new Point(d * h, 0);
-            var kvec = new Point(d * k, 0).rotate(60);
-            var Kvec = new Point(d * K, 0).rotate(120);
+            const hvec = new Point(d * h, 0);
+            const kvec = new Point(d * k, 0).rotate(60);
+            const Kvec = new Point(d * K, 0).rotate(120);
 
-            var tvec = hvec.add(kvec);
-            var qvec = kvec.add(Kvec);
-            var Tvec = tvec.clone().rotate(120);
+            const tvec = hvec.add(kvec);
+            const qvec = kvec.add(Kvec);
+            const Tvec = tvec.clone().rotate(120);
+
+            var opt = {
+                "fill.hex": "#006633",
+                "fill.pen": "#FFCC33"
+            };
 
             // isometric
             {
                 paper.setup("canvas1");
 
-                const nr = [0, h + k];
-                const nc = [-h, k];
+                const nc = [0, h + k];
+                const nr = [-h, k];
+                const vt = [[0, 0], tvec, tvec.rotate(-60)]
 
-                var T = new Path([[0, 0], tvec, tvec.rotate(-60, [0, 0])]);
+                var T = new Path([[0, 0], tvec, tvec.rotate(-60)]);
                 T.closePath();
-                T = new Group(Array.from(grid(nr, nc, R)).map(e => T.intersect(e)));
 
-                T.strokeColor = "black";
+                T = new Group(intersect_grid(T, Array.from(unit.grid(nc, nr)), vt, opt).flat())
                 T.position = view.center;
+                T.strokeColor = "black";
             }
             {
                 paper.setup("canvas2");
 
-                const nr = [0, h + k];
-                const nc = [-h, k];
+                const nc = [0, h + k];
+                const nr = [-h, k];
+                const vt = [[0, 0], tvec, tvec.rotate(-60)]
 
                 // triangle
-                var T = new Path([[0, 0], tvec, tvec.rotate(-60, [0, 0])]);
+                var T = new Path([[0, 0], tvec, tvec.rotate(-60)]);
                 T.closePath();
 
+                T = new Group(
+                    intersect_grid(T, Array.from(unit.grid(nc, nr)), vt, opt).flat()
+                ).rotate(-Tvec.angle);
+
                 // unit
-                var g = Array.from(grid(nr, nc, R));
-                T = new Group(g.map(e => T.intersect(e))).rotate(-tvec.angle);
                 var G = [
                     T,
                     T.clone().rotate(300, T.bounds.bottomRight),
@@ -118,17 +170,20 @@
             {
                 paper.setup("canvas3");
 
-                const nr = [-K, h + k];
-                const nc = [-h, k + K];
+                const nc = [-K, h + k];
+                const nr = [-h, k + K];
+                const vt = [[0, 0], tvec, tvec.rotate(-60), qvec];
 
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60, [0, 0])]);
+                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
                 T1.closePath();
-                var x = T1.clone().rotate(-tvec.angle);
                 var T2 = new Path([0, 0], qvec, tvec);
                 T2.closePath();
 
-                var g = Array.from(grid(nr, nc, R));
-                var G = new Group(g.map(e => T1.intersect(e)).concat(g.map(e => T2.intersect(e))));
+                var g = Array.from(unit.grid(nc, nr));
+                var G = new Group(
+                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
+                    /**/ intersect_grid(T2, g, vt, opt).flat())
+                )
 
                 G.strokeColor = "black";
                 G.position = view.center;
@@ -136,19 +191,20 @@
             {
                 paper.setup("canvas4");
 
-                const nr = [-K, h + k];
-                const nc = [-h, k + K];
+                const nc = [-K, h + k];
+                const nr = [-h, k + K];
+                const vt = [[0, 0], tvec, tvec.rotate(-60), qvec];
 
-                // triangle
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60, [0, 0])]);
+                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
                 T1.closePath();
-                var x = T1.clone().rotate(-tvec.angle);
                 var T2 = new Path([0, 0], qvec, tvec);
                 T2.closePath();
 
-                // unit
-                var g = Array.from(grid(nr, nc, R));
-                var G1 = new Group(g.map(e => T1.intersect(e)).concat(g.map(e => T2.intersect(e))));
+                var g = Array.from(unit.grid(nc, nr));
+                var G1 = new Group(
+                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
+                    /**/ intersect_grid(T2, g, vt, opt).flat())
+                )
                 var G2 = G1.clone().scale(-1, -1)
 
                 var dx = 0;
@@ -178,10 +234,12 @@
             // 3-symmetry
             {
                 paper.setup("canvas5");
-                const nr = [-((h + k) > K ? (h + k) : K), h + k];
-                const nc = [-h - k, h > (k + K) ? h : (k + K)];
 
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60, [0, 0])]);
+                const nc = [-((h + k) > K ? (h + k) : K), h + k];
+                const nr = [-h - k, h > (k + K) ? h : (k + K)];
+                const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec];
+
+                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
                 T1.closePath();
                 var T2 = new Path([0, 0], qvec, tvec);
                 T2.closePath();
@@ -189,16 +247,25 @@
                 var T4 = new Path([0, 0], Tvec, qvec);
                 T4.closePath();
 
-                var g = Array.from(grid(nr, nc, R));
-                var G = new Group(Array.from(g).concat([T1, T2, T3, T4]));
+                var g = Array.from(unit.grid(nc, nr));
+                var G = new Group(
+                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
+                    /**/ intersect_grid(T2, g, vt, opt).flat(),
+                    /**/ intersect_grid(T3, g, vt, opt).flat(),
+                    /**/ intersect_grid(T4, g, vt, opt).flat())
+                )
+
                 G.strokeColor = "black";
                 G.position = view.center;
             }
             {
                 paper.setup("canvas6");
 
+                const nc = [-((h + k) > K ? (h + k) : K), h + k];
+                const nr = [-h - k, h > (k + K) ? h : (k + K)];
+                const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec];
 
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60, [0, 0])]);
+                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
                 T1.closePath();
                 var T2 = new Path([0, 0], qvec, tvec);
                 T2.closePath();
@@ -206,38 +273,43 @@
                 var T4 = new Path([0, 0], Tvec, qvec);
                 T4.closePath();
 
+                var g = Array.from(unit.grid(nc, nr));
+                var G = new Group(
+                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
+                    /**/ intersect_grid(T2, g, vt, opt).flat(),
+                    /**/ intersect_grid(T4, g, vt, opt).flat())
+                )
+
                 const p = [
                     T3.segments.map(e => e.point.x).reduce((a, b) => a + b) / 3,
                     T3.segments.map(e => e.point.y).reduce((a, b) => a + b) / 3,
                 ];
 
-                var G = new Group([T1, T2, T3, T4]);
                 G = new Group([
+                    new Group(intersect_grid(T3, g, vt, opt).flat()),
                     G,
                     G.clone().rotate(120, p),
                     G.clone().rotate(240, p)
                 ]);
 
-                var q = G.children.map(e => e.children).flat().map(e => e.segments).flat().sort((a, b) => b.point.x - a.point.x);
-
+                const p1 = qvec.rotate(240, p);
+                const p2 = Tvec.rotate(240, p);
                 G = new Group([
                     G,
-                    G.clone().scale(-1, -1, q[0].point).translate(q[2].point.subtract(q[0].point))
-                ]);
-
-                var g = Array.from(grid2(G, R));
-                G.children.map(e => e.children).flat().map(e => e.children).flat().map(e => g.map(f => e.intersect(f)));
+                    G.clone().rotate(-180, p1).translate(p2.subtract(p1))
+                ]).rotate(-tvec.angle);;
 
                 G.strokeColor = "black";
                 G.position = view.center;
             }
 
-            // 2-symmetry
             {
                 paper.setup("canvas7");
-                const nr = [-h, h];
-                const nc = [-h, h];
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60, [0, 0])]);
+
+                const nc = [-2 * (h + k + K), 2 * (h + k + K)];
+                const nr = nc;
+
+                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
                 T1.closePath();
                 var T2 = new Path([0, 0], qvec, tvec);
                 T2.closePath();
@@ -245,55 +317,75 @@
                 var T4 = new Path([0, 0], Tvec, qvec);
                 T4.closePath();
                 var T5 = T2.clone().translate(tvec);
-                var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4, T5])).scale(1, -1);
+
+                // const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec];
+                const vt = [T1, T2, T3, T4, T5].map(e => e.segments.map(f => f.point)).flat();
+                console.log(vt)
+                var g = Array.from(unit.grid(nc, nr));
+                var G = new Group(
+                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
+                    /**/ intersect_grid(T2, g, vt, opt).flat(),
+                    /**/ intersect_grid(T3, g, vt, opt).flat(),
+                    /**/ intersect_grid(T4, g, vt, opt).flat(),
+                    /**/ intersect_grid(T5, g, vt, opt).flat())
+                );
+
                 G.strokeColor = "black";
                 G.position = view.center;
             }
             {
                 paper.setup("canvas8");
-                const nr = [-h - K, h + k + 1];
-                const nc = [-h - k, k + K + 1];
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60, [0, 0])]);
+
+                const nc = [-2 * (h + k + K), 2 * (h + k + K)];
+                const nr = nc;
+                const vt = [T1, T2, T3, T4, T5].map(e => e.segments.map(f => f.point)).flat();
+
+                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
                 T1.closePath();
                 var T2 = new Path([0, 0], qvec, tvec);
                 T2.closePath();
                 var T3 = T1.clone().rotate(60, tvec);
-                var Tvec = tvec.clone().rotate(120);
                 var T4 = new Path([0, 0], Tvec, qvec);
                 T4.closePath();
                 var T5 = T2.clone().translate(tvec);
-                T5.name = "T5";
-                var G = new Group(Array.from(grid(nr, nc, R)).concat([T1, T2, T3, T4, T5])).scale(1, -1).rotate(-90);
 
-                // console.log(G.children.filter(e => e.name == "T1"))
+                var g = Array.from(unit.grid(nc, nr));
+                var G = new Group(
+                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
+                    /**/ intersect_grid(T2, g, vt, opt).flat(),
+                    /**/ intersect_grid(T1, g, vt, opt).flat(),
+                    /**/ intersect_grid(T4, g, vt, opt).flat(),
+                    /**/ intersect_grid(T5, g, vt, opt).flat(),
+                    T1,
+                    T5)
+                ).scale(1, -1).rotate(-90);
+
                 const p1 = [
                     T1.segments.map(e => e.point.x).reduce((a, b) => a + b) / 3,
                     T1.segments.map(e => e.point.y).reduce((a, b) => a + b) / 3,
                 ];
                 const p2 = T1.segments[0].point.add(T1.segments[2]?.point).divide(2);
                 var G2 = G.clone().scale(-1, -1, p1).translate(p2.subtract(p1).multiply(2));
-                var x = G2.children.filter(e => e.name == "T5 1");
+                var x = G2.children[G2.children.length - 1];
                 G = new Group(
                     G,
-                    G2,
-                    new Path.Circle(p1, 5),
-                    new Path.Circle(p2, 5),
-                    new Path.Circle(T5.segments[1].point, 5),
-                    new Path.Circle(x[0].segments[0].point, 5)
+                    G2
                 );
 
                 G = new Group([
                     G,
-                    G.clone().translate(x[0].segments[0].point.subtract(T5.segments[1].point))
+                    G.clone().translate(x.segments[0].point.subtract(T5.segments[1].point))
                 ]);
 
                 G.strokeColor = "black";
                 G.position = view.center;
             }
+
         }
 
         window.onload = function (opt) {
             ["h", "k", "K", "R"].forEach(e => document.getElementById(e).addEventListener("change", draw));
+            ["1", "2", "3", "4", "5", "6", "7", "8"].forEach(e => document.getElementById("e" + e).addEventListener("click", exportSVG));
             draw();
         }
 
@@ -305,34 +397,47 @@
     <label for="k">k&nbsp;=&nbsp;</label><input type="number" id="k" step="1" value="1" min="0">
     <label for="K">K&nbsp;=&nbsp;</label><input type="number" id="K" step="1" value="2" min="0">
     <label for="R">R&nbsp;=&nbsp;</label><input type="number" id="R" step="1" value="10" min="0">
+    <button id="e1">s1</button>
+    <button id="e2">s2</button>
+    <button id="e3">s3</button>
+    <button id="e4">s4</button>
+    <button id="e5">s5</button>
+    <button id="e6">s6</button>
+    <button id="e7">s7</button>
+    <button id="e8">s8</button>
     <br>
-    <canvas id="canvas1" resize>
-        Your browser does not support the HTML canvas tag.
-    </canvas>
-    <canvas id="canvas2" resize>
-        Your browser does not support the HTML canvas tag.
-    </canvas>
-    <br>
-    <canvas id="canvas3" resize>
-        Your browser does not support the HTML canvas tag.
-    </canvas>
-    <canvas id="canvas4" resize>
-        Your browser does not support the HTML canvas tag.
-    </canvas>
-    <br>
-    <canvas id="canvas5" resize>
-        Your browser does not support the HTML canvas tag.
-    </canvas>
-    <canvas id="canvas6" resize>
-        Your browser does not support the HTML canvas tag.
-    </canvas>
-    <br>
-    <canvas id="canvas7" resize>
-        Your browser does not support the HTML canvas tag.
-    </canvas>
-    <canvas id="canvas8" resize>
-        Your browser does not support the HTML canvas tag.
-    </canvas>
+    <div>
+        <canvas id="canvas1" resize>
+            Your browser does not support the HTML canvas tag.
+        </canvas>
+        <canvas id="canvas2" resize>
+            Your browser does not support the HTML canvas tag.
+        </canvas>
+    </div>
+    <div>
+        <canvas id="canvas3" resize>
+            Your browser does not support the HTML canvas tag.
+        </canvas>
+        <canvas id="canvas4" resize>
+            Your browser does not support the HTML canvas tag.
+        </canvas>
+    </div>
+    <div>
+        <canvas id="canvas5" resize>
+            Your browser does not support the HTML canvas tag.
+        </canvas>
+        <canvas id="canvas6" resize>
+            Your browser does not support the HTML canvas tag.
+        </canvas>
+    </div>
+    <div>
+        <canvas id="canvas7" resize>
+            Your browser does not support the HTML canvas tag.
+        </canvas>
+        <canvas id="canvas8" resize>
+            Your browser does not support the HTML canvas tag.
+        </canvas>
+    </div>
 </body>
 
 </html>
