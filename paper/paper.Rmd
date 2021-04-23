@@ -93,7 +93,7 @@ The capsid.js app renders customizable icosahedral viral capsids. Development is
 Acknowledgements {.unnumbered}
 ==============
 
-The author would like the thank his dissertation committee: Dr. Donald Seto, Dr. Patrick Gillevet, and Dr. Sterling Thomas. Also, the author would like to thank Shane Mitchell, Mychal Ivancich, and Mitchell Holland for comments and review.
+The author would like the thank his dissertation committee: Dr. Donald Seto, Dr. Patrick Gillevet, and Dr. Sterling Thomas. Also, the author would like to thank Shane Mitchell, Mychal Ivancich, and Mitchell Holland for comments and review. This constitutes a portion of Chapter 2 of the PhD dissertation "Molecular Clock Analysis of Human Adenovirus" submitted to GMU.
 
 
 References {.unnumbered}
