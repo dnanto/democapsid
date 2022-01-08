@@ -1,6 +1,6 @@
 # abstract
 
-This work implements Caspar-Klug Theory to generate high-quality, vectorized capsid cartoons in the browser. This is the first online tool that provides comprehensive style customization, geometry, and SVG export. The app renders class icosahedra and nets, including geometry for viruses with exotic lattice structures.
+This work implements Caspar-Klug Theory to generate high-quality, vectorized capsid cartoons in the browser. It is the first online tool that provides comprehensive style customization, geometry, and SVG export. The app renders class icosahedra and nets, including geometry for viruses with exotic lattice structures.
 
 # run
 
