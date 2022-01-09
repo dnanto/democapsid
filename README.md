@@ -40,7 +40,7 @@ Please comment on or cite the preprint at [bioRxiv](https://www.biorxiv.org/cont
 
 # license
 
-- dnanto/capsid: [MIT License](https://github.com/dnanto/capsid/blob/master/LICENSE)
-    - paperjs/Paper.js: [MIT License](https://github.com/paperjs/paper.js/blob/master/LICENSE.txt)
-        - lehni/straps.js: [MIT License](https://github.com/lehni/straps.js/blob/master/LICENSE.txt)
-        - acornjs/acorn: [MIT License](https://github.com/acornjs/acorn/blob/master/acorn/LICENSE)
+- [dnanto/capsid](https://github.com/dnanto/capsid): [MIT License](https://github.com/dnanto/capsid/blob/master/LICENSE)
+    - [paperjs/Paper.js](https://github.com/paperjs/paper.js): [MIT License](https://github.com/paperjs/paper.js/blob/master/LICENSE.txt)
+        - [lehni/straps.js](https://github.com/lehni/straps.js): [MIT License](https://github.com/lehni/straps.js/blob/master/LICENSE.txt)
+        - [acornjs/acorn](https://github.com/acornjs/acorn): [MIT License](https://github.com/acornjs/acorn/blob/master/acorn/LICENSE)
