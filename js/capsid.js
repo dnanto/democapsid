@@ -1,5 +1,6 @@
-const root2 = Math.sqrt(2)
-const root3 = Math.sqrt(3)
+const phi = (1 + Math.sqrt(5)) / 2;
+const root2 = Math.sqrt(2);
+const root3 = Math.sqrt(3);
 
 /**
  * @class Matrix math.
@@ -100,15 +101,11 @@ class Camera {
             Math.sin(this.θ), Math.sin(this.ψ), Math.sin(this.φ),
             Math.cos(this.θ), Math.cos(this.ψ), Math.cos(this.φ)
         ];
-        this.R[0][0] = cosθ * cosψ;
-        this.R[0][1] = cosθ * sinψ * sinφ - sinθ * cosφ;
-        this.R[0][2] = cosθ * sinψ * cosφ + sinθ * sinφ;
-        this.R[1][0] = sinθ * cosψ;
-        this.R[1][1] = sinθ * sinψ * sinφ + cosθ * cosφ;
-        this.R[1][2] = sinθ * sinψ * cosφ - cosθ * sinφ;
-        this.R[2][0] = -sinψ;
-        this.R[2][1] = cosψ * sinφ;
-        this.R[2][2] = cosψ * cosφ;
+        this.R = [
+            [cosθ * cosψ, cosθ * sinψ * sinφ - sinθ * cosφ, cosθ * sinψ * cosφ + sinθ * sinφ],
+            [sinθ * cosψ, sinθ * sinψ * sinφ + cosθ * cosφ, sinθ * sinψ * cosφ - cosθ * sinφ],
+            [-sinψ, cosψ * sinφ, cosψ * cosφ]
+        ];
         // translation
         const IC = [
             [1, 0, 0, -this.C[0]],
@@ -125,27 +122,36 @@ class Camera {
  */
 class RegularIcosahedron {
 
-    /**
-     * Iterate the faces.
-     * @return {Array} The face coordinate vertex indexe tuples. 
-     */
-    static iterFaces() {
-        return [
-            [0, 1, 2], [3, 2, 1], [3, 4, 5], [3, 8, 4], [0, 6, 7],
-            [0, 9, 6], [4, 10, 11], [6, 11, 10], [2, 5, 9], [11, 9, 5],
-            [1, 7, 8], [10, 8, 7], [3, 5, 2], [3, 1, 8], [0, 2, 9],
-            [0, 7, 1], [6, 9, 11], [6, 10, 7], [4, 11, 5], [4, 8, 10]
-        ]
-    }
+    static faceIndexes = [
+        [0, 1, 2],
+        [3, 2, 1],
+        [3, 4, 5],
+        [3, 8, 4],
+        [0, 6, 7],
+        [0, 9, 6],
+        [4, 10, 11],
+        [6, 11, 10],
+        [2, 5, 9],
+        [11, 9, 5],
+        [1, 7, 8],
+        [10, 8, 7],
+        [3, 5, 2],
+        [3, 1, 8],
+        [0, 2, 9],
+        [0, 7, 1],
+        [6, 9, 11],
+        [6, 10, 7],
+        [4, 11, 5],
+        [4, 8, 10]
+    ];
 
     /**
     * Calculate the 3D vertex projections.
     * @param {Array} P The camera matrix.
     */
     static verts(R, P) {
-        const phi = (1 + Math.sqrt(5)) / 2;
         const [a, b] = [0.5 * R, 1 / (2 * phi) * R];
-        const coordinates = [
+        return [
             [0, b, -a, 1],
             [b, a, 0, 1],
             [-b, a, 0, 1],
@@ -158,8 +164,7 @@ class RegularIcosahedron {
             [-a, 0, -b, 1],
             [b, -a, 0, 1],
             [-b, -a, 0, 1]
-        ];
-        return coordinates.map(v => Matrix.mul(P, v.map(e => [e])));
+        ].map(v => Matrix.mul(P, v.map(e => [e])));
     }
 
     /**
@@ -168,7 +173,7 @@ class RegularIcosahedron {
      */
     static faces(R, P) {
         var p = this.verts(R, P).map(e => [e[0][0], e[1][0], e[2][0]]);
-        return this.iterFaces()
+        return this.faceIndexes
             .sort((a, b) =>
                 // sort faces by z-order
                 Math.min(p[a[0]][2], p[a[1]][2], p[a[2]][2]) -
@@ -183,12 +188,12 @@ class Hex {
     constructor(R) {
         this.R = R;
         this.r = root3 / 2 * R;
+        this.r3 = this.R * root3 / 6;
+        this.R3 = this.R * root3 / 3;
         this.dx = 2 * this.r;
         this.dy = 1.5 * this.R;
         this.ddx = this.r;
         this.ddy = 0;
-        this.fx = 0;
-        this.fy = 0;
     }
 
     unit() {
@@ -203,7 +208,10 @@ class Hex {
 
     // map hexagon grid row/col to cartesian coordinates
     coor(i, j) {
-        return [i * this.dx + j * this.ddx, j * this.dy + i * this.ddy];
+        return [
+            i * this.dx + j * this.ddx,
+            j * this.dy + i * this.ddy
+        ];
     }
 
     // generate hexagonal grid
@@ -213,6 +221,7 @@ class Hex {
             for (var j = 0; j < nc; j++) {
                 var v = u.clone();
                 v.position = new Point(this.coor(i, j));
+                v.coordinate = [i, j];
                 yield v;
             }
         }
@@ -220,45 +229,47 @@ class Hex {
     }
 
     walk(h, k, c = 0, r = 0) {
-        var p1 = new Point(this.coor(r, c));
-        p1.x += this.fx;
-        p1.y += this.fy;
-        var p2 = new Point(this.coor(r + h, c + k));
-        p2.x += this.fx;
-        p2.y += this.fy;
-        var p3 = new Point(this.coor(r - k, c + k + h));
-        p3.x += this.fx;
-        p3.y += this.fy;
-        return [p1, p2, p3];
+        var [i1, i2, i3] = [[r, c], [r + h, c + k], [r - k, c + k + h]];
+        var p1 = new Point(this.coor(i1[0], i1[1]));
+        var p2 = new Point(this.coor(i2[0], i2[1]));
+        var p3 = new Point(this.coor(i3[0], i3[1]));
+        return [
+            [i1, i2, i3],
+            [p1, p2, p3]
+        ];
     }
 
     face(h, k, opt = {}) {
         const n = h + k + 1;
 
-        var p = this.walk(h, k, 0, k);
+        var [i, p] = this.walk(h, k, 0, k);
         var f = new Path(p, { closed: true });
         f.closed = true;
         f.style = opt.face;
 
-        var circles = [
-            new Path.Circle(p[0], this.circumradius(), { strokeColor: "black" }),
-            new Path.Circle(p[1], this.circumradius(), { strokeColor: "black" }),
-            new Path.Circle(p[2], this.circumradius(), { strokeColor: "black" })
-        ];
-
         // computer intersection of triangle with hexagonal grid
         var g = [];
-        for (var u of this.grid(n, n)) {
-            u.children.forEach(e => {
-                var x = f.intersect(e);
-                var type = circles.some(c =>
-                    c.contains(e.bounds.center) || c.contains(x.bounds.center)
-                ) ? "pen" : "hex";
-                x.style = opt[type + "." + e.name.split(" ")[0]];
-                g.push(x);
+        // for (var u of this.grid(n, n)) {
+        Array.from(this.grid(n, n))
+            .map(u => {
+                var type = (
+                    /**/u.coordinate[0] === i[0][0] && u.coordinate[1] == i[0][1] ||
+                        u.coordinate[0] === i[1][0] && u.coordinate[1] == i[1][1] ||
+                        u.coordinate[0] === i[2][0] && u.coordinate[1] == i[2][1] ?
+                        "pen" : "hex"
+                );
+                u.type = type;
+                return u;
             })
-            u.remove();
-        }
+            .sort((a, b) => b.type < a.type)
+            .forEach(u => {
+                u.children.forEach(e => {
+                    var x = f.intersect(e);
+                    x.style = opt[u.type + "." + e.name.split(" ")[0]];
+                    g.push(x);
+                })
+                u.remove();
+            });
         f.remove();
         var g = new Group(g);
 
@@ -266,7 +277,7 @@ class Hex {
         g.rotate(90 - c.subtract(p[0]).angle, c);
         g.scale(opt.levo ? -1 : 1, 1);
 
-        circles.forEach(e => e.remove());
+        // circles.forEach(e => e.remove());
 
         return g;
     }
@@ -281,17 +292,14 @@ class TriHex extends Hex {
         this.dx = 2 * R;
         this.dy = 2 * this.r;
         this.ddx = R;
-        this.fx = R / 2 / 2;
-        this.fy = R * root3 / 2 / 2;
     }
 
     unit() {
-        var tri1 = new Path.RegularPolygon([0, -4 / 3 * this.r], 3, 2 * this.r / 3);
-        tri1.name = "mer-2";
-        var tri2 = tri1.clone().rotate(-180, tri1.bounds.bottomLeft)
+        var tri = new Path.RegularPolygon([0, -this.r - this.r3], 3, this.R3);
+        tri.name = "mer-2";
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.name = "mer-1";
-        return [tri1, tri2, hex];
+        return [tri, [1, 2, 3, 4, 5].map(e => tri.clone().rotate(60 * e, [0, 0])), hex].flat();
     }
 
     circumradius() {
@@ -309,14 +317,19 @@ class SnubHex extends Hex {
         this.dy = 3 * this.r;
         this.ddy = this.r;
         this.ddx = 0.5 * R;
-        this.fx = this.R / 2;
     }
 
     unit() {
-        var tri1 = new Path.RegularPolygon([0, -4 / 3 * this.r], 3, 2 * this.r / 3);
+        var tri1 = new Path.RegularPolygon([0, -this.r - this.r3], 3, this.R3);
         tri1.name = "mer-2";
         var tri2 = tri1.clone().rotate(-180, tri1.bounds.bottomLeft);
+        tri2.name = "mer-2";
         var tri3 = tri2.clone().rotate(-180, tri2.bounds.bottomCenter);
+        tri3.name = "mer-2";
+        var tri4 = tri3.clone().rotate(-180, tri3.bounds.bottomRight);
+        tri4.name = "mer-2";
+        var tri5 = tri4.clone().rotate(-180, tri4.bounds.topRight);
+        tri5.name = "mer-2";
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.name = "mer-1";
         return [
@@ -326,8 +339,18 @@ class SnubHex extends Hex {
             tri2,
             tri2.clone().rotate(-60, tri2.bounds.bottomCenter),
             tri2.clone().rotate(-120, tri2.bounds.bottomCenter),
-            tri2.clone().rotate(-180, tri2.bounds.bottomCenter),
+            tri3,
             tri3.clone().rotate(-60, tri3.bounds.bottomRight),
+            tri3.clone().rotate(-120, tri3.bounds.bottomRight),
+            tri4,
+            tri4.clone().rotate(-60, tri4.bounds.topRight),
+            tri4.clone().rotate(-120, tri4.bounds.topRight),
+            tri5,
+            tri5.clone().rotate(-60, tri5.bounds.topCenter),
+            tri5.clone().rotate(-120, tri5.bounds.topCenter),
+            tri5.clone().rotate(-180, tri5.bounds.topCenter),
+            tri1.clone().rotate(60, tri1.bounds.bottomRight),
+            tri1.clone().rotate(120, tri1.bounds.bottomRight),
             hex
         ];
     }
@@ -345,32 +368,22 @@ class RhombiTriHex extends Hex {
         this.dx = 2 * this.r + R;
         this.dy = 0.5 * R + this.R * root3 / 2 + R;
         this.ddx = this.r + R / 2;
-        this.fx = R / 2;
     }
 
     unit() {
         var hex = new Path.RegularPolygon([0, 0], 6, this.R);
         hex.name = "mer-1";
-
         var sqr = new Path.RegularPolygon([0, 0], 4, Math.sqrt(2 * this.R * this.R) / 2);
         sqr.name = "mer-3";
         sqr.bounds.x = hex.bounds.left - sqr.bounds.width;
-
-        var tri1 = new Path.RegularPolygon([0, 0], 3, this.R * root3 / 3).rotate(180);
-        tri1.name = "mer-2";
-        tri1.position.y = hex.bounds.top - this.R * root3 / 2 / 2;
-        var tri2 = tri1.clone().rotate(180);
-        tri2.position = sqr.position;
-        tri2.bounds.bottom = sqr.bounds.top;
-
+        var tri = new Path.RegularPolygon([0, 0], 3, this.R3);
+        tri.position.y = hex.bounds.bottom + this.R * root3 / 2 / 2;
+        tri.name = "mer-2";
         return [
-            sqr,
-            sqr.clone().rotate(150, sqr.bounds.topRight),
-            sqr.clone().rotate(-150, sqr.bounds.bottomRight),
-            tri1,
-            tri2,
+            sqr, [1, 2, 3, 4, 5].map(e => sqr.clone().rotate(60 * e, [0, 0])),
+            tri, [1, 2, 3, 4, 5].map(e => tri.clone().rotate(60 * e, [0, 0])),
             hex
-        ];
+        ].flat();
     }
 
     circumradius() {
@@ -387,18 +400,14 @@ class DualTriHex extends Hex {
     }
 
     unit() {
-        const tri_rad = this.R * root3 / 3;
-        const tri_inr = this.R * root3 / 6;
-
         var path1 = new Path([
             [0, 0],
-            [0, -this.r - tri_inr],
+            [0, -this.r - this.r3],
             [-this.R, -2 * this.r],
-            [-this.R, -tri_rad]
+            [-this.R, -this.R3]
         ]);
         path1.closed = true;
         path1.name = "mer-1";
-
         var path2 = path1.clone().rotate(-60, path1.bounds.topLeft);
         path2.name = "mer-2";
         var path3 = path1.clone().rotate(-300, path1.bounds.topLeft);
@@ -411,7 +420,6 @@ class DualTriHex extends Hex {
         path6.name = "mer-2";
         var path7 = path2.clone().rotate(240, path2.bounds.rightCenter)
         path7.name = "mer-2";
-
         return [
             path1,
             path1.clone().rotate(-60, [0, 0]),
@@ -443,27 +451,16 @@ class DualSnubHex extends Hex {
     }
 
     unit() {
-        const tri_rad = this.R * root3 / 3;
-        const tri_inr = this.R * root3 / 6;
-
         var path = new Path([
             [0, 0],
-            [0, -(this.r + tri_inr)],
-            [0.5 * this.R, -(this.r + tri_rad)],
-            [this.R, -(this.r + tri_inr)],
-            [this.R, -tri_rad]
+            [0, -(this.r + this.r3)],
+            [0.5 * this.R, -(this.r + this.R3)],
+            [this.R, -(this.r + this.r3)],
+            [this.R, -this.R3]
         ])
         path.closed = true;
         path.name = "mer-1";
-
-        return [
-            path,
-            path.clone().rotate(60, [0, 0]),
-            path.clone().rotate(120, [0, 0]),
-            path.clone().rotate(180, [0, 0]),
-            path.clone().rotate(240, [0, 0]),
-            path.clone().rotate(300, [0, 0])
-        ];
+        return [path, [1, 2, 3, 4, 5].map(e => path.clone().rotate(e * 60, [0, 0]))].flat();
     }
 
 }
@@ -484,15 +481,7 @@ class DualRhombiTriHex extends Hex {
         path.closed = true;
         path.name = "mer-1";
         line.remove();
-
-        return [
-            path,
-            path.clone().rotate(60, [0, 0]),
-            path.clone().rotate(120, [0, 0]),
-            path.clone().rotate(180, [0, 0]),
-            path.clone().rotate(240, [0, 0]),
-            path.clone().rotate(300, [0, 0])
-        ];
+        return [path, [1, 2, 3, 4, 5].map(e => path.clone().rotate(e * 60, [0, 0]))].flat();
     }
 }
 
@@ -539,8 +528,10 @@ function drawIco(face, R, F, P, opt) {
     }
 
     return new Group(
-        RegularIcosahedron.faces(R, P).concat(fibers)
-            .sort((a, b) => Math.min(...a.map(a => a[2])) - Math.min(...b.map(b => b[2]))).map(e => {
+        RegularIcosahedron.faces(R, P)
+            .concat(fibers)
+            .sort((a, b) => Math.min(...a.map(a => a[2])) - Math.min(...b.map(b => b[2])))
+            .map(e => {
                 if (e.length == 3) {
                     const B = [
                         [e[0][0], e[1][0], e[2][0]],

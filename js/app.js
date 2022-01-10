@@ -1,5 +1,5 @@
 let opt;
-let cam = new Camera();
+let cam;
 let hex;
 let face;
 
@@ -9,12 +9,13 @@ function eid(id) {
 
 function tNumber() {
     const [h, k] = [opt.h, opt.k];
-    eid("tnumber").innerHTML = "" +
+    eid("tnumber").innerHTML = (
         "&nbsp;&nbsp;=&nbsp;" +
         `${h}<sup>2</sup>&nbsp;+&nbsp;` +
         `(${h})(${k})&nbsp;+&nbsp;` +
         `${k}<sup>2</sup><br>&nbsp;&nbsp;=&nbsp;` +
-        `${h * h + h * k + k * k}`;
+        `${h * h + h * k + k * k}`
+    );
 }
 
 function parseAlpha(value) {
@@ -24,13 +25,14 @@ function parseAlpha(value) {
 function exportSVG() {
     var link = document.createElement("a");
     link.download = "capsid.svg";
-    link.href = "" +
+    link.href = (
         "data:image/svg+xml;utf8," +
         encodeURIComponent(paper.project.exportSVG({
             "options.bounds": "content",
             asString: true,
             "options.matchShapes": true
-        }));
+        }))
+    );
     link.click();
 }
 
@@ -41,8 +43,12 @@ function updateCam() {
 
 function getMer(i, j, k) {
     return document.querySelector(
-        `.tg > tbody:nth-child(2) > tr:nth-child(${i}) > td:nth-child(${j + 1}) > input:nth-child(${k})`
-    )
+        `.tg > ` +
+        `tbody:nth-child(2) > ` +
+        `tr:nth-child(${i}) > ` +
+        `td:nth-child(${j + 1}) > ` +
+        `input:nth-child(${k})`
+    );
 }
 
 function getOpt() {
@@ -61,31 +67,6 @@ function getOpt() {
         φ: parseFloat(eid("φ").value),
         interval: parseInt(eid("interval").value)
     };
-}
-
-function drawHex() {
-    switch (eid("geometry").value) {
-        case "Hex":
-            hex = new Hex(opt.R2);
-            break;
-        case "TriHex":
-            hex = new TriHex(opt.R2);
-            break;
-        case "SnubHex":
-            hex = new SnubHex(opt.R2);
-            break;
-        case "RhombiTriHex":
-            hex = new RhombiTriHex(opt.R2);
-            break;
-        case "DualTriHex":
-            hex = new DualTriHex(opt.R2);
-            break;
-        case "DualSnubHex":
-            hex = new DualSnubHex(opt.R2);
-            break;
-        case "DualRhombiTriHex":
-            hex = new DualRhombiTriHex(opt.R2);
-    }
 }
 
 function getFaceStyle() {
@@ -107,10 +88,6 @@ function getFaceStyle() {
     return style;
 }
 
-function drawFace() {
-    face = hex.face(opt.h, opt.k, getFaceStyle());
-}
-
 function getIcoStyle() {
     return {
         "fib.mer": {
@@ -124,7 +101,39 @@ function getIcoStyle() {
     }
 }
 
-function redraw(ele) {
+function drawHex() {
+    switch (eid("geometry").value) {
+        case "Hex":
+            hex = new Hex(opt.R2);
+            break;
+        case "TriHex":
+            hex = new TriHex(opt.R2);
+            break;
+        case "SnubHex":
+            hex = new SnubHex(opt.R2);
+            break;
+        case "RhombiTriHex":
+            hex = new RhombiTriHex(opt.R2);
+            break;
+        case "DualHex":
+            hex = new Hex(opt.R2);
+            break;
+        case "DualTriHex":
+            hex = new DualTriHex(opt.R2);
+            break;
+        case "DualSnubHex":
+            hex = new DualSnubHex(opt.R2);
+            break;
+        case "DualRhombiTriHex":
+            hex = new DualRhombiTriHex(opt.R2);
+    }
+}
+
+function drawFace() {
+    face = hex.face(opt.h, opt.k, getFaceStyle());
+}
+
+function redraw() {
     project.clear();
     var obj;
     Array.from(document.getElementsByName("topology")).forEach(e => {
@@ -151,6 +160,7 @@ paper.install(window);
 window.onload = function () {
     paper.setup("canvas");
 
+    cam = new Camera()
     getOpt();
 
     Object.keys(opt).forEach(e =>
