@@ -554,3 +554,5 @@ function drawIco(face, R, F, P, opt) {
             })
     );
 }
+
+module.exports = Matrix;
