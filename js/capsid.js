@@ -16,8 +16,8 @@ class Matrix {
     static mul(A, B) {
         const [m, n, p] = [A.length, A[0].length, B[0].length];
         var C = new Array(m);
-        for (var i = 0; i < m; i++)
-            C[i] = new Array(p).fill(0);
+        for (var e = 0; e < m; e++)
+            C[e] = new Array(p).fill(0);
         for (var i = 0; i < m; i++)
             for (var j = 0; j < p; j++)
                 for (var k = 0; k < n; k++)
@@ -115,7 +115,7 @@ class Camera {
         // calculate camera matrix
         this.P = Matrix.mul(Matrix.mul(this.K, this.R), IC);
     }
-};
+}
 
 /**
  * Regular Icosahedron math.
@@ -244,7 +244,6 @@ class Hex {
 
         // computer intersection of triangle with hexagonal grid
         var g = [];
-        // for (var u of this.grid(n, n)) {
         Array.from(this.grid(n, n))
             .map(u => {
                 var type = (
@@ -268,7 +267,7 @@ class Hex {
                 u.remove();
             });
         f.remove();
-        var g = new Group(g);
+        g = new Group(g);
 
         var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
         g.rotate(90 - c.subtract(p[0]).angle, c);
@@ -519,7 +518,7 @@ function drawIco(face, R, F, P, opt) {
     if (F > 0) {
         var p1 = RegularIcosahedron.verts(R, P).map(e => [e[0][0], e[1][0], e[2][0]]);
         var p2 = RegularIcosahedron.verts(F, P).map(e => [e[0][0], e[1][0], e[2][0]]);
-        var fibers = p1.map((_, i) => [p1[i], p2[i]]);
+        fibers = p1.map((_, i) => [p1[i], p2[i]]);
     }
 
     return new Group(
@@ -555,3 +554,14 @@ function drawIco(face, R, F, P, opt) {
             })
     );
 }
+
+module.exports = [
+    Matrix,
+    Hex,
+    TriHex,
+    SnubHex,
+    RhombiTriHex,
+    DualTriHex,
+    DualSnubHex,
+    DualRhombiTriHex
+];
