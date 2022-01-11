@@ -1,5 +1,5 @@
 ---
-title: 'Vectorized Capsid Rendering in the Browser with Capsid.js'
+title: 'Vectorized capsid rendering in the browser with capsid.js'
 tags:
   - virus
   - capsid
