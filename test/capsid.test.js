@@ -246,6 +246,7 @@ test("lattice - snubhex ", () => {
         '<path d="M215,80.31089l8.75,0l0.53571,-3.71154l-4.91071,-3.86618z" fill="#5ab4ac"/></g></g></svg>'
     );
 });
+
 test("lattice - rhombitrihex ", () => {
     var face = new RhombiTriHex(10).face(2, 1, opt);
     face.position = view.center;
@@ -320,6 +321,7 @@ test("lattice - rhombitrihex ", () => {
         '"#f6e8c3"/><path d="M213.85836,81.29957h9.16515l0.65465,-1.88982l-5.23723,-6.04743z" fill="#5ab4ac"/></g></g></svg>'
     );
 });
+
 test("lattice - dualtrihex ", () => {
     var face = new DualTriHex(10).face(2, 1, opt);
     face.position = view.center;
@@ -386,6 +388,7 @@ test("lattice - dualtrihex ", () => {
         '="#f6e8c3"/><path d="M208.42391,93.64358l1.88982,2.18218h7.93725l1.51186,-4.36436l-7.55929,-8.72872z" fill="#f6e8c3"/></g></g></svg>'
     );
 });
+
 test("lattice - dualsnubhex ", () => {
     var face = new DualSnubHex(10).face(2, 1, opt);
     face.position = view.center;
@@ -427,6 +430,7 @@ test("lattice - dualsnubhex ", () => {
         '4z" fill="#5ab4ac"/></g></g></svg>'
     );
 });
+
 test("lattice - dualrhombitrihex ", () => {
     var face = new DualRhombiTriHex(10).face(2, 1, opt);
     face.position = view.center;
