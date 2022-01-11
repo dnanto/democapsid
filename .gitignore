@@ -5,3 +5,4 @@ node_modules
 *.Rproj
 paper/paper.html
 paper/paper.log
+paper/paper.pdf
