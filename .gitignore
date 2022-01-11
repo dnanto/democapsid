@@ -3,3 +3,5 @@
 node_modules
 .Rproj.user
 *.Rproj
+paper/paper.html
+paper/paper.log
