@@ -3,10 +3,18 @@ let cam;
 let hex;
 let face;
 
+/**
+ * Alias getElementById
+ * @param {*} id the element id
+ * @returns the element
+ */
 function eid(id) {
     return document.getElementById(id);
 }
 
+/**
+ * Calculat the capsid T-number
+ */
 function tNumber() {
     const [h, k] = [opt.h, opt.k];
     eid("tnumber").innerHTML = (
@@ -18,10 +26,18 @@ function tNumber() {
     );
 }
 
+/**
+ * Parse the color alpha value.
+ * @param {*} value the value [0 255]
+ * @returns the hex value
+ */
 function parseAlpha(value) {
     return Number(value).toString(16).padStart(2, "0");
 }
 
+/**
+ * Export SVG.
+ */
 function exportSVG() {
     var link = document.createElement("a");
     link.download = "capsid.svg";
@@ -36,11 +52,21 @@ function exportSVG() {
     link.click();
 }
 
+/**
+ * Update camera matrix.
+ */
 function updateCam() {
     ["θ", "ψ", "φ"].forEach(e => { cam[e] = parseFloat(eid(e).value); });
     cam.update();
 }
 
+/**
+ * Get the face monomer color.
+ * @param {*} i the row index
+ * @param {*} j the column
+ * @param {*} k the color/alpha index [1, 2]
+ * @returns the element
+ */
 function getMer(i, j, k) {
     return document.querySelector(
         `.tg > ` +
@@ -51,6 +77,9 @@ function getMer(i, j, k) {
     );
 }
 
+/**
+ * Get the options from UI.
+ */
 function getOpt() {
     opt = {
         h: parseInt(eid("h").value),
@@ -69,6 +98,10 @@ function getOpt() {
     };
 }
 
+/**
+ * Get the style options for the face.
+ * @returns the style object
+ */
 function getFaceStyle() {
     var style = {
         "face": {
@@ -88,6 +121,10 @@ function getFaceStyle() {
     return style;
 }
 
+/**
+ * Get the style for the icosahedron.
+ * @returns the style object
+ */
 function getIcoStyle() {
     return {
         "fib.mer": {
@@ -100,7 +137,9 @@ function getIcoStyle() {
         }
     }
 }
-
+/**
+ * Draw the hexagonal lattice unit.
+ */
 function drawHex() {
     switch (eid("geometry").value) {
         case "Hex":
@@ -129,10 +168,16 @@ function drawHex() {
     }
 }
 
+/**
+ * Draw the face.
+ */
 function drawFace() {
     face = hex.face(opt.h, opt.k, getFaceStyle());
 }
 
+/**
+ * Update scene.
+ */
 function redraw() {
     project.clear();
     var obj;
@@ -161,12 +206,13 @@ window.onload = function () {
     paper.setup("canvas");
 
     cam = new Camera()
+    
     getOpt();
 
+    // set event listeners for UI
     Object.keys(opt).forEach(e =>
         eid(e).addEventListener("change", getOpt)
     );
-
     ["geometry", "R2"]
         .map(eid)
         .forEach(e => e.addEventListener("change", drawHex));
@@ -188,14 +234,15 @@ window.onload = function () {
         .concat(Array.from(document.querySelectorAll("[id^='knb.']")))
         .concat(Array.from(document.querySelectorAll(".tg > * > * > * > input")))
         .forEach(e => e.addEventListener("change", redraw));
-
     eid("export").addEventListener("click", exportSVG);
 
+    // update
     tNumber();
     drawHex();
     drawFace();
     redraw();
 
+    // animate
     view.onFrame = function (event) {
         getOpt();
         if (opt.ico && event.count % opt.interval === 0) {

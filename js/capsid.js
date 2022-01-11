@@ -1,3 +1,4 @@
+// mathematical constants
 const phi = (1 + Math.sqrt(5)) / 2;
 const root2 = Math.sqrt(2);
 const root3 = Math.sqrt(3);
@@ -96,23 +97,24 @@ class Camera {
      * Update the camera matrix.
      */
     update() {
-        // rotation
+        // trigonometry
         const [sinθ, sinψ, sinφ, cosθ, cosψ, cosφ] = [
             Math.sin(this.θ), Math.sin(this.ψ), Math.sin(this.φ),
             Math.cos(this.θ), Math.cos(this.ψ), Math.cos(this.φ)
         ];
+        // rotation matrix
         this.R = [
             [cosθ * cosψ, cosθ * sinψ * sinφ - sinθ * cosφ, cosθ * sinψ * cosφ + sinθ * sinφ],
             [sinθ * cosψ, sinθ * sinψ * sinφ + cosθ * cosφ, sinθ * sinψ * cosφ - cosθ * sinφ],
             [-sinψ, cosψ * sinφ, cosψ * cosφ]
         ];
-        // translation
+        // translation matrix
         const IC = [
             [1, 0, 0, -this.C[0]],
             [0, 1, 0, -this.C[1]],
             [0, 0, 1, -this.C[2]]
         ];
-        // calculate camera matrix
+        // camera matrix
         this.P = Matrix.mul(Matrix.mul(this.K, this.R), IC);
     }
 }
@@ -122,6 +124,7 @@ class Camera {
  */
 class RegularIcosahedron {
 
+    // array of face vertexes
     static faceIndexes = [
         [0, 1, 2],
         [3, 2, 1],
@@ -180,28 +183,45 @@ class RegularIcosahedron {
 
 class Hex {
 
+    /**
+     * Hex lattice object.
+     * @param {*} R the circumradius
+     */
     constructor(R) {
+        // hexagonal circumradius
         this.R = R;
+        // haxagonal inradius
         this.r = root3 / 2 * R;
-        this.r3 = this.R * root3 / 6;
+        // triangular circumradius
         this.R3 = this.R * root3 / 3;
+        // triangular inradius
+        this.r3 = this.R * root3 / 6;
+        // grid x-offset
         this.dx = 2 * this.r;
+        // grid y-offset
         this.dy = 1.5 * this.R;
+        // grid x-offset per column
         this.ddx = this.r;
+        // grid y-offset per row
         this.ddy = 0;
     }
 
+    /**
+     * Calculate lattice unit.
+     * @returns the array of lattice objects
+     */
     unit() {
         var hex = new Path.RegularPolygon([0, 0], 6, this.R);
         hex.name = "mer-1";
         return [hex];
     }
 
-    circumradius() {
-        return this.R;
-    }
-
-    // map hexagon grid row/col to cartesian coordinates
+    /**
+     * Map the grid to cartesian coordinate
+     * @param {*} i the row index
+     * @param {*} j the column index
+     * @returns the coordinate
+     */
     coor(i, j) {
         return [
             i * this.dx + j * this.ddx,
@@ -209,7 +229,11 @@ class Hex {
         ];
     }
 
-    // generate hexagonal grid
+    /**
+     * Generate hexagonal grid.
+     * @param {*} nr the number of rows
+     * @param {*} nc the number of columns
+     */
     * grid(nr, nc) {
         const u = new Group(this.unit(this.R));
         for (var i = 0; i < nr; i++) {
@@ -223,6 +247,14 @@ class Hex {
         u.remove();
     }
 
+    /**
+     * Perform grid walk.
+     * @param {*} h the h-parameter
+     * @param {*} k the k-parameter
+     * @param {*} c the starting column
+     * @param {*} r the starting row
+     * @returns the list of triangular walk coordinates as grid and cartesian values
+     */
     walk(h, k, c = 0, r = 0) {
         var [i1, i2, i3] = [[r, c], [r + h, c + k], [r - k, c + k + h]];
         var p1 = new Point(this.coor(i1[0], i1[1]));
@@ -234,6 +266,13 @@ class Hex {
         ];
     }
 
+    /**
+     * Calculate the face object.
+     * @param {*} h the h-parameter
+     * @param {*} k the k-parameter
+     * @param {*} opt the style options
+     * @returns the face Group object
+     */
     face(h, k, opt = {}) {
         const n = h + k + 1;
 
@@ -246,6 +285,7 @@ class Hex {
         var g = [];
         Array.from(this.grid(n, n))
             .map(u => {
+                // penton or hexagon
                 var type = (
                     /**/u.coordinate[0] === i[0][0] && u.coordinate[1] == i[0][1] ||
                         u.coordinate[0] === i[1][0] && u.coordinate[1] == i[1][1] ||
@@ -255,7 +295,9 @@ class Hex {
                 u.type = type;
                 return u;
             })
+            // overlay penton elements
             .sort((a, b) => b.type < a.type)
+            // compute intersection with the computed grid face
             .forEach(u => {
                 u.children.forEach(e => {
                     var x = f.intersect(e);
@@ -269,6 +311,7 @@ class Hex {
         f.remove();
         g = new Group(g);
 
+        // rotate to have flat triangular base
         var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
         g.rotate(90 - c.subtract(p[0]).angle, c);
         g.scale(opt.levo ? -1 : 1, 1);
@@ -280,6 +323,10 @@ class Hex {
 
 class TriHex extends Hex {
 
+    /**
+     * TriHex lattice object.
+     * @param {*} R the circumradius
+     */
     constructor(R) {
         super(R);
         this.r = root3 / 2 * R;
@@ -288,6 +335,10 @@ class TriHex extends Hex {
         this.ddx = R;
     }
 
+    /**
+     * Calculate lattice unit.
+     * @returns the array of lattice objects
+     */
     unit() {
         var tri = new Path.RegularPolygon([0, -this.r - this.r3], 3, this.R3);
         tri.name = "mer-2";
@@ -296,14 +347,14 @@ class TriHex extends Hex {
         return [tri, [1, 2, 3, 4, 5].map(e => tri.clone().rotate(60 * e, [0, 0])), hex].flat();
     }
 
-    circumradius() {
-        return this.R + 2 * this.r / 3;
-    }
-
 }
 
 class SnubHex extends Hex {
 
+    /**
+     * SnubHex lattice object.
+     * @param {*} R the circumradius
+     */
     constructor(R) {
         super(R);
         this.r = root3 / 2 * R;
@@ -313,6 +364,10 @@ class SnubHex extends Hex {
         this.ddx = 0.5 * R;
     }
 
+    /**
+     * Calculate lattice unit.
+     * @returns the array of lattice objects
+     */
     unit() {
         var tri1 = new Path.RegularPolygon([0, -this.r - this.r3], 3, this.R3);
         tri1.name = "mer-2";
@@ -349,13 +404,15 @@ class SnubHex extends Hex {
         ];
     }
 
-    circumradius() {
-        return 2 * this.R - .5;
-    }
 }
 
 class RhombiTriHex extends Hex {
 
+
+    /**
+     * RhombiTriHex lattice object.
+     * @param {*} R the circumradius
+     */
     constructor(R) {
         super(R);
         this.r = root3 / 2 * R;
@@ -364,6 +421,10 @@ class RhombiTriHex extends Hex {
         this.ddx = this.r + R / 2;
     }
 
+    /**
+     * Calculate lattice unit.
+     * @returns the array of lattice objects
+     */
     unit() {
         var hex = new Path.RegularPolygon([0, 0], 6, this.R);
         hex.name = "mer-1";
@@ -380,12 +441,15 @@ class RhombiTriHex extends Hex {
         ].flat();
     }
 
-    circumradius() {
-        return 2 * this.R;
-    }
+
 }
 
 class DualTriHex extends Hex {
+
+    /**
+     * DualTriHex lattice object.
+     * @param {*} R the circumradius
+     */
     constructor(R) {
         super(R);
         this.dx = 4 * R;
@@ -393,6 +457,10 @@ class DualTriHex extends Hex {
         this.ddx = 2 * R;
     }
 
+    /**
+     * Calculate lattice unit.
+     * @returns the array of lattice objects
+     */
     unit() {
         var path1 = new Path([
             [0, 0],
@@ -430,12 +498,14 @@ class DualTriHex extends Hex {
         ];
     }
 
-    circumradius() {
-        return this.R + this.R * root3 / 2;
-    }
 }
 
 class DualSnubHex extends Hex {
+
+    /**
+     * DualSnubHex lattice object.
+     * @param {*} R the circumradius
+     */
     constructor(R) {
         super(R);
         this.dx = 2.5 * R;
@@ -444,6 +514,10 @@ class DualSnubHex extends Hex {
         this.ddy = this.r;
     }
 
+    /**
+     * Calculate lattice unit.
+     * @returns the array of lattice objects
+     */
     unit() {
         var path = new Path([
             [0, 0],
@@ -460,10 +534,20 @@ class DualSnubHex extends Hex {
 }
 
 class DualRhombiTriHex extends Hex {
+
+
+    /**
+     * DualRhombiHex lattice object.
+     * @param {*} R the circumradius
+     */
     constructor(R) {
         super(R);
     }
 
+    /**
+     * Calculate lattice unit.
+     * @returns the array of lattice objects
+     */
     unit() {
         var line = new Path([[0, 0], [0, this.r]]);
         var path = new Path([
@@ -479,6 +563,11 @@ class DualRhombiTriHex extends Hex {
     }
 }
 
+/**
+ * Draw the icosahedron net.
+ * @param {*} face the Group face object
+ * @returns the Group net object
+ */
 function drawNet(face) {
     var f1 = face.clone();
 
@@ -506,6 +595,15 @@ function drawNet(face) {
     return net;
 }
 
+/**
+ * Draw the icosahedron.
+ * @param {*} face the Group face object
+ * @param {*} R the circumradius
+ * @param {*} F the fiber length
+ * @param {*} P the camera matrix
+ * @param {*} opt the style options
+ * @returns the Group icosahedron object
+ */
 function drawIco(face, R, F, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
     const A = Matrix.inv3([
