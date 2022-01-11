@@ -174,11 +174,6 @@ class RegularIcosahedron {
     static faces(R, P) {
         var p = this.verts(R, P).map(e => [e[0][0], e[1][0], e[2][0]]);
         return this.faceIndexes
-            .sort((a, b) =>
-                // sort faces by z-order
-                Math.min(p[a[0]][2], p[a[1]][2], p[a[2]][2]) -
-                Math.min(p[b[0]][2], p[b[1]][2], p[b[2]][2])
-            )
             .map(e => [p[e[0]], p[e[1]], p[e[2]]]);
     }
 }
@@ -265,8 +260,10 @@ class Hex {
             .forEach(u => {
                 u.children.forEach(e => {
                     var x = f.intersect(e);
-                    x.style = opt[u.type + "." + e.name.split(" ")[0]];
-                    g.push(x);
+                    if (x.segments.length > 0) {
+                        x.style = opt[u.type + "." + e.name.split(" ")[0]];
+                        g.push(x);
+                    }
                 })
                 u.remove();
             });
@@ -276,8 +273,6 @@ class Hex {
         var c = p[0].add(p[1]).add(p[2]).multiply(1 / 3);
         g.rotate(90 - c.subtract(p[0]).angle, c);
         g.scale(opt.levo ? -1 : 1, 1);
-
-        // circles.forEach(e => e.remove());
 
         return g;
     }
@@ -530,7 +525,11 @@ function drawIco(face, R, F, P, opt) {
     return new Group(
         RegularIcosahedron.faces(R, P)
             .concat(fibers)
-            .sort((a, b) => Math.min(...a.map(a => a[2])) - Math.min(...b.map(b => b[2])))
+            .sort((a, b) =>
+                // sort faces by z-order
+                (a[0][2] + a[1][2] + (a.length < 3 ? 0 : a[2][2])) -
+                (b[0][2] + b[1][2] + (b.length < 3 ? 0 : b[2][2]))
+            )
             .map(e => {
                 if (e.length == 3) {
                     const B = [
