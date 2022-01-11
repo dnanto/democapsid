@@ -13,11 +13,9 @@
 <body>
     <div class="grid-container">
         <div class="options">
-            <strong>
-                <p>Caspar-Klug Theory</p>
-                <p><a href="https://github.com/dnanto/capsid">GitHub</a></p>
-                <p><a href="https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1">Preprint</a></p>
-            </strong>
+            <p><strong>Capsid.js</strong></p>
+            <p><a href="https://github.com/dnanto/capsid">GitHub</a></p>
+            <p><a href="https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1">Preprint</a></p>
             <br><br>
 
             <label for="h">h&nbsp;=&nbsp;</label><input type="number" id="h" step="1" value="2" min="0">
@@ -36,6 +34,7 @@
                 <option value="TriHex">TriHex</option>
                 <option value="SnubHex">SnubHex</option>
                 <option value="RhombiTriHex">RhombiTriHex</option>
+                <option value="DualHex">DualHex (= Hex)</option>
                 <option value="DualTriHex">DualTriHex</option>
                 <option value="DualSnubHex">DualSnubHex</option>
                 <option value="DualRhombiTriHex">DualRhombiTriHex</option>
@@ -64,14 +63,14 @@
             </div>
 
             <div class="rowinput">
-                <label for="θ">θ&nbsp;:&nbsp;</label><input type="number" id="θ" step="any" value="0">
-                <label for="ψ">ψ&nbsp;:&nbsp;</label><input type="number" id="ψ" step="any" value="0">
-                <label for="φ">φ&nbsp;:&nbsp;</label><input type="number" id="φ" step="any" value="0">
+                <label for="θ">θ&nbsp;:&nbsp;</label><input type="number" id="θ" step="0.05" value="0">
+                <label for="ψ">ψ&nbsp;:&nbsp;</label><input type="number" id="ψ" step="0.05" value="0">
+                <label for="φ">φ&nbsp;:&nbsp;</label><input type="number" id="φ" step="0.05" value="0">
                 <br><br>
             </div>
 
             <label for="interval">interval:</label>
-            <input type="number" id="interval" value="1" min="0">
+            <input type="number" id="interval" value="0" min="0">
             <br><br>
 
             <label for="face.color">face color:</label>
@@ -136,10 +135,12 @@
                         <td>3</td>
                         <td>
                             <input type="color" value="#d8b365">
-                            <input type="number" step="any" value="255" min="0" max="255"></td>
+                            <input type="number" step="any" value="255" min="0" max="255">
+                        </td>
                         <td>
                             <input type="color" value="#8c510a">
-                            <input type="number" step="any" value="255" min="0" max="255"></td>
+                            <input type="number" step="any" value="255" min="0" max="255">
+                        </td>
                     </tr>
                 </tbody>
             </table>
