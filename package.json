@@ -8,6 +8,7 @@
     "test": "jest"
   },
   "jest": {
-    "verbose": true
+    "verbose": true,
+    "collectCoverage": true
   }
 }
