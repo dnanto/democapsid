@@ -1,4 +1,6 @@
 {
+  "name": "capsid.js",
+  "version": "1.0.0",
   "dependencies": {
     "canvas": "^2.8.0",
     "jest": "^27.4.7",
