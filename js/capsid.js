@@ -555,4 +555,13 @@ function drawIco(face, R, F, P, opt) {
     );
 }
 
-module.exports = Matrix;
+module.exports = [
+    Matrix,
+    Hex,
+    TriHex,
+    SnubHex,
+    RhombiTriHex,
+    DualTriHex,
+    DualSnubHex,
+    DualRhombiTriHex
+];

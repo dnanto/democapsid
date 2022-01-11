@@ -1,8 +1,13 @@
 {
   "dependencies": {
-    "jest": "^27.4.7"
+    "canvas": "^2.8.0",
+    "jest": "^27.4.7",
+    "paper": "^0.12.15"
   },
   "scripts": {
     "test": "jest"
+  },
+  "jest": {
+    "verbose": true
   }
 }
