@@ -5,7 +5,7 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 # run
 
 - Run main app: https://dnanto.github.io/capsid/capsid.html.
-- Run prototype for nets: https://dnanto.github.io/capsid/net.html.
+- Run prototype for elongated capsid nets: https://dnanto.github.io/capsid/net.html.
 
 ![screenshot.png](screenshot.png)
 
