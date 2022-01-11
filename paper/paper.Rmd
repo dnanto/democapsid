@@ -63,7 +63,7 @@ To project each face, the procedure computes the unit icosahedron and applies th
 
 ## Discussion
 
-The capsid.js app renders customizable icosahedral viral capsids. Development is active with plans to include elongated (prolate/oblate) capsids. A separate prototype for generating elongated capsid nets is available based on theory [@moodyShapeTevenBacteriophage1965; @luqueStructureElongatedViral2010]. High-resolution SVG continues being a primary design goal to aid in the creation of detailed figures. This includes rendering all details as separate shapes. As a result, the current implementation may lag for large values of $h$ or $k$. However, performance enhancements are possible by improving the rendering algorithm or switching to a GPU-based library, such as WebGL.
+The capsid.js app renders customizable icosahedral viral capsids and was recently used to model the adeno-associated virus (AAV) [@hamannImprovedTargetingHuman2021]. Development is active with plans to include elongated (prolate/oblate) capsids. A separate prototype for generating elongated capsid nets is available based on theory [@moodyShapeTevenBacteriophage1965; @luqueStructureElongatedViral2010]. High-resolution SVG continues being a primary design goal to aid in the creation of detailed figures. This includes rendering all details as separate shapes. As a result, the current implementation may lag for large values of $h$ or $k$. However, performance enhancements are possible by improving the rendering algorithm or switching to a GPU-based library, such as WebGL.
 
 
 # Acknowledgements
