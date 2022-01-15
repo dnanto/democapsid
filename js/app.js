@@ -71,7 +71,6 @@ function getOpt() {
         ψ: radians(parseFloat(eid("ψ").value)),
         φ: radians(parseFloat(eid("φ").value)),
         interval: parseInt(eid("interval").value),
-        mode: eid("mode").value,
     };
 }
 
@@ -203,7 +202,7 @@ function redraw() {
     updateCam();
 
     var obj;
-    switch (opt.mode) {
+    switch (eid("mode").value) {
         case "ico":
             obj = drawIco(face, opt.R3, opt.F, cam.P, getIcoStyle());
             break;
@@ -258,7 +257,7 @@ window.onload = function () {
     // animate
     view.onFrame = function (event) {
         getOpt();
-        if (opt.mode === "ico" && event.count % opt.interval === 0) {
+        if (eid("mode").value === "ico" && event.count % opt.interval === 0) {
             ["θ", "ψ", "φ"].map(eid).forEach((e) => (e.value = parseFloat(e.value) + 1));
             redraw();
         }
