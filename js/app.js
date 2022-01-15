@@ -56,7 +56,7 @@ function exportSVG() {
  * Update camera matrix.
  */
 function updateCam() {
-    ["θ", "ψ", "φ"].forEach(e => { cam[e] = parseFloat(eid(e).value); });
+    ["θ", "ψ", "φ"].forEach(e => { cam[e] = parseFloat(eid(e).value) * Math.PI / 180; });
     cam.update();
 }
 
@@ -91,9 +91,9 @@ function getOpt() {
         R2: parseFloat(eid("R2").value),
         R3: parseFloat(eid("R3").value),
         F: parseFloat(eid("F").value),
-        θ: parseFloat(eid("θ").value),
-        ψ: parseFloat(eid("ψ").value),
-        φ: parseFloat(eid("φ").value),
+        θ: parseFloat(eid("θ").value) * Math.PI / 180,
+        ψ: parseFloat(eid("ψ").value) * Math.PI / 180,
+        φ: parseFloat(eid("φ").value) * Math.PI / 180,
         interval: parseInt(eid("interval").value)
     };
 }
@@ -246,9 +246,6 @@ window.onload = function () {
     view.onFrame = function (event) {
         getOpt();
         if (opt.ico && event.count % opt.interval === 0) {
-            ["θ", "ψ", "φ"].forEach(e => {
-                eid(e).value = parseFloat(eid(e).value) + 0.05;
-            });
             updateCam();
             redraw();
         };
