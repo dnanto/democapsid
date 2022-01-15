@@ -23,7 +23,8 @@ input {
     vertical-align: middle;
 }
 
-input[type=color], input[type=number] {
+input[type="color"],
+input[type="number"] {
     width: 20%;
 }
 
@@ -32,11 +33,11 @@ table {
     text-align: center;
 }
 
-table input[type=color] {
+table input[type="color"] {
     width: 50%;
 }
 
-table input[type=number] {
+table input[type="number"] {
     width: 30%;
 }
 
