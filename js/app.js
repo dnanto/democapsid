@@ -272,6 +272,7 @@ window.onload = function () {
     view.onFrame = function (event) {
         getOpt();
         if (opt.ico && event.count % opt.interval === 0) {
+            ["θ", "ψ", "φ"].map(eid).forEach((e) => (e.value = parseFloat(e.value) + 1));
             updateCam();
             redraw();
         }
