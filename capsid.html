@@ -1,167 +1,144 @@
 <!DOCTYPE html>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <html lang="en">
+    <head>
+        <script type="text/javascript" src="js/lib/paper-core.min.js"></script>
+        <script type="text/javascript" src="js/capsid.js"></script>
+        <script type="text/javascript" src="js/app.js"></script>
+        <link rel="stylesheet" href="css/app.css" />
+        <title>capsid</title>
+    </head>
 
-<head>
-    <script type="text/javascript" src="js/lib/paper-core.min.js"></script>
-    <script type="text/javascript" src="js/capsid.js"></script>
-    <script type="text/javascript" src="js/app.js"></script>
-    <link rel="stylesheet" href="css/app.css">
-    <title>capsid</title>
-</head>
+    <body>
+        <div class="layout">
+            <div class="options">
+                <div>
+                    <strong>capsid.js</strong> | <a href="https://github.com/dnanto/capsid">GitHub</a> |
+                    <a href="https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1">Preprint</a>
+                </div>
+                <br />
 
-<body>
-    <div class="grid-container">
-        <div class="options">
-            <p><strong>capsid.js</strong></p>
-            <p><a href="https://github.com/dnanto/capsid">GitHub</a></p>
-            <p><a href="https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1">Preprint</a></p>
-            <br><br>
+                <div>
+                    <button id="export">Export SVG</button>
+                </div>
+                <br />
 
-            <label for="h">h&nbsp;=&nbsp;</label><input type="number" id="h" step="1" value="2" min="0">
-            <br>
-            <label for="k">k&nbsp;=&nbsp;</label><input type="number" id="k" step="1" value="1" min="0">
-            <div>T&nbsp;=&nbsp;h<sup>2</sup>&nbsp;+&nbsp;hk&nbsp;+&nbsp;k<sup>2</sup></div>
-            <div id="tnumber"></div>
-            <br><br>
+                <div class="table2">
+                    <div><label for="h">h</label></div>
+                    <div><input type="number" id="h" step="1" value="2" min="0" /></div>
+                    <div><label for="k">k</label></div>
+                    <div><input type="number" id="k" step="1" value="1" min="0" /></div>
+                    <div><label for="tnumber">T-Number</label></div>
+                    <div id="tnumber">0</div>
+                </div>
+                <br />
 
-            <button id="export">Export SVG</button>
-            <br><br>
+                <div class="table2">
+                    <div><label for="mode">mode</label></div>
+                    <div>
+                        <select id="mode">
+                            <option value="ico" selected>ico</option>
+                            <option value="net">net</option>
+                            <option value="face">face</option>
+                        </select>
+                    </div>
+                    <div><label for="geometry">geometry</label></div>
+                    <div>
+                        <select id="geometry">
+                            <option value="Hex">Hex</option>
+                            <option value="TriHex">TriHex</option>
+                            <option value="SnubHex">SnubHex</option>
+                            <option value="RhombiTriHex">RhombiTriHex</option>
+                            <option value="DualHex">DualHex (= Hex)</option>
+                            <option value="DualTriHex">DualTriHex</option>
+                            <option value="DualSnubHex">DualSnubHex</option>
+                            <option value="DualRhombiTriHex">DualRhombiTriHex</option>
+                        </select>
+                    </div>
+                    <div><label for="projection">projection</label></div>
+                    <div>
+                        <select id="projection">
+                            <option value="Face-1" selected>Face-1</option>
+                            <option value="Face-2">Face-2</option>
+                            <option value="Edge-1">Edge-1</option>
+                            <option value="Edge-2">Edge-2</option>
+                            <option value="Vertex-1">Vertex-1</option>
+                            <option value="Vertex-2">Vertex-2</option>
+                        </select>
+                    </div>
+                    <div><label for="rotation">rotation</label></div>
+                    <div>
+                        <select id="rotation">
+                            <option value="levo">levo</option>
+                            <option value="dextro">dextro</option>
+                        </select>
+                    </div>
 
-            <label for="geometry">geometry:</label>
-            <select id="geometry">
-                <option value="Hex">Hex</option>
-                <option value="TriHex">TriHex</option>
-                <option value="SnubHex">SnubHex</option>
-                <option value="RhombiTriHex">RhombiTriHex</option>
-                <option value="DualHex">DualHex (= Hex)</option>
-                <option value="DualTriHex">DualTriHex</option>
-                <option value="DualSnubHex">DualSnubHex</option>
-                <option value="DualRhombiTriHex">DualRhombiTriHex</option>
-            </select>
-            <br><br>
+                    <div><label for="R3">radius (ico)</label></div>
+                    <div><input type="number" id="R3" step="any" value="500" min="0" /></div>
+                    <div><label for="R2">radius (net)</label></div>
+                    <div><input type="number" id="R2" step="any" value="25" min="0" /></div>
+                    <div><label for="F">radius (fiber)</label></div>
+                    <div><input type="number" id="F" step="any" value="650" min="0" /></div>
 
-            <label for="topology">ico/net/face:</label>
-            <input type="radio" name="topology" id="ico" value="ico" checked>
-            <input type="radio" name="topology" id="net" value="net">
-            <input type="radio" name="topology" id="face" value="face">
-            <br><br>
+                    <div><label for="θ">θ</label></div>
+                    <div><input type="number" id="θ" step="any" value="0" /></div>
+                    <div><label for="ψ">ψ</label></div>
+                    <div><input type="number" id="ψ" step="any" value="0" /></div>
+                    <div><label for="φ">φ</label></div>
+                    <div><input type="number" id="φ" step="any" value="0" /></div>
 
-            <label for="rotation">levo/dextro&nbsp;:</label>
-            <input type="radio" name="rotation" id="levo" checked>
-            <input type="radio" name="rotation" id="dextro">
-            <br><br>
+                    <div><label for="interval">interval</label></div>
+                    <div><input type="number" id="interval" value="0" min="0" /></div>
+                </div>
+                <br />
 
-            <div class="rowinput">
-                <label for="R">R2:</label>
-                <input type="number" id="R2" step="any" value="25" min="0">
-                <label for="R">R3:</label>
-                <input type="number" id="R3" step="any" value="500" min="0">
-                <label for="F">F&nbsp;:</label>
-                <input type="number" id="F" step="any" value="700" min="0">
-                <br><br>
+                <div class="table4">
+                    <div></div>
+                    <div class="header">color</div>
+                    <div class="header">alpha</div>
+                    <div class="header">size</div>
+                    <div>line</div>
+                    <div><input type="color" id="face.color" /></div>
+                    <div><input type="number" id="face.alpha" step="1" value="255" min="0" max="255" /></div>
+                    <div><input type="number" id="face.size" value="1" min="0" /></div>
+                    <div>fiber</div>
+                    <div><input type="color" id="fib.color" value="#eded61" /></div>
+                    <div><input type="number" id="fib.alpha" step="1" value="255" min="0" max="255" /></div>
+                    <div><input type="number" id="fib.size" value="2" min="0" /></div>
+                    <div>knob</div>
+                    <div><input type="color" id="knb.color" value="#ffa500" /></div>
+                    <div><input type="number" id="knb.alpha" step="1" value="255" min="0" max="255" /></div>
+                    <div><input type="number" id="knb.size" value="4" min="0" /></div>
+                    <div>hexamer-1</div>
+                    <div><input type="color" id="hex.color-1" value="#92be5f" /></div>
+                    <div><input type="number" id="hex.alpha-1" step="1" value="255" min="0" max="255" /></div>
+                    <div></div>
+                    <div>hexamer-2</div>
+                    <div><input type="color" id="hex.color-2" value="#44782c" /></div>
+                    <div><input type="number" id="hex.alpha-2" step="1" value="255" min="0" max="255" /></div>
+                    <div></div>
+                    <div>hexamer-3</div>
+                    <div><input type="color" id="hex.color-3" value="#3278ad" /></div>
+                    <div><input type="number" id="hex.alpha-3" step="1" value="255" min="0" max="255" /></div>
+                    <div></div>
+                    <div>pentamer-1</div>
+                    <div><input type="color" id="pen.color-1" value="#6da59b" /></div>
+                    <div><input type="number" id="pen.alpha-1" step="1" value="255" min="0" max="255" /></div>
+                    <div></div>
+                    <div>pentamer-2</div>
+                    <div><input type="color" id="pen.color-2" value="#aed6d4" /></div>
+                    <div><input type="number" id="pen.alpha-2" step="1" value="255" min="0" max="255" /></div>
+                    <div></div>
+                    <div>pentamer-3</div>
+                    <div><input type="color" id="pen.color-3" value="#8291c2" /></div>
+                    <div><input type="number" id="pen.alpha-3" step="1" value="255" min="0" max="255" /></div>
+                    <div></div>
+                </div>
             </div>
-
-            <div class="rowinput">
-                <label for="θ">θ&nbsp;:&nbsp;</label><input type="number" id="θ" step="any" value="0">
-                <label for="ψ">ψ&nbsp;:&nbsp;</label><input type="number" id="ψ" step="any" value="0">
-                <label for="φ">φ&nbsp;:&nbsp;</label><input type="number" id="φ" step="any" value="0">
-                <br><br>
+            <div class="view">
+                <canvas id="canvas" resize> Your browser does not support the HTML canvas tag. </canvas>
             </div>
-
-            <label for="projection">projection:</label>
-            <select id="projection">
-                <option value="Face-1" selected>Face-1</option>
-                <option value="Face-2">Face-2</option>
-                <option value="Edge-1">Edge-1</option>
-                <option value="Edge-2">Edge-2</option>
-                <option value="Vertex-1">Vertex-1</option>
-                <option value="Vertex-2">Vertex-2</option>
-            </select>
-            <br></br>
-
-            <label for="interval">interval:</label>
-            <input type="number" id="interval" value="0" min="0">
-            <br><br>
-
-            <label for="face.color">face color:</label>
-            <input type="color" id="face.color">
-            <br>
-            <label for="face.alpha">face alpha:</label>
-            <input type="number" id="face.alpha" step="any" value="255" min="0" max="255">
-            <br>
-            <label for="face.size">face size&nbsp;:</label>
-            <input type="number" id="face.size" step="any" value="1" min="0">
-            <br>
-            <br>
-
-            <label for="fib.color">fiber color:</label>
-            <input type="color" id="fib.color" value="#FFA500">
-            <input type="number" id="fib.alpha" step="any" value="255" min="0" max="255">
-            <br>
-            <label for="knb.color">knob&nbsp;&nbsp;color:</label>
-            <input type="color" id="knb.color" value="#FF8C00">
-            <input type="number" id="knb.alpha" step="any" value="255" min="0" max="255">
-            <br>
-            <label for="fib.size">fiber&nbsp;&nbsp;size:</label>
-            <input type="number" id="fib.size" step="any" value="2" min="0">
-            <br>
-            <label for="knb.size">knob&nbsp;&nbsp;&nbsp;size:</label>
-            <input type="number" id="knb.size" step="any" value="4" min="0">
-            <br>
-            <br>
-
-            <table class="tg" role="presentation">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Hexamer<br></th>
-                        <th>Pentamer</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>
-                            <input type="color" value="#01665e">
-                            <input type="number" step="any" value="255" min="0" max="255">
-                        </td>
-                        <td>
-                            <input type="color" value="#5ab4ac">
-                            <input type="number" step="any" value="255" min="0" max="255">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>
-                            <input type="color" value="#c7eae5">
-                            <input type="number" step="any" value="255" min="0" max="255">
-                        </td>
-                        <td>
-                            <input type="color" value="#f6e8c3">
-                            <input type="number" step="any" value="255" min="0" max="255">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>
-                            <input type="color" value="#d8b365">
-                            <input type="number" step="any" value="255" min="0" max="255">
-                        </td>
-                        <td>
-                            <input type="color" value="#8c510a">
-                            <input type="number" step="any" value="255" min="0" max="255">
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
-        <div class="view">
-            <canvas id="canvas" resize>
-                Your browser does not support the HTML canvas tag.
-            </canvas>
-        </div>
-    </div>
-</body>
-
+    </body>
 </html>
