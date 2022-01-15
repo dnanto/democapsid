@@ -85,7 +85,7 @@ function getFaceStyle() {
             strokeColor: eid("face.color").value + parseAlpha(eid("face.alpha").value),
             strokeWidth: parseFloat(eid("face.size").value),
         },
-        levo: opt.rotation === "levo",
+        levo: eid("rotation").value === "levo",
     };
     for (var i = 1; i <= 3; i++) {
         style["hex.mer-" + i] = {
@@ -199,7 +199,6 @@ function drawFace() {
 function redraw() {
     project.clear();
 
-    getOpt();
     tNumber();
     updateCam();
 
