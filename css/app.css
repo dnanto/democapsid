@@ -2,10 +2,10 @@
     font-family: monospace;
 }
 
-.grid-container {
+.layout {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     gap: 0px 0px;
     grid-template-areas:
         "options view view view"
@@ -19,58 +19,35 @@
     padding: 5%;
 }
 
-input {
-    vertical-align: middle;
+.view {
+    grid-area: view;
 }
 
-input[type=color], input[type=number] {
-    width: 20%;
+.table2 {
+    display: grid;
+    grid-template-columns: 30% 1fr;
 }
 
-table {
-    width: 100%;
-    text-align: center;
-}
-
-table input[type=color] {
+.table2 select {
     width: 50%;
 }
 
-table input[type=number] {
-    width: 30%;
+.table4 {
+    display: grid;
+    grid-template-columns: 30% 1fr 1fr 1fr;
 }
 
-.tg {
-    border-collapse: collapse;
-    border-color: #ccc;
-    border-spacing: 0;
+.table4 input {
+    width: 75%;
 }
 
-.tg td {
-    background-color: #fff;
-    border-color: #ccc;
-    border-style: solid;
-    border-width: 1px;
-    color: #333;
-    overflow: hidden;
-    padding: 10px 5px;
-    word-break: normal;
+.header {
+    text-align: center;
+    padding-bottom: 5px;
 }
 
-.tg th {
-    background-color: #f0f0f0;
-    border-color: #ccc;
-    border-style: solid;
-    border-width: 1px;
-    color: #333;
-    font-weight: normal;
-    overflow: hidden;
-    padding: 10px 5px;
-    word-break: normal;
-}
-
-.view {
-    grid-area: view;
+button {
+    width: 100%;
 }
 
 canvas[resize] {

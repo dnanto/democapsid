@@ -13,17 +13,11 @@ function eid(id) {
 }
 
 /**
- * Calculat the capsid T-number
+ * Calculate the capsid T-number
  */
 function tNumber() {
     const [h, k] = [opt.h, opt.k];
-    eid("tnumber").innerHTML = (
-        "&nbsp;&nbsp;=&nbsp;" +
-        `${h}<sup>2</sup>&nbsp;+&nbsp;` +
-        `(${h})(${k})&nbsp;+&nbsp;` +
-        `${k}<sup>2</sup><br>&nbsp;&nbsp;=&nbsp;` +
-        `${h * h + h * k + k * k}`
-    );
+    eid("tnumber").innerHTML = "&nbsp;&nbsp;=&nbsp;" + `${h}<sup>2</sup>&nbsp;+&nbsp;` + `(${h})(${k})&nbsp;+&nbsp;` + `${k}<sup>2</sup><br>&nbsp;&nbsp;=&nbsp;` + `${h * h + h * k + k * k}`;
 }
 
 /**
@@ -41,14 +35,15 @@ function parseAlpha(value) {
 function exportSVG() {
     var link = document.createElement("a");
     link.download = "capsid.svg";
-    link.href = (
+    link.href =
         "data:image/svg+xml;utf8," +
-        encodeURIComponent(paper.project.exportSVG({
-            "options.bounds": "content",
-            asString: true,
-            "options.matchShapes": true
-        }))
-    );
+        encodeURIComponent(
+            paper.project.exportSVG({
+                "options.bounds": "content",
+                asString: true,
+                "options.matchShapes": true,
+            })
+        );
     link.click();
 }
 
@@ -56,25 +51,10 @@ function exportSVG() {
  * Update camera matrix.
  */
 function updateCam() {
-    ["θ", "ψ", "φ"].forEach(e => { cam[e] = parseFloat(eid(e).value); });
+    ["θ", "ψ", "φ"].forEach((e) => {
+        cam[e] = radians(parseFloat(eid(e).value));
+    });
     cam.update();
-}
-
-/**
- * Get the face monomer color.
- * @param {*} i the row index
- * @param {*} j the column
- * @param {*} k the color/alpha index [1, 2]
- * @returns the element
- */
-function getMer(i, j, k) {
-    return document.querySelector(
-        `.tg > ` +
-        `tbody:nth-child(2) > ` +
-        `tr:nth-child(${i}) > ` +
-        `td:nth-child(${j + 1}) > ` +
-        `input:nth-child(${k})`
-    );
 }
 
 /**
@@ -84,17 +64,14 @@ function getOpt() {
     opt = {
         h: parseInt(eid("h").value),
         k: parseInt(eid("k").value),
-        ico: eid("ico").checked,
-        net: eid("net").checked,
-        levo: eid("levo").checked,
-        dextro: eid("dextro").checked,
         R2: parseFloat(eid("R2").value),
         R3: parseFloat(eid("R3").value),
         F: parseFloat(eid("F").value),
-        θ: parseFloat(eid("θ").value),
-        ψ: parseFloat(eid("ψ").value),
-        φ: parseFloat(eid("φ").value),
-        interval: parseInt(eid("interval").value)
+        θ: radians(parseFloat(eid("θ").value)),
+        ψ: radians(parseFloat(eid("ψ").value)),
+        φ: radians(parseFloat(eid("φ").value)),
+        interval: parseInt(eid("interval").value),
+        mode: eid("mode").value,
     };
 }
 
@@ -104,20 +81,20 @@ function getOpt() {
  */
 function getFaceStyle() {
     var style = {
-        "face": {
+        face: {
             strokeColor: eid("face.color").value + parseAlpha(eid("face.alpha").value),
-            strokeWidth: parseFloat(eid("face.size").value)
+            strokeWidth: parseFloat(eid("face.size").value),
         },
-        "levo": opt.levo
-    }
+        levo: eid("rotation").value === "levo",
+    };
     for (var i = 1; i <= 3; i++) {
         style["hex.mer-" + i] = {
-            fillColor: getMer(i, 1, 1).value + parseAlpha(getMer(i, 1, 2).value),
-        }
+            fillColor: eid("hex.color-" + i).value + parseAlpha(eid("hex.alpha-" + i).value),
+        };
         style["pen.mer-" + i] = {
-            fillColor: getMer(i, 2, 1).value + parseAlpha(getMer(i, 2, 2).value),
-        }
-    };
+            fillColor: eid("pen.color-" + i).value + parseAlpha(eid("pen.alpha-" + i).value),
+        };
+    }
     return style;
 }
 
@@ -129,14 +106,55 @@ function getIcoStyle() {
     return {
         "fib.mer": {
             strokeColor: eid("fib.color").value + parseAlpha(eid("fib.alpha").value),
-            strokeWidth: parseFloat(eid("fib.size").value)
+            strokeWidth: parseFloat(eid("fib.size").value),
         },
         "knb.mer": {
             R: parseFloat(eid("knb.size").value),
-            "style": { fillColor: eid("knb.color").value + parseAlpha(eid("knb.alpha").value) }
-        }
-    }
+            style: {
+                fillColor: eid("knb.color").value + parseAlpha(eid("knb.alpha").value),
+            },
+        },
+    };
 }
+
+/**
+ * Set the projection.
+ */
+function setProjection(name) {
+    const b = 1 / (2 * phi);
+    eid("θ").value = 0;
+    eid("ψ").value = 0;
+    eid("φ").value = 0;
+    switch (name) {
+        case "Face-1":
+            eid("φ").value = 90 - degrees(Math.atan2((b + 0.5 + 0.5) / 3, 0.5 / 3)) + 90;
+            break;
+        case "Face-2":
+            eid("φ").value = 90 - degrees(Math.atan2((b + 0.5 + 0.5) / 3, 0.5 / 3));
+            break;
+        case "Edge-1":
+            eid("ψ").value = 90;
+            break;
+        case "Edge-2":
+            // default
+            break;
+        case "Vertex-1":
+            eid("φ").value = degrees(Math.atan2(b, 0.5));
+            break;
+        case "Vertex-2":
+            eid("φ").value = 90 - degrees(Math.atan2(b, 0.5));
+            break;
+    }
+    updateCam();
+}
+
+/**
+ * Set the projection from event.
+ */
+function setProjectionEvent(ele) {
+    setProjection(ele.target.value);
+}
+
 /**
  * Draw the hexagonal lattice unit.
  */
@@ -180,24 +198,24 @@ function drawFace() {
  */
 function redraw() {
     project.clear();
+
+    tNumber();
+    updateCam();
+
     var obj;
-    Array.from(document.getElementsByName("topology")).forEach(e => {
-        if (e.checked) {
-            switch (e.value) {
-                case "ico":
-                    obj = drawIco(face, opt.R3, opt.F, cam.P, getIcoStyle());
-                    break;
-                case "net":
-                    obj = drawNet(face);
-                    break;
-                case "face":
-                    drawFace();
-                    obj = face;
-                    break;
-            }
-        }
-    });
-    if (obj !== undefined) obj.position = view.center;
+    switch (opt.mode) {
+        case "ico":
+            obj = drawIco(face, opt.R3, opt.F, cam.P, getIcoStyle());
+            break;
+        case "net":
+            obj = drawNet(face);
+            break;
+        case "face":
+            drawFace();
+            obj = face;
+            break;
+    }
+    obj.position = view.center;
 }
 
 paper.install(window);
@@ -205,39 +223,34 @@ paper.install(window);
 window.onload = function () {
     paper.setup("canvas");
 
-    cam = new Camera()
-    
-    getOpt();
+    cam = new Camera();
 
     // set event listeners for UI
-    Object.keys(opt).forEach(e =>
-        eid(e).addEventListener("change", getOpt)
-    );
-    ["geometry", "R2"]
-        .map(eid)
-        .forEach(e => e.addEventListener("change", drawHex));
-    ["h", "k"]
-        .map(eid)
-        .forEach(e => e.addEventListener("change", tNumber));
-    ["h", "k", "geometry", "levo", "dextro", "R2"]
+    ["geometry", "R2"].map(eid).forEach((e) => e.addEventListener("change", drawHex));
+    ["projection"].map(eid).forEach((e) => e.addEventListener("change", setProjectionEvent));
+    ["h", "k"].map(eid).forEach((e) => e.addEventListener("change", tNumber));
+    ["h", "k", "geometry", "rotation", "R2"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
-        .concat(Array.from(document.querySelectorAll(".tg > * > * > * > input")))
-        .forEach(e => e.addEventListener("change", drawFace));
-    ["θ", "ψ", "φ"]
-        .map(eid)
-        .forEach(e => e.addEventListener("change", updateCam));
-    ["h", "k", "geometry", "levo", "dextro", "ico", "net", "face", "R2", "R3", "F", "θ", "ψ", "φ"]
+        .concat(Array.from(document.querySelectorAll("[id^='hex.']")))
+        .concat(Array.from(document.querySelectorAll("[id^='pen.']")))
+        .forEach((e) => e.addEventListener("change", drawFace));
+    ["θ", "ψ", "φ"].map(eid).forEach((e) => e.addEventListener("change", updateCam));
+    ["h", "k", "geometry", "projection", "rotation", "mode", "R2", "R3", "F", "θ", "ψ", "φ"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
         .concat(Array.from(document.querySelectorAll("[id^='fib.']")))
         .concat(Array.from(document.querySelectorAll("[id^='knb.']")))
-        .concat(Array.from(document.querySelectorAll(".tg > * > * > * > input")))
-        .forEach(e => e.addEventListener("change", redraw));
+        .concat(Array.from(document.querySelectorAll("[id^='hex.']")))
+        .concat(Array.from(document.querySelectorAll("[id^='pen.']")))
+        .forEach((e) => e.addEventListener("change", redraw));
     eid("export").addEventListener("click", exportSVG);
 
-    // update
-    tNumber();
+    //init
+    getOpt();
+    setProjection(eid("projection").value);
+
+    // draw
     drawHex();
     drawFace();
     redraw();
@@ -245,12 +258,9 @@ window.onload = function () {
     // animate
     view.onFrame = function (event) {
         getOpt();
-        if (opt.ico && event.count % opt.interval === 0) {
-            ["θ", "ψ", "φ"].forEach(e => {
-                eid(e).value = parseFloat(eid(e).value) + 0.05;
-            });
-            updateCam();
+        if (opt.mode === "ico" && event.count % opt.interval === 0) {
+            ["θ", "ψ", "φ"].map(eid).forEach((e) => (e.value = parseFloat(e.value) + 1));
             redraw();
-        };
-    }
-}
+        }
+    };
+};
