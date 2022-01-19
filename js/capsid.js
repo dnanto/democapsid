@@ -280,7 +280,6 @@ class Hex {
         var T = new Path([[0, 0], tvec, tvec.rotate(-60)]);
         T.closePath();
 
-        console.log(opt);
         var G = new Group(this.intersect_grid(T, Array.from(this.grid(nc, nr)), vt, opt).flat());
         G.style = opt.face;
         G.rotate(-tvec.angle);
@@ -310,7 +309,7 @@ class Hex {
         var G = new Group(this.intersect_grid(T, Array.from(this.grid(nc, nr)), vt, opt).flat());
         G.style = opt.face;
         G.rotate(-tvec.angle);
-        // G.scale(opt.levo ? -1 : 1, 1);
+        G.scale(opt.levo ? -1 : 1, 1);
 
         T.remove();
 
