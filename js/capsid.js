@@ -101,54 +101,87 @@ class Camera {
     }
 }
 
-/**
- * Regular Icosahedron math.
- */
-class RegularIcosahedron {
+class Icosahedron {
+    constructor(s, h = -1, angle = radians(-60)) {
+        this.setEdge(s, (h = 1.25 * s), angle);
+    }
+
     // array of face vertexes
-    static faceIndexes = [
-        [0, 1, 2],
-        [3, 2, 1],
-        [3, 4, 5],
-        [3, 8, 4],
-        [0, 6, 7],
-        [0, 9, 6],
-        [4, 10, 11],
-        [6, 11, 10],
-        [2, 5, 9],
-        [11, 9, 5],
-        [1, 7, 8],
-        [10, 8, 7],
-        [3, 5, 2],
-        [3, 1, 8],
-        [0, 2, 9],
-        [0, 7, 1],
-        [6, 9, 11],
-        [6, 10, 7],
-        [4, 11, 5],
-        [4, 8, 10],
+    faceIndexes = [
+        [0, 2, 1],
+        [0, 1, 4],
+        [0, 4, 3],
+        [0, 3, 5],
+        [0, 5, 2],
+        [1, 6, 7],
+        [1, 7, 4],
+        [4, 7, 8],
+        [4, 8, 3],
+        [3, 8, 9],
+        [3, 9, 5],
+        [5, 9, 10],
+        [5, 10, 2],
+        [2, 10, 6],
+        [2, 1, 6],
+        [2, 10, 6],
+        [6, 11, 7],
+        [7, 11, 8],
+        [8, 11, 9],
+        [9, 11, 10],
+        [10, 11, 6],
     ];
+
+    setEdge(s, h, angle) {
+        h = h < 0 ? s : h;
+
+        const b = s / 2;
+        const a = phi * b;
+
+        var cam = new Camera();
+        cam.φ = radians(90 - degrees(Math.atan2(1 / (2 * phi), 0.5)));
+        cam.update();
+
+        var v = [
+            [0, b, -a, 1],
+            [b, a, 0, 1],
+            [-b, a, 0, 1],
+            [0, -b, -a, 1],
+            [a, 0, -b, 1],
+            [-a, 0, -b, 1],
+        ].map((v) =>
+            Matrix.mul(
+                cam.P,
+                v.map((e) => [e])
+            )
+        );
+
+        const A = [v[2][0][0] + h * Math.cos(angle), v[2][1][0] + h * Math.sin(angle), v[2][2][0]];
+        const B = [A[0], v[2][1][0], v[2][2][0]];
+        const r1 = Math.sqrt(v[2][0][0] * v[2][0][0] + v[2][2][0] * v[2][2][0]);
+        const C = [A[0], A[1], Math.sqrt(r1 * r1 - A[0] * A[0])];
+        const r2 = A[1] - B[1];
+        const D = [C[0], B[1] - Math.sqrt(-(B[2] * B[2]) + 2 * B[2] * C[2] + r2 * r2 - C[2] * C[2]), C[2]];
+        const a72 = radians(-72);
+        var cy = (B[1] + D[1]) / 2;
+
+        this.vertexes = v
+            .map((v) => [v[0][0], v[1][0], v[2][0], 1])
+            .concat([
+                [D[0], D[1], D[2], 1],
+                [Math.cos(a72 * 1) * D[0] - Math.sin(a72 * 1) * D[2], D[1], Math.sin(a72 * 1) * D[0] + Math.cos(a72 * 1) * D[2], 1],
+                [Math.cos(a72 * 2) * D[0] - Math.sin(a72 * 2) * D[2], D[1], Math.sin(a72 * 2) * D[0] + Math.cos(a72 * 2) * D[2], 1],
+                [Math.cos(a72 * 3) * D[0] - Math.sin(a72 * 3) * D[2], D[1], Math.sin(a72 * 3) * D[0] + Math.cos(a72 * 3) * D[2], 1],
+                [Math.cos(a72 * 4) * D[0] - Math.sin(a72 * 4) * D[2], D[1], Math.sin(a72 * 4) * D[0] + Math.cos(a72 * 4) * D[2], 1],
+                [0, cy - (v[0][1][0] - cy), 0, 1],
+            ]);
+    }
 
     /**
      * Calculate the 3D vertex projections.
      * @param {Array} P The camera matrix.
      */
-    static verts(R, P) {
-        const [a, b] = [0.5 * R, (1 / (2 * phi)) * R];
-        return [
-            [0, b, -a, 1],
-            [b, a, 0, 1],
-            [-b, a, 0, 1],
-            [0, b, a, 1],
-            [0, -b, a, 1],
-            [-a, 0, b, 1],
-            [0, -b, -a, 1],
-            [a, 0, -b, 1],
-            [a, 0, b, 1],
-            [-a, 0, -b, 1],
-            [b, -a, 0, 1],
-            [-b, -a, 0, 1],
-        ].map((v) =>
+    projectVertexes(P) {
+        return this.vertexes.map((v) =>
             Matrix.mul(
                 P,
                 v.map((e) => [e])
@@ -160,8 +193,8 @@ class RegularIcosahedron {
      * Calculate the 3D face projections.
      * @param {Array} P The camera matrix.
      */
-    static faces(R, P) {
-        var p = this.verts(R, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+    projectFaces(P) {
+        var p = this.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
         return this.faceIndexes.map((e) => [p[e[0]], p[e[1]], p[e[2]]]);
     }
 }
@@ -590,6 +623,8 @@ function drawNet(face) {
  * @returns the Group icosahedron object
  */
 function drawIco(face, R, F, P, opt) {
+    var ico = new Icosahedron(R);
+
     // affine transform each triangle to the 2D projection of icosahedron face
     const A = Matrix.inv3([
         [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],
@@ -598,14 +633,15 @@ function drawIco(face, R, F, P, opt) {
     ]);
 
     var fibers = [];
-    if (F > 0) {
-        var p1 = RegularIcosahedron.verts(R, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        var p2 = RegularIcosahedron.verts(F, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        fibers = p1.map((_, i) => [p1[i], p2[i]]);
-    }
+    // if (F > 0) {
+    //     var p1 = Icosahedron.projectVertexes(R, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+    //     var p2 = Icosahedron.projectVertexes(F, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+    //     fibers = p1.map((_, i) => [p1[i], p2[i]]);
+    // }
 
     return new Group(
-        RegularIcosahedron.faces(R, P)
+        ico
+            .projectFaces(P)
             .concat(fibers)
             .sort(
                 (a, b) =>
