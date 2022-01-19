@@ -243,101 +243,78 @@ class Hex {
         return [i * this.dx + j * this.ddx, j * this.dy + i * this.ddy];
     }
 
-    /**
-     * Generate hexagonal grid.
-     * @param {*} nr the number of rows
-     * @param {*} nc the number of columns
-     */
-    *grid(nr, nc) {
+    *grid(xc, xr) {
         const u = new Group(this.unit(this.R));
-        for (var i = 0; i < nr; i++) {
-            for (var j = 0; j < nc; j++) {
+        for (var i = xc[0]; i <= xc[1]; i++) {
+            for (var j = xr[0]; j <= xr[1]; j++) {
                 var v = u.clone();
                 v.position = new Point(this.coor(i, j));
-                v.coordinate = [i, j];
                 yield v;
             }
         }
         u.remove();
     }
 
-    /**
-     * Perform grid walk.
-     * @param {*} h the h-parameter
-     * @param {*} k the k-parameter
-     * @param {*} c the starting column
-     * @param {*} r the starting row
-     * @returns the list of triangular walk coordinates as grid and cartesian values
-     */
-    walk(h, k, c = 0, r = 0) {
-        var [i1, i2, i3] = [
-            [r, c],
-            [r + h, c + k],
-            [r - k, c + k + h],
-        ];
-        var p1 = new Point(this.coor(i1[0], i1[1]));
-        var p2 = new Point(this.coor(i2[0], i2[1]));
-        var p3 = new Point(this.coor(i3[0], i3[1]));
-        return [
-            [i1, i2, i3],
-            [p1, p2, p3],
-        ];
+    intersect_grid(T, G, v, opt) {
+        return G.map((e) => {
+            return e.children.map((f) => {
+                var x = T.intersect(f);
+                x.type = v.some((y) => x.contains(y)) ? "pen" : "hex";
+                x.style = opt[x.type + "." + f.name.split(" ")[0]];
+                return x;
+            });
+        });
     }
 
-    /**
-     * Calculate the face object.
-     * @param {*} h the h-parameter
-     * @param {*} k the k-parameter
-     * @param {*} opt the style options
-     * @returns the face Group object
-     */
     face(h, k, opt = {}) {
-        const n = h + k + 1;
+        // triangulation
+        const d = 2 * this.r;
+        const hvec = new Point(d * h, 0);
+        const kvec = new Point(d * k, 0).rotate(60);
+        const tvec = hvec.add(kvec);
 
-        var [i, p] = this.walk(h, k, 0, k);
-        var f = new Path(p, { closed: true });
-        f.closed = true;
-        f.style = opt.face;
+        const nc = [0, h + k];
+        const nr = [-h, k];
+        const vt = [[0, 0], tvec, tvec.rotate(-60)];
 
-        // computer intersection of triangle with hexagonal grid
-        var g = [];
-        Array.from(this.grid(n, n))
-            .map((u) => {
-                // penton or hexagon
-                var type =
-                    /**/ (u.coordinate[0] === i[0][0] && u.coordinate[1] == i[0][1]) ||
-                    (u.coordinate[0] === i[1][0] && u.coordinate[1] == i[1][1]) ||
-                    (u.coordinate[0] === i[2][0] && u.coordinate[1] == i[2][1])
-                        ? "pen"
-                        : "hex";
-                u.type = type;
-                return u;
-            })
-            // overlay penton elements
-            .sort((a, b) => b.type < a.type)
-            // compute intersection with the computed grid face
-            .forEach((u) => {
-                u.children.forEach((e) => {
-                    var x = f.intersect(e);
-                    if (x.segments.length > 0) {
-                        x.style = opt[u.type + "." + e.name.split(" ")[0]];
-                        g.push(x);
-                    }
-                });
-                u.remove();
-            });
-        f.remove();
-        g = new Group(g);
+        var T = new Path([[0, 0], tvec, tvec.rotate(-60)]);
+        T.closePath();
 
-        // rotate to have flat triangular base
-        var c = p[0]
-            .add(p[1])
-            .add(p[2])
-            .multiply(1 / 3);
-        g.rotate(90 - c.subtract(p[0]).angle, c);
-        g.scale(opt.levo ? -1 : 1, 1);
+        console.log(opt);
+        var G = new Group(this.intersect_grid(T, Array.from(this.grid(nc, nr)), vt, opt).flat());
+        G.style = opt.face;
+        G.rotate(-tvec.angle);
+        G.scale(opt.levo ? -1 : 1, 1);
 
-        return g;
+        T.remove();
+
+        return G;
+    }
+
+    face5(h, k, K, opt = {}) {
+        // triangulation
+        const d = 2 * this.r;
+        const hvec = new Point(d * h, 0);
+        const kvec = new Point(d * k, 0).rotate(60);
+        const Kvec = new Point(d * K, 0).rotate(120);
+        const tvec = hvec.add(kvec);
+        const qvec = kvec.add(Kvec);
+
+        const nc = [-K, h + k];
+        const nr = [-h, k + K];
+        const vt = [[0, 0], tvec, tvec.rotate(-60), qvec];
+
+        var T = new Path([0, 0], qvec, tvec);
+        T.closePath();
+
+        var G = new Group(this.intersect_grid(T, Array.from(this.grid(nc, nr)), vt, opt).flat());
+        G.style = opt.face;
+        G.rotate(-tvec.angle);
+        // G.scale(opt.levo ? -1 : 1, 1);
+
+        T.remove();
+
+        return G;
     }
 }
 

@@ -18,7 +18,7 @@ function eid(id) {
  */
 function tNumber() {
     const [h, k] = [opt.h, opt.k];
-    eid("tnumber").innerHTML = "&nbsp;&nbsp;=&nbsp;" + `${h}<sup>2</sup>&nbsp;+&nbsp;` + `(${h})(${k})&nbsp;+&nbsp;` + `${k}<sup>2</sup><br>&nbsp;&nbsp;=&nbsp;` + `${h * h + h * k + k * k}`;
+    eid("tnumber").innerHTML = `=&nbsp;${h}<sup>2</sup>&nbsp;+&nbsp;(${h})(${k})&nbsp;+&nbsp;${k}<sup>2</sup>&nbsp=&nbsp${h * h + h * k + k * k}`;
 }
 
 /**

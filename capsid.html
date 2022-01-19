@@ -25,6 +25,8 @@
                     <div><input type="number" id="h" step="1" value="2" min="0" /></div>
                     <div><label for="k">k</label></div>
                     <div><input type="number" id="k" step="1" value="1" min="0" /></div>
+                    <div><label for="K">K</label></div>
+                    <div><input type="number" id="K" step="1" value="2" min="0" /></div>
                     <div><label for="tnumber">T-Number</label></div>
                     <div id="tnumber">0</div>
                 </div>
@@ -37,6 +39,13 @@
                             <option value="ico" selected>ico</option>
                             <option value="net">net</option>
                             <option value="face">face</option>
+                        </select>
+                    </div>
+                    <div><label for="symmetry">symmetry</label></div>
+                    <div>
+                        <select id="symmetry">
+                            <option value="equilateral" selected>equilateral</option>
+                            <option value="5-fold">5-fold</option>
                         </select>
                     </div>
                     <div><label for="geometry">geometry</label></div>
@@ -71,11 +80,11 @@
                         </select>
                     </div>
 
-                    <div><label for="R3">radius (ico)</label></div>
-                    <div><input type="number" id="R3" step="any" value="500" min="0" /></div>
-                    <div><label for="R2">radius (net)</label></div>
+                    <div><label for="R3">ico edge</label></div>
+                    <div><input type="number" id="R3" step="any" value="300" min="0" /></div>
+                    <div><label for="R2">hex radius </label></div>
                     <div><input type="number" id="R2" step="any" value="25" min="0" /></div>
-                    <div><label for="F">radius (fiber)</label></div>
+                    <div><label for="F">fiber radius</label></div>
                     <div><input type="number" id="F" step="any" value="650" min="0" /></div>
 
                     <div><label for="θ">θ</label></div>
