@@ -622,9 +622,7 @@ function drawNet(face) {
  * @param {*} opt the style options
  * @returns the Group icosahedron object
  */
-function drawIco(face, R, F, P, opt) {
-    var ico = new Icosahedron(R);
-
+function drawIco(face, ico, F, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
     const A = Matrix.inv3([
         [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],

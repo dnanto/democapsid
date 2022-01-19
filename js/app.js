@@ -2,6 +2,7 @@ let opt;
 let cam;
 let hex;
 let face;
+let ico;
 
 /**
  * Alias getElementById
@@ -147,6 +148,10 @@ function setProjection(name) {
     updateCam();
 }
 
+function updateIco() {
+    ico.setEdge(opt.R3);
+}
+
 /**
  * Set the projection from event.
  */
@@ -204,7 +209,7 @@ function redraw() {
     var obj;
     switch (eid("mode").value) {
         case "ico":
-            obj = drawIco(face, opt.R3, opt.F, cam.P, getIcoStyle());
+            obj = drawIco(face, ico, opt.F, cam.P, getIcoStyle());
             break;
         case "net":
             obj = drawNet(face);
@@ -235,6 +240,7 @@ window.onload = function () {
         .concat(Array.from(document.querySelectorAll("[id^='pen.']")))
         .forEach((e) => e.addEventListener("change", drawFace));
     ["θ", "ψ", "φ"].map(eid).forEach((e) => e.addEventListener("change", updateCam));
+    eid("R3").addEventListener("change", updateIco);
     ["h", "k", "geometry", "projection", "rotation", "mode", "R2", "R3", "F", "θ", "ψ", "φ"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
@@ -248,6 +254,7 @@ window.onload = function () {
     //init
     getOpt();
     setProjection(eid("projection").value);
+    ico = new Icosahedron(opt.R3);
 
     // draw
     drawHex();
