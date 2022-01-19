@@ -149,7 +149,7 @@ function setProjection(name) {
 }
 
 function updateIco() {
-    ico.setEdge(opt.R3);
+    ico.setEdge(opt.R3, undefined);
 }
 
 /**
@@ -165,28 +165,28 @@ function setProjectionEvent(ele) {
 function drawHex() {
     switch (eid("geometry").value) {
         case "Hex":
-            hex = new Hex(opt.R2);
+            hex = new Hex(opt.R2, opt.h, opt.k);
             break;
         case "TriHex":
-            hex = new TriHex(opt.R2);
+            hex = new TriHex(opt.R2, opt.h, opt.k);
             break;
         case "SnubHex":
-            hex = new SnubHex(opt.R2);
+            hex = new SnubHex(opt.R2, opt.h, opt.k);
             break;
         case "RhombiTriHex":
-            hex = new RhombiTriHex(opt.R2);
+            hex = new RhombiTriHex(opt.R2, opt.h, opt.k);
             break;
         case "DualHex":
-            hex = new Hex(opt.R2);
+            hex = new Hex(opt.R2, opt.h, opt.k);
             break;
         case "DualTriHex":
-            hex = new DualTriHex(opt.R2);
+            hex = new DualTriHex(opt.R2, opt.h, opt.k);
             break;
         case "DualSnubHex":
-            hex = new DualSnubHex(opt.R2);
+            hex = new DualSnubHex(opt.R2, opt.h, opt.k);
             break;
         case "DualRhombiTriHex":
-            hex = new DualRhombiTriHex(opt.R2);
+            hex = new DualRhombiTriHex(opt.R2, opt.h, opt.k);
     }
 }
 
@@ -194,7 +194,7 @@ function drawHex() {
  * Draw the face.
  */
 function drawFace() {
-    face = hex.face(opt.h, opt.k, getFaceStyle());
+    face = hex.face(getFaceStyle());
 }
 
 /**
@@ -230,8 +230,8 @@ window.onload = function () {
     cam = new Camera();
 
     // set event listeners for UI
-    ["geometry", "R2"].map(eid).forEach((e) => e.addEventListener("change", drawHex));
-    ["projection"].map(eid).forEach((e) => e.addEventListener("change", setProjectionEvent));
+    ["h", "k", "geometry", "R2"].map(eid).forEach((e) => e.addEventListener("change", drawHex));
+    eid("projection").addEventListener("change", setProjectionEvent);
     ["h", "k"].map(eid).forEach((e) => e.addEventListener("change", tNumber));
     ["h", "k", "geometry", "rotation", "R2"]
         .map(eid)

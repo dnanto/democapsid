@@ -26,7 +26,11 @@ class Matrix {
      * @return {Number} The determinant;
      */
     static det3(A) {
-        return A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+        return (
+            A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - //
+            A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + //
+            A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0])
+        );
     }
 
     /**
@@ -102,7 +106,7 @@ class Camera {
 }
 
 class Icosahedron {
-    constructor(s, h = -1, angle = radians(-60)) {
+    constructor(s, h = undefined, angle = radians(-60)) {
         this.setEdge(s, h, angle);
     }
 
@@ -113,6 +117,7 @@ class Icosahedron {
         [0, 4, 3],
         [0, 3, 5],
         [0, 5, 2],
+        [1, 2, 6],
         [1, 6, 7],
         [1, 7, 4],
         [4, 7, 8],
@@ -122,7 +127,6 @@ class Icosahedron {
         [5, 9, 10],
         [5, 10, 2],
         [2, 10, 6],
-        [2, 1, 6],
         [2, 10, 6],
         [6, 11, 7],
         [7, 11, 8],
@@ -131,8 +135,8 @@ class Icosahedron {
         [10, 11, 6],
     ];
 
-    setEdge(s, h, angle) {
-        h = h < 0 ? s : h;
+    setEdge(s, h = undefined, angle = radians(-60)) {
+        h = h === undefined ? s : h;
 
         const b = s / 2;
         const a = phi * b;
@@ -155,12 +159,20 @@ class Icosahedron {
             )
         );
 
+        // console.log("s", s);
+        // console.log("h", h);
         const A = [v[2][0][0] + h * Math.cos(angle), v[2][1][0] + h * Math.sin(angle), v[2][2][0]];
+        // console.log("A", A);
         const B = [A[0], v[2][1][0], v[2][2][0]];
+        // console.log("B", B);
         const r1 = Math.sqrt(v[2][0][0] * v[2][0][0] + v[2][2][0] * v[2][2][0]);
+        // console.log("r1", r1);
         const C = [A[0], A[1], Math.sqrt(r1 * r1 - A[0] * A[0])];
+        // console.log("C", C);
         const r2 = A[1] - B[1];
+        // console.log("r2", r2);
         const D = [C[0], B[1] - Math.sqrt(-(B[2] * B[2]) + 2 * B[2] * C[2] + r2 * r2 - C[2] * C[2]), C[2]];
+        // console.log("D", D);
         const a72 = radians(-72);
         var cy = (B[1] + D[1]) / 2;
 
@@ -174,6 +186,8 @@ class Icosahedron {
                 [Math.cos(a72 * 4) * D[0] - Math.sin(a72 * 4) * D[2], D[1], Math.sin(a72 * 4) * D[0] + Math.cos(a72 * 4) * D[2], 1],
                 [0, cy - (v[0][1][0] - cy), 0, 1],
             ]);
+
+        // console.log(this.vertexes);
     }
 
     /**
@@ -200,11 +214,7 @@ class Icosahedron {
 }
 
 class Hex {
-    /**
-     * Hex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
+    constructor(R, h = 0, k = 0, K = 0) {
         // hexagonal circumradius
         this.R = R;
         // haxagonal inradius
@@ -221,6 +231,22 @@ class Hex {
         this.ddx = this.r;
         // grid y-offset per row
         this.ddy = 0;
+
+        this.h = h;
+        this.k = k;
+        this.K = K;
+    }
+
+    hvec() {
+        return new Point(this.dx * this.h, this.ddy * this.h);
+    }
+
+    kvec() {
+        return new Point(this.dx * this.k, this.ddy * this.k).rotate(60);
+    }
+
+    Tvec() {
+        return new Point(2 * this.r * this.K, 0).rotate(120);
     }
 
     /**
@@ -261,20 +287,18 @@ class Hex {
                 var x = T.intersect(f);
                 x.type = v.some((y) => x.contains(y)) ? "pen" : "hex";
                 x.style = opt[x.type + "." + f.name.split(" ")[0]];
+                console.log(x.type, x.style);
                 return x;
             });
         });
     }
 
-    face(h, k, opt = {}) {
+    face(opt = {}) {
         // triangulation
-        const d = 2 * this.r;
-        const hvec = new Point(d * h, 0);
-        const kvec = new Point(d * k, 0).rotate(60);
-        const tvec = hvec.add(kvec);
+        const tvec = this.hvec().add(this.kvec());
 
-        const nc = [0, h + k];
-        const nr = [-h, k];
+        const nc = [0, this.h + this.k];
+        const nr = [-this.h, this.k];
         const vt = [[0, 0], tvec, tvec.rotate(-60)];
 
         var T = new Path([[0, 0], tvec, tvec.rotate(-60)]);
@@ -293,11 +317,8 @@ class Hex {
     face5(h, k, K, opt = {}) {
         // triangulation
         const d = 2 * this.r;
-        const hvec = new Point(d * h, 0);
-        const kvec = new Point(d * k, 0).rotate(60);
-        const Kvec = new Point(d * K, 0).rotate(120);
-        const tvec = hvec.add(kvec);
-        const qvec = kvec.add(Kvec);
+        const tvec = this.hvec(h).add(this.kvec(k));
+        const qvec = kvec.add(this.Kvec(K));
 
         const nc = [-K, h + k];
         const nr = [-h, k + K];
@@ -318,12 +339,8 @@ class Hex {
 }
 
 class TriHex extends Hex {
-    /**
-     * TriHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.r = (root3 / 2) * R;
         this.dx = 2 * R;
         this.dy = 2 * this.r;
@@ -344,12 +361,8 @@ class TriHex extends Hex {
 }
 
 class SnubHex extends Hex {
-    /**
-     * SnubHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.r = (root3 / 2) * R;
         this.dx = 2.5 * R;
         this.dy = 3 * this.r;
@@ -399,12 +412,8 @@ class SnubHex extends Hex {
 }
 
 class RhombiTriHex extends Hex {
-    /**
-     * RhombiTriHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.r = (root3 / 2) * R;
         this.dx = 2 * this.r + R;
         this.dy = 0.5 * R + (this.R * root3) / 2 + R;
@@ -429,12 +438,8 @@ class RhombiTriHex extends Hex {
 }
 
 class DualTriHex extends Hex {
-    /**
-     * DualTriHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.dx = 4 * R;
         this.dy = (4 * R * root3) / 2;
         this.ddx = 2 * R;
@@ -483,12 +488,8 @@ class DualTriHex extends Hex {
 }
 
 class DualSnubHex extends Hex {
-    /**
-     * DualSnubHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.dx = 2.5 * R;
         this.dy = 2 * this.r + 2 * ((this.R * root3) / 3) - (this.R * root3) / 6;
         this.ddx = 0.5 * R;
@@ -514,12 +515,8 @@ class DualSnubHex extends Hex {
 }
 
 class DualRhombiTriHex extends Hex {
-    /**
-     * DualRhombiHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
     }
 
     /**
