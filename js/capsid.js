@@ -283,14 +283,17 @@ class Hex {
 
     intersect_grid(T, G, v, opt) {
         return G.map((e) => {
-            return e.children.map((f) => {
-                var x = T.intersect(f);
-                x.type = v.some((y) => x.contains(y)) ? "pen" : "hex";
-                x.style = opt[x.type + "." + f.name.split(" ")[0]];
-                console.log(x.type, x.style);
-                return x;
+            e.type = v.some((y) => e.contains(y)) ? "pen" : "hex";
+            return e;
+        })
+            .sort((a, b) => b.type < a.type)
+            .map((e) => {
+                return e.children.map((f) => {
+                    var x = T.intersect(f);
+                    x.style = opt[e.type + "." + f.name.split(" ")[0]];
+                    return x;
+                });
             });
-        });
     }
 
     face(opt = {}) {
