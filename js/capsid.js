@@ -103,7 +103,7 @@ class Camera {
 
 class Icosahedron {
     constructor(s, h = -1, angle = radians(-60)) {
-        this.setEdge(s, (h = 1.25 * s), angle);
+        this.setEdge(s, h, angle);
     }
 
     // array of face vertexes
