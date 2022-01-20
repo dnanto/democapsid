@@ -251,8 +251,8 @@ class Hex {
         return new Point(this.dx * this.k, this.ddy * this.k).rotate(60);
     }
 
-    Tvec() {
-        return new Point(2 * this.r * this.K, 0).rotate(120);
+    Kvec() {
+        return new Point(this.dx * this.K, this.ddy * this.K).rotate(120);
     }
 
     /**
@@ -304,7 +304,6 @@ class Hex {
     }
 
     face(opt = {}) {
-        // triangulation
         const tvec = this.hvec().add(this.kvec());
 
         const nc = [0, this.h + this.k];
@@ -324,25 +323,25 @@ class Hex {
         return G;
     }
 
-    face5(h, k, K, opt = {}) {
-        // triangulation
-        const d = 2 * this.r;
-        const tvec = this.hvec(h).add(this.kvec(k));
-        const qvec = kvec.add(this.Kvec(K));
+    face5(opt = {}) {
+        const kvec = this.kvec();
+        const tvec = this.hvec().add(kvec);
+        const qvec = kvec.add(this.Kvec());
 
-        const nc = [-K, h + k];
-        const nr = [-h, k + K];
+        const nc = [-this.K, this.h + this.k];
+        const nr = [-this.h, this.k + this.K];
         const vt = [[0, 0], tvec, tvec.rotate(-60), qvec];
 
-        var T = new Path([0, 0], qvec, tvec);
-        T.closePath();
+        var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
+        T1.closePath();
+        var T2 = new Path([0, 0], qvec, tvec);
+        T2.closePath();
 
-        var G = new Group(this.intersect_grid(T, Array.from(this.grid(nc, nr)), vt, opt).flat());
+        var g = Array.from(this.grid(nc, nr));
+        var G = new Group([new Group(this.intersect_grid(T1, g, vt, opt).flat()), new Group(this.intersect_grid(T2, g, vt, opt).flat())]);
         G.style = opt.face;
         G.rotate(-tvec.angle);
         G.scale(opt.levo ? -1 : 1, 1);
-
-        T.remove();
 
         return G;
     }
