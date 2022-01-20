@@ -232,6 +232,8 @@ class Hex {
         // grid y-offset per row
         this.ddy = 0;
 
+        this.circumradius = this.R;
+
         this.h = h;
         this.k = k;
         this.K = K;
@@ -283,17 +285,18 @@ class Hex {
 
     intersect_grid(T, G, v, opt) {
         return G.map((e) => {
-            e.type = v.some((y) => e.contains(y)) ? "pen" : "hex";
-            return e;
-        })
-            .sort((a, b) => b.type < a.type)
-            .map((e) => {
-                return e.children.map((f) => {
+            return e.children
+                .filter((f) => {
+                    return !f.name.startsWith("cir-1");
+                })
+                .map((f) => {
                     var x = T.intersect(f);
-                    x.style = opt[e.type + "." + f.name.split(" ")[0]];
+                    // NOTE: subtract 1 from circumradius as a correction factor for SnubHex (temporary)
+                    x.type = v.some((y) => x.bounds.center.getDistance(y) < this.circumradius - 1) ? "pen" : "hex";
+                    x.style = opt[x.type + "." + f.name.split(" ")[0]];
                     return x;
                 });
-            });
+        });
     }
 
     face(opt = {}) {
@@ -348,6 +351,7 @@ class TriHex extends Hex {
         this.dx = 2 * R;
         this.dy = 2 * this.r;
         this.ddx = R;
+        this.circumradius = this.r + 0.5 * root3 * this.R;
     }
 
     /**
@@ -359,7 +363,9 @@ class TriHex extends Hex {
         tri.name = "mer-2";
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.name = "mer-1";
-        return [tri, [1, 2, 3, 4, 5].map((e) => tri.clone().rotate(60 * e, [0, 0])), hex].flat();
+        var cir = new Path.Circle([0, 0], this.circumradius);
+        cir.name = "cir-1";
+        return [tri, tri.clone().rotate(60, [0, 0]), hex, cir];
     }
 }
 
@@ -371,6 +377,7 @@ class SnubHex extends Hex {
         this.dy = 3 * this.r;
         this.ddy = this.r;
         this.ddx = 0.5 * R;
+        this.circumradius = 2.0 * this.R;
     }
 
     /**
@@ -390,6 +397,8 @@ class SnubHex extends Hex {
         tri5.name = "mer-2";
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.name = "mer-1";
+        var cir = new Path.Circle([0, 0], this.circumradius);
+        cir.name = "cir-1";
         return [
             tri1,
             tri1.clone().rotate(-60, tri1.bounds.bottomLeft),
@@ -399,17 +408,8 @@ class SnubHex extends Hex {
             tri2.clone().rotate(-120, tri2.bounds.bottomCenter),
             tri3,
             tri3.clone().rotate(-60, tri3.bounds.bottomRight),
-            tri3.clone().rotate(-120, tri3.bounds.bottomRight),
-            tri4,
-            tri4.clone().rotate(-60, tri4.bounds.topRight),
-            tri4.clone().rotate(-120, tri4.bounds.topRight),
-            tri5,
-            tri5.clone().rotate(-60, tri5.bounds.topCenter),
-            tri5.clone().rotate(-120, tri5.bounds.topCenter),
-            tri5.clone().rotate(-180, tri5.bounds.topCenter),
-            tri1.clone().rotate(60, tri1.bounds.bottomRight),
-            tri1.clone().rotate(120, tri1.bounds.bottomRight),
             hex,
+            cir,
         ];
     }
 }
@@ -421,6 +421,8 @@ class RhombiTriHex extends Hex {
         this.dx = 2 * this.r + R;
         this.dy = 0.5 * R + (this.R * root3) / 2 + R;
         this.ddx = this.r + R / 2;
+        // not an exact circumradius solution, but it works for now...
+        this.circumradius = this.R + this.R / Math.cos(radians(30));
     }
 
     /**
@@ -436,7 +438,9 @@ class RhombiTriHex extends Hex {
         var tri = new Path.RegularPolygon([0, 0], 3, this.R3);
         tri.position.y = hex.bounds.bottom + (this.R * root3) / 2 / 2;
         tri.name = "mer-2";
-        return [sqr, [1, 2, 3, 4, 5].map((e) => sqr.clone().rotate(60 * e, [0, 0])), tri, [1, 2, 3, 4, 5].map((e) => tri.clone().rotate(60 * e, [0, 0])), hex].flat();
+        var cir = new Path.Circle([0, 0], this.circumradius);
+        cir.name = "cir-1";
+        return [sqr, sqr.clone().rotate(60, [0, 0]), sqr.clone().rotate(120, [0, 0]), tri, tri.clone().rotate(60, [0, 0]), hex, cir];
     }
 }
 
@@ -446,6 +450,7 @@ class DualTriHex extends Hex {
         this.dx = 4 * R;
         this.dy = (4 * R * root3) / 2;
         this.ddx = 2 * R;
+        this.circumradius = 2 * (this.r + this.r3);
     }
 
     /**
