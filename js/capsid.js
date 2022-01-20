@@ -611,6 +611,36 @@ function drawNet(face) {
     return net;
 }
 
+function drawNet5(face) {
+    var f2 = face.clone().scale(-1, -1);
+    var p = face.children[1].children
+        .flatMap((e) => {
+            return e.segments.map((f) => {
+                return f.point;
+            });
+        })
+        .reduce((a, b) => {
+            return a.y < b.y ? b : a;
+        });
+
+    f2.bounds.left = p.x;
+    f2.position.y += face.children[0].bounds.height;
+
+    var G1 = new Group([face.clone(), f2]);
+    var G2 = G1.clone();
+    G2.position.x += face.children[0].bounds.width;
+    var G3 = G2.clone();
+    G3.position.x += face.children[0].bounds.width;
+    var G4 = G3.clone();
+    G4.position.x += face.children[0].bounds.width;
+    var G5 = G4.clone();
+    G5.position.x += face.children[0].bounds.width;
+
+    var net = new Group([G1, G2, G3, G4, G5]);
+    net.position = view.center;
+    return net;
+}
+
 function drawIco(face, ico, fib, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
     const A = Matrix.inv3([

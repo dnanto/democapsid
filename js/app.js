@@ -220,7 +220,7 @@ function redraw() {
             obj = drawIco(face, ico, fib, cam.P, getIcoStyle());
             break;
         case "net":
-            obj = eid("symmetry").value === "equilateral" ? drawNet(face) : drawNet(face);
+            obj = eid("symmetry").value === "equilateral" ? drawNet(face) : drawNet5(face);
             break;
         case "face":
             drawFace();
