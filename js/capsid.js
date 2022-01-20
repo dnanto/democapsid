@@ -114,26 +114,29 @@ class Icosahedron {
     faceIndexes = [
         [0, 2, 1],
         [0, 1, 4],
-        [0, 4, 3],
-        [0, 3, 5],
+        [0, 4, 3], // B
+        [0, 3, 5], // B
         [0, 5, 2],
-        [1, 2, 6],
-        [1, 6, 7],
+        [1, 2, 6], // T
+        [1, 6, 7], // T
         [1, 7, 4],
         [4, 7, 8],
-        [4, 8, 3],
-        [3, 8, 9],
-        [3, 9, 5],
+        [4, 8, 3], // B
+        [3, 8, 9], // B
+        [3, 9, 5], // B
         [5, 9, 10],
         [5, 10, 2],
-        [2, 10, 6],
-        [2, 10, 6],
-        [6, 11, 7],
+        [2, 10, 6], // T
+        [6, 11, 7], // T
         [7, 11, 8],
         [8, 11, 9],
         [9, 11, 10],
-        [10, 11, 6],
+        [10, 11, 6], // T
     ];
+
+    isCap(i) {
+        return [2, 3, 5, 6, 9, 10, 11, 14, 15, 19].some((e) => e === i);
+    }
 
     setEdge(s, h = undefined, angle = radians(-60)) {
         this.s = s;
@@ -255,6 +258,14 @@ class Hex {
         return new Point(this.dx * this.K, this.ddy * this.K).rotate(120);
     }
 
+    tvec() {
+        return this.hvec().add(this.kvec());
+    }
+
+    qvec() {
+        return this.kvec().add(this.Kvec());
+    }
+
     /**
      * Calculate lattice unit.
      * @returns the array of lattice objects
@@ -302,7 +313,6 @@ class Hex {
                     return f.length > 1;
                 })
                 .map((f) => {
-                    console.log("capsid.js", this.h, this.k, this.K);
                     var c = centroid(f.segments);
                     f.type = v.some((y) => c.getDistance(y) < this.circumradius) ? "pen" : "hex";
                     f.style = opt[f.type + "." + f.name.split(" ")[0]];
@@ -312,7 +322,7 @@ class Hex {
     }
 
     face(opt = {}) {
-        const tvec = this.hvec().add(this.kvec());
+        const tvec = this.tvec();
 
         const nc = [0, this.h + this.k];
         const nr = [-this.h, this.k];
@@ -332,9 +342,8 @@ class Hex {
     }
 
     face5(opt = {}) {
-        const kvec = this.kvec();
-        const tvec = this.hvec().add(kvec);
-        const qvec = kvec.add(this.Kvec());
+        const tvec = this.tvec();
+        const qvec = this.qvec();
 
         const nc = [-this.K, this.h + this.k];
         const nr = [-this.h, this.k + this.K];
@@ -623,10 +632,13 @@ function drawNet5(face) {
             return a.y < b.y ? b : a;
         });
 
-    f2.bounds.left = p.x;
+    f2.bounds.left = p.x < face.children[0].bounds.right ? p.x : face.children[0].bounds.right;
     f2.position.y += face.children[0].bounds.height;
 
-    var G1 = new Group([face.clone(), f2]);
+    var c1 = new Path.Circle(p, 10);
+    c1.strokeColor = "black";
+
+    var G1 = new Group([face.clone(), f2, c1]);
     var G2 = G1.clone();
     G2.position.x += face.children[0].bounds.width;
     var G3 = G2.clone();
@@ -685,4 +697,65 @@ function drawIco(face, ico, fib, P, opt) {
     );
 }
 
+function drawIco5(ff, ico, fib, P, opt) {
+    // affine transform each triangle to the 2D projection of icosahedron face
+    var face = ff.children[0];
+    // var face1 = ff.children[1];
+
+    // var p = face1.children
+    //     .flatMap((e) => {
+    //         return e.segments.map((f) => {
+    //             return f.point;
+    //         });
+    //     })
+    //     .reduce((a, b) => {
+    //         return a.y < b.y ? b : a;
+    //     });
+
+    const A = Matrix.inv3([
+        [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],
+        [face.bounds.topCenter.y, face.bounds.bottomLeft.y, face.bounds.bottomRight.y],
+        [1, 1, 1],
+    ]);
+    // const A1 = Matrix.inv3([
+    //     [p.x, face1.bounds.topLeft.x, face.bounds.topRight.x],
+    //     [p.y, face1.bounds.topLeft.y, face.bounds.topRight.y],
+    //     [1, 1, 1],
+    // ]);
+
+    var fibers = [];
+    if (fib.s > 0) {
+        var p1 = ico.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        var p2 = fib.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        fibers = p1.map((_, i) => [p1[i], p2[i]]);
+    }
+
+    return new Group(
+        ico
+            .projectFaces(P)
+            // .concat(fibers)
+            .sort(
+                (a, b) =>
+                    // sort faces by z-order
+                    a[0][2] + a[1][2] + (a.length < 3 ? 0 : a[2][2]) - (b[0][2] + b[1][2] + (b.length < 3 ? 0 : b[2][2]))
+            )
+            .map((e, i) => {
+                if (e.length == 3) {
+                    const B = [
+                        [e[0][0], e[1][0], e[2][0]],
+                        [e[0][1], e[1][1], e[2][1]],
+                        [1, 1, 1],
+                    ];
+                    const M = Matrix.mul(B, A);
+                    return face.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
+                } else {
+                    var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
+                    fiber.style = opt["fib.mer"];
+                    var knob = new Path.Circle([e[1][0], e[1][1]], opt["knb.mer"].R);
+                    knob.style = opt["knb.mer"]["style"];
+                    return new Group([fiber, knob]);
+                }
+            })
+    );
+}
 module.exports = [Matrix, Hex, TriHex, SnubHex, RhombiTriHex, DualTriHex, DualSnubHex, DualRhombiTriHex];

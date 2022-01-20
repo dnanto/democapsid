@@ -150,12 +150,43 @@ function setProjection(name) {
     updateCam();
 }
 
+// function edgeToIcoParams(edge) {
+//     var angle = radians(eid("symmetry").value === "equilateral" ? 60 : hex.tvec().getDirectedAngle(hex.qvec()));
+//     return eid("symmetry").value === "equilateral" //
+//         ? [edge, angle]
+//         : [edge / 2 / Math.cos(angle), angle];
+// }
+
 function updateIco() {
-    ico.setEdge(opt.R3, undefined);
+    // set angle based on symmetry
+    // var params = edgeToIcoParams(opt.R3);
+    // ico.setEdge(opt.R3, params[0], params[1]);
+
+    // set angle based on symmetry
+    var obj = new Hex(1, opt.h, opt.k, opt.K);
+    var ang = eid("symmetry").value === "equilateral" ? radians(60) : radians(obj.tvec().getDirectedAngle(obj.qvec()));
+    var hyp = eid("symmetry").value === "equilateral" ? opt.R3 : opt.R3 / Math.cos(ang);
+
+    console.log(opt.R3, hyp, -degrees(ang));
+    ico.setEdge(opt.R3, hyp, -ang);
+
+    // var obj2 = new Hex(opt.F / 2, opt.h, opt.k, opt.K);
+    // const y =
+    //     eid("symmetry").value === "equilateral" //
+    //         ? [obj2.R, 60]
+    //         : [obj2.qvec().length, obj2.tvec().getDirectedAngle(obj2.qvec()) % 90];
+    // // console.log(obj2.R, y);
+    // fib.setEdge(obj2.R, y[0], radians(-y[1]));
 }
 
 function updateFib() {
-    fib.setEdge(opt.F, undefined);
+    var obj = new Hex(opt.F, opt.h, opt.k, opt.K);
+    const x =
+        eid("symmetry").value === "equilateral" //
+            ? [obj.R, 60]
+            : [obj.qvec().length, obj.tvec().getDirectedAngle(obj.qvec())];
+    console.log(obj.R, x);
+    fib.setEdge(obj.R, x[0], radians(-x[1]));
 }
 
 /**
@@ -169,7 +200,6 @@ function setProjectionEvent(ele) {
  * Draw the hexagonal lattice unit.
  */
 function drawHex() {
-    console.log("app.js", opt.h, opt.k, opt.K);
     switch (eid("geometry").value) {
         case "Hex":
             hex = new Hex(opt.R2, opt.h, opt.k, opt.K);
@@ -202,7 +232,10 @@ function drawHex() {
  */
 function drawFace() {
     console.log(eid("symmetry").value);
-    face = eid("symmetry").value === "equilateral" ? hex.face(getFaceStyle()) : hex.face5(getFaceStyle());
+    face =
+        eid("symmetry").value === "equilateral" //
+            ? hex.face(getFaceStyle())
+            : hex.face5(getFaceStyle());
 }
 
 /**
@@ -217,10 +250,16 @@ function redraw() {
     var obj;
     switch (eid("mode").value) {
         case "ico":
-            obj = drawIco(face, ico, fib, cam.P, getIcoStyle());
+            obj =
+                eid("symmetry").value === "equilateral" //
+                    ? drawIco(face, ico, fib, cam.P, getIcoStyle())
+                    : drawIco5(face, ico, fib, cam.P, getIcoStyle());
             break;
         case "net":
-            obj = eid("symmetry").value === "equilateral" ? drawNet(face) : drawNet5(face);
+            obj =
+                eid("symmetry").value === "equilateral" //
+                    ? drawNet(face)
+                    : drawNet5(face);
             break;
         case "face":
             drawFace();
@@ -248,8 +287,7 @@ window.onload = function () {
         .concat(Array.from(document.querySelectorAll("[id^='pen.']")))
         .forEach((e) => e.addEventListener("change", drawFace));
     ["θ", "ψ", "φ"].map(eid).forEach((e) => e.addEventListener("change", updateCam));
-    eid("R3").addEventListener("change", updateIco);
-    eid("F").addEventListener("change", updateFib);
+    ["h", "k", "K", "symmetry", "R3", "F"].map(eid).forEach((e) => e.addEventListener("change", updateIco));
     ["h", "k", "K", "geometry", "projection", "rotation", "mode", "symmetry", "R2", "R3", "F", "θ", "ψ", "φ"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
@@ -269,6 +307,7 @@ window.onload = function () {
     // draw
     drawHex();
     drawFace();
+    updateIco();
     redraw();
 
     // animate
