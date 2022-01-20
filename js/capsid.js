@@ -425,8 +425,7 @@ class RhombiTriHex extends Hex {
         this.dx = 2 * this.r + R;
         this.dy = 0.5 * R + (this.R * root3) / 2 + R;
         this.ddx = this.r + R / 2;
-        // not an exact circumradius solution, but it works for now...
-        this.circumradius = this.R + this.R / Math.cos(radians(30));
+        this.circumradius = Math.sqrt(Math.pow(this.r + this.R, 2) + Math.pow(this.R / 2, 2));
     }
 
     /**
