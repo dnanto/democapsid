@@ -136,6 +136,10 @@ class Icosahedron {
     ];
 
     setEdge(s, h = undefined, angle = radians(-60)) {
+        this.s = s;
+        this.h = h;
+        this.angle = angle;
+
         h = h === undefined ? s : h;
 
         const b = s / 2;
@@ -594,16 +598,7 @@ function drawNet(face) {
     return net;
 }
 
-/**
- * Draw the icosahedron.
- * @param {*} face the Group face object
- * @param {*} R the circumradius
- * @param {*} F the fiber length
- * @param {*} P the camera matrix
- * @param {*} opt the style options
- * @returns the Group icosahedron object
- */
-function drawIco(face, ico, F, P, opt) {
+function drawIco(face, ico, fib, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
     const A = Matrix.inv3([
         [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],
@@ -612,11 +607,11 @@ function drawIco(face, ico, F, P, opt) {
     ]);
 
     var fibers = [];
-    // if (F > 0) {
-    //     var p1 = Icosahedron.projectVertexes(R, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-    //     var p2 = Icosahedron.projectVertexes(F, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-    //     fibers = p1.map((_, i) => [p1[i], p2[i]]);
-    // }
+    if (fib.s > 0) {
+        var p1 = ico.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        var p2 = fib.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        fibers = p1.map((_, i) => [p1[i], p2[i]]);
+    }
 
     return new Group(
         ico

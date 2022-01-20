@@ -3,6 +3,7 @@ let cam;
 let hex;
 let face;
 let ico;
+let fib;
 
 /**
  * Alias getElementById
@@ -152,6 +153,10 @@ function updateIco() {
     ico.setEdge(opt.R3, undefined);
 }
 
+function updateFib() {
+    fib.setEdge(opt.F, undefined);
+}
+
 /**
  * Set the projection from event.
  */
@@ -209,7 +214,7 @@ function redraw() {
     var obj;
     switch (eid("mode").value) {
         case "ico":
-            obj = drawIco(face, ico, opt.F, cam.P, getIcoStyle());
+            obj = drawIco(face, ico, fib, cam.P, getIcoStyle());
             break;
         case "net":
             obj = drawNet(face);
@@ -241,6 +246,7 @@ window.onload = function () {
         .forEach((e) => e.addEventListener("change", drawFace));
     ["θ", "ψ", "φ"].map(eid).forEach((e) => e.addEventListener("change", updateCam));
     eid("R3").addEventListener("change", updateIco);
+    eid("F").addEventListener("change", updateFib);
     ["h", "k", "geometry", "projection", "rotation", "mode", "R2", "R3", "F", "θ", "ψ", "φ"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
@@ -255,6 +261,7 @@ window.onload = function () {
     getOpt();
     setProjection(eid("projection").value);
     ico = new Icosahedron(opt.R3);
+    fib = new Icosahedron(opt.F);
 
     // draw
     drawHex();
