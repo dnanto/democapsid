@@ -66,6 +66,7 @@ function getOpt() {
     opt = {
         h: parseInt(eid("h").value),
         k: parseInt(eid("k").value),
+        K: parseInt(eid("K").value),
         R2: parseFloat(eid("R2").value),
         R3: parseFloat(eid("R3").value),
         F: parseFloat(eid("F").value),
@@ -168,30 +169,31 @@ function setProjectionEvent(ele) {
  * Draw the hexagonal lattice unit.
  */
 function drawHex() {
+    console.log("app.js", opt.h, opt.k, opt.K);
     switch (eid("geometry").value) {
         case "Hex":
-            hex = new Hex(opt.R2, opt.h, opt.k);
+            hex = new Hex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "TriHex":
-            hex = new TriHex(opt.R2, opt.h, opt.k);
+            hex = new TriHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "SnubHex":
-            hex = new SnubHex(opt.R2, opt.h, opt.k);
+            hex = new SnubHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "RhombiTriHex":
-            hex = new RhombiTriHex(opt.R2, opt.h, opt.k);
+            hex = new RhombiTriHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "DualHex":
-            hex = new Hex(opt.R2, opt.h, opt.k);
+            hex = new Hex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "DualTriHex":
-            hex = new DualTriHex(opt.R2, opt.h, opt.k);
+            hex = new DualTriHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "DualSnubHex":
-            hex = new DualSnubHex(opt.R2, opt.h, opt.k);
+            hex = new DualSnubHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "DualRhombiTriHex":
-            hex = new DualRhombiTriHex(opt.R2, opt.h, opt.k);
+            hex = new DualRhombiTriHex(opt.R2, opt.h, opt.k, opt.K);
     }
 }
 
@@ -199,7 +201,8 @@ function drawHex() {
  * Draw the face.
  */
 function drawFace() {
-    face = hex.face(getFaceStyle());
+    console.log(eid("symmetry").value);
+    face = eid("symmetry").value === "equilateral" ? hex.face(getFaceStyle()) : hex.face5(getFaceStyle());
 }
 
 /**
@@ -217,7 +220,7 @@ function redraw() {
             obj = drawIco(face, ico, fib, cam.P, getIcoStyle());
             break;
         case "net":
-            obj = drawNet(face);
+            obj = eid("symmetry").value === "equilateral" ? drawNet(face) : drawNet(face);
             break;
         case "face":
             drawFace();
@@ -235,10 +238,10 @@ window.onload = function () {
     cam = new Camera();
 
     // set event listeners for UI
-    ["h", "k", "geometry", "R2"].map(eid).forEach((e) => e.addEventListener("change", drawHex));
+    ["h", "k", "K", "geometry", "R2"].map(eid).forEach((e) => e.addEventListener("change", drawHex));
     eid("projection").addEventListener("change", setProjectionEvent);
-    ["h", "k"].map(eid).forEach((e) => e.addEventListener("change", tNumber));
-    ["h", "k", "geometry", "rotation", "R2"]
+    ["h", "k", "K"].map(eid).forEach((e) => e.addEventListener("change", tNumber));
+    ["h", "k", "K", "geometry", "symmetry", "rotation", "R2"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
         .concat(Array.from(document.querySelectorAll("[id^='hex.']")))
@@ -247,7 +250,7 @@ window.onload = function () {
     ["θ", "ψ", "φ"].map(eid).forEach((e) => e.addEventListener("change", updateCam));
     eid("R3").addEventListener("change", updateIco);
     eid("F").addEventListener("change", updateFib);
-    ["h", "k", "geometry", "projection", "rotation", "mode", "R2", "R3", "F", "θ", "ψ", "φ"]
+    ["h", "k", "K", "geometry", "projection", "rotation", "mode", "symmetry", "R2", "R3", "F", "θ", "ψ", "φ"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
         .concat(Array.from(document.querySelectorAll("[id^='fib.']")))

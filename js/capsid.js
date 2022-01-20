@@ -295,10 +295,18 @@ class Hex {
                 })
                 .map((f) => {
                     var x = T.intersect(f);
-                    // NOTE: subtract 1 from circumradius as a correction factor for SnubHex (temporary)
-                    x.type = v.some((y) => x.bounds.center.getDistance(y) < this.circumradius - 1) ? "pen" : "hex";
-                    x.style = opt[x.type + "." + f.name.split(" ")[0]];
+                    x.name = f.name;
                     return x;
+                })
+                .filter((f) => {
+                    return f.length > 1;
+                })
+                .map((f) => {
+                    console.log("capsid.js", this.h, this.k, this.K);
+                    var c = centroid(f.segments);
+                    f.type = v.some((y) => c.getDistance(y) < this.circumradius) ? "pen" : "hex";
+                    f.style = opt[f.type + "." + f.name.split(" ")[0]];
+                    return f;
                 });
         });
     }
@@ -394,10 +402,6 @@ class SnubHex extends Hex {
         tri2.name = "mer-2";
         var tri3 = tri2.clone().rotate(-180, tri2.bounds.bottomCenter);
         tri3.name = "mer-2";
-        var tri4 = tri3.clone().rotate(-180, tri3.bounds.bottomRight);
-        tri4.name = "mer-2";
-        var tri5 = tri4.clone().rotate(-180, tri4.bounds.topRight);
-        tri5.name = "mer-2";
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.name = "mer-1";
         var cir = new Path.Circle([0, 0], this.circumradius);
@@ -544,6 +548,17 @@ class DualRhombiTriHex extends Hex {
         line.remove();
         return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0]))].flat();
     }
+}
+
+function centroid(segments) {
+    return segments
+        .map((e) => {
+            return e.point;
+        })
+        .reduce((a, b) => {
+            return a.add(b);
+        })
+        .divide(segments.length);
 }
 
 /**
