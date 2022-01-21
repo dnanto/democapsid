@@ -154,35 +154,26 @@ function pyth(a, b, C) {
     return Math.sqrt(b * b + a * a - 2 * b * a * Math.cos(C));
 }
 
-function angle(P1, P2, P3) {
-    // https://stackoverflow.com/a/31334882
-    return Math.atan2(P3.y - P1.y, P3.x - P1.x) - Math.atan2(P2.y - P1.y, P2.x - P1.x);
-}
-
 function updateIco() {
-    // set angle based on symmetry
-    // var params = edgeToIcoParams(opt.R3);
-    // ico.setEdge(opt.R3, params[0], params[1]);
-
-    var p = face.children[1].children
-        .flatMap((e) => {
-            return e.segments.map((f) => {
-                return f.point;
+    if (eid("symmetry").value === "equilateral") {
+        ico.setEdge(opt.R3);
+        fib.setEdge(opt.F);
+    } else {
+        var p = face.children[1].children
+            .flatMap((e) => {
+                return e.segments.map((f) => {
+                    return f.point;
+                });
+            })
+            .reduce((a, b) => {
+                return a.y < b.y ? b : a;
             });
-        })
-        .reduce((a, b) => {
-            return a.y < b.y ? b : a;
-        });
-
-    const a1 = angle(face.children[1].bounds.topLeft, face.children[1].bounds.topRight, p);
-    const a2 = angle(face.children[1].bounds.topRight, p, face.children[1].bounds.topLeft);
-
-    // set angle based on symmetry
-    var ang = eid("symmetry").value === "equilateral" ? radians(60) : a1;
-    var side = eid("symmetry").value === "equilateral" ? opt.R3 : (opt.R3 * Math.sin(a2)) / Math.sin(radians(180) - a1 - a2);
-    ico.setEdge(opt.R3, side, ang);
-    side = eid("symmetry").value === "equilateral" ? opt.F : (opt.F * Math.sin(a2)) / Math.sin(radians(180) - a1 - a2);
-    fib.setEdge(opt.F, side, ang);
+        const a1 = angle(face.children[1].bounds.topLeft, face.children[1].bounds.topRight, p);
+        const a2 = angle(face.children[1].bounds.topRight, p, face.children[1].bounds.topLeft);
+        const d = Math.sin(radians(180) - a1 - a2);
+        ico.setEdge(opt.R3, (opt.R3 * Math.sin(a2)) / d, a1);
+        fib.setEdge(opt.F, (opt.F * Math.sin(a2)) / d, a1);
+    }
 }
 
 function updateFib() {
