@@ -114,28 +114,28 @@ class Icosahedron {
     faceIndexes = [
         [0, 2, 1],
         [0, 1, 4],
-        [0, 4, 3], // B
-        [0, 3, 5], // B
+        [0, 4, 3],
+        [0, 3, 5],
         [0, 5, 2],
-        [1, 2, 6], // T
-        [1, 6, 7], // T
+        [1, 2, 6],
+        [1, 6, 7],
         [1, 7, 4],
         [4, 7, 8],
-        [4, 8, 3], // B
-        [3, 8, 9], // B
-        [3, 9, 5], // B
+        [4, 8, 3],
+        [3, 8, 9],
+        [3, 9, 5],
         [5, 9, 10],
         [5, 10, 2],
-        [2, 10, 6], // T
-        [6, 11, 7], // T
+        [2, 10, 6],
+        [6, 11, 7],
         [7, 11, 8],
         [8, 11, 9],
         [9, 11, 10],
-        [10, 11, 6], // T
+        [10, 11, 6],
     ];
 
     isCap(i) {
-        return [2, 3, 5, 6, 9, 10, 11, 14, 15, 19].some((e) => e === i);
+        return [0, 1, 2, 3, 4, 15, 16, 17, 18, 19].some((e) => e === i);
     }
 
     setEdge(s, h = undefined, angle = radians(-60)) {
@@ -665,20 +665,25 @@ function drawIco(face, ico, fib, P, opt) {
     if (fib.s > 0) {
         var p1 = ico.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
         var p2 = fib.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        fibers = p1.map((_, i) => [p1[i], p2[i]]);
+        fibers = p1.map((_, i) => {
+            return { v: [p1[i], p2[i]], t: "fiber" };
+        });
     }
-
     return new Group(
         ico
             .projectFaces(P)
+            .map((e, i) => {
+                return { v: e, t: "face", c: ico.isCap(i) };
+            })
             .concat(fibers)
-            .sort(
-                (a, b) =>
-                    // sort faces by z-order
-                    a[0][2] + a[1][2] + (a.length < 3 ? 0 : a[2][2]) - (b[0][2] + b[1][2] + (b.length < 3 ? 0 : b[2][2]))
-            )
-            .map((e) => {
-                if (e.length == 3) {
+            .sort((a, b) => {
+                // sort by z-order
+                const [u, v] = [a.v, b.v];
+                return u[0][2] + u[1][2] + (u.length < 3 ? 0 : u[2][2]) - (v[0][2] + v[1][2] + (v.length < 3 ? 0 : v[2][2]));
+            })
+            .map((o) => {
+                const e = o.v;
+                if (o.t === "face") {
                     const B = [
                         [e[0][0], e[1][0], e[2][0]],
                         [e[0][1], e[1][1], e[2][1]],
@@ -699,54 +704,59 @@ function drawIco(face, ico, fib, P, opt) {
 
 function drawIco5(ff, ico, fib, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
-    var face = ff.children[0];
-    // var face1 = ff.children[1];
+    var face1 = ff.children[0];
+    var face2 = ff.children[1];
+    var p = face2.children
+        .flatMap((e) => {
+            return e.segments.map((f) => {
+                return f.point;
+            });
+        })
+        .reduce((a, b) => {
+            return a.y < b.y ? b : a;
+        });
 
-    // var p = face1.children
-    //     .flatMap((e) => {
-    //         return e.segments.map((f) => {
-    //             return f.point;
-    //         });
-    //     })
-    //     .reduce((a, b) => {
-    //         return a.y < b.y ? b : a;
-    //     });
-
-    const A = Matrix.inv3([
-        [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],
-        [face.bounds.topCenter.y, face.bounds.bottomLeft.y, face.bounds.bottomRight.y],
+    const A1 = Matrix.inv3([
+        [face1.bounds.topCenter.x, face1.bounds.bottomLeft.x, face1.bounds.bottomRight.x],
+        [face1.bounds.topCenter.y, face1.bounds.bottomLeft.y, face1.bounds.bottomRight.y],
         [1, 1, 1],
     ]);
-    // const A1 = Matrix.inv3([
-    //     [p.x, face1.bounds.topLeft.x, face.bounds.topRight.x],
-    //     [p.y, face1.bounds.topLeft.y, face.bounds.topRight.y],
-    //     [1, 1, 1],
-    // ]);
+    const A2 = Matrix.inv3([
+        [p.x, face2.bounds.topLeft.x, face2.bounds.topRight.x],
+        [p.y, face2.bounds.topLeft.y, face2.bounds.topRight.y],
+        [1, 1, 1],
+    ]);
 
     var fibers = [];
     if (fib.s > 0) {
         var p1 = ico.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
         var p2 = fib.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        fibers = p1.map((_, i) => [p1[i], p2[i]]);
+        fibers = p1.map((_, i) => {
+            return { v: [p1[i], p2[i]], t: "fiber" };
+        });
     }
-
     return new Group(
         ico
             .projectFaces(P)
-            // .concat(fibers)
-            .sort(
-                (a, b) =>
-                    // sort faces by z-order
-                    a[0][2] + a[1][2] + (a.length < 3 ? 0 : a[2][2]) - (b[0][2] + b[1][2] + (b.length < 3 ? 0 : b[2][2]))
-            )
             .map((e, i) => {
-                if (e.length == 3) {
+                return { v: e, t: "face", c: ico.isCap(i) };
+            })
+            .concat(fibers)
+            .sort((a, b) => {
+                // sort by z-order
+                const [u, v] = [a.v, b.v];
+                return u[0][2] + u[1][2] + (u.length < 3 ? 0 : u[2][2]) - (v[0][2] + v[1][2] + (v.length < 3 ? 0 : v[2][2]));
+            })
+            .map((o) => {
+                const e = o.v;
+                if (o.t === "face") {
                     const B = [
                         [e[0][0], e[1][0], e[2][0]],
                         [e[0][1], e[1][1], e[2][1]],
                         [1, 1, 1],
                     ];
-                    const M = Matrix.mul(B, A);
+                    const M = Matrix.mul(B, o.c ? A1 : A2);
+                    var face = o.c ? face1 : face2;
                     return face.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
                 } else {
                     var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);

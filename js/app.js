@@ -178,14 +178,11 @@ function updateIco() {
     const a2 = angle(face.children[1].bounds.topRight, p, face.children[1].bounds.topLeft);
 
     // set angle based on symmetry
-    var obj = new Hex(1, opt.h, opt.k, opt.K);
     var ang = eid("symmetry").value === "equilateral" ? radians(60) : a1;
     var side = eid("symmetry").value === "equilateral" ? opt.R3 : (opt.R3 * Math.sin(a2)) / Math.sin(radians(180) - a1 - a2);
-    console.log(opt.R3, side, degrees(ang));
     ico.setEdge(opt.R3, side, ang);
-
-    // side = eid("symmetry").value === "equilateral" ? opt.F : (opt.F * Math.sin(a2)) / Math.sin(radians(180) - a1 - a2);
-    // fib.setEdge(opt.F, side, ang);
+    side = eid("symmetry").value === "equilateral" ? opt.F : (opt.F * Math.sin(a2)) / Math.sin(radians(180) - a1 - a2);
+    fib.setEdge(opt.F, side, ang);
 }
 
 function updateFib() {
