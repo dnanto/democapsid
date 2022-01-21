@@ -638,10 +638,7 @@ function drawNet5(face) {
     f2.bounds.left = p.x < face.children[0].bounds.right ? p.x : face.children[0].bounds.right;
     f2.position.y += face.children[0].bounds.height;
 
-    var c1 = new Path.Circle(p, 10);
-    c1.strokeColor = "black";
-
-    var G1 = new Group([face.clone(), f2, c1]);
+    var G1 = new Group([face.clone(), f2]);
     var G2 = G1.clone();
     G2.position.x += face.children[0].bounds.width;
     var G3 = G2.clone();
@@ -748,16 +745,16 @@ function drawIco5(ff, ico, fib, P, opt) {
         [0, 1, 2],
         [0, 1, 2],
         // mid
-        [0, 2, 1],
-        [1, 0, 2],
-        [2, 1, 0],
-        [1, 0, 2],
-        [2, 1, 0],
-        [1, 0, 2],
-        [2, 1, 0],
-        [1, 0, 2],
-        [2, 1, 0],
-        [1, 0, 2],
+        [1, 2, 0],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
         // cap
         [0, 1, 2],
         [0, 1, 2],
