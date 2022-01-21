@@ -73,6 +73,7 @@ function getOpt() {
         θ: radians(parseFloat(eid("θ").value)),
         ψ: radians(parseFloat(eid("ψ").value)),
         φ: radians(parseFloat(eid("φ").value)),
+        rotation: eid("rotation").value,
         interval: parseInt(eid("interval").value),
     };
 }
@@ -176,16 +177,6 @@ function updateIco() {
     }
 }
 
-function updateFib() {
-    var obj = new Hex(opt.F, opt.h, opt.k, opt.K);
-    const x =
-        eid("symmetry").value === "equilateral" //
-            ? [obj.R, 60]
-            : [obj.qvec().length, obj.tvec().getDirectedAngle(obj.qvec())];
-    console.log(obj.R, x);
-    fib.setEdge(obj.R, x[0], radians(-x[1]));
-}
-
 /**
  * Set the projection from event.
  */
@@ -284,7 +275,7 @@ window.onload = function () {
         .concat(Array.from(document.querySelectorAll("[id^='pen.']")))
         .forEach((e) => e.addEventListener("change", drawFace));
     ["θ", "ψ", "φ"].map(eid).forEach((e) => e.addEventListener("change", updateCam));
-    ["h", "k", "K", "symmetry", "R3", "F"].map(eid).forEach((e) => e.addEventListener("change", updateIco));
+    ["h", "k", "K", "symmetry", "rotation", "R3", "F"].map(eid).forEach((e) => e.addEventListener("change", updateIco));
     ["h", "k", "K", "geometry", "projection", "rotation", "mode", "symmetry", "R2", "R3", "F", "θ", "ψ", "φ"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
