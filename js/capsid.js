@@ -706,6 +706,7 @@ function drawIco5(ff, ico, fib, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
     var face1 = ff.children[0];
     var face2 = ff.children[1];
+    var face3 = ff.children[1].clone().rotate(180);
     var p = face2.children
         .flatMap((e) => {
             return e.segments.map((f) => {
@@ -715,6 +716,15 @@ function drawIco5(ff, ico, fib, P, opt) {
         .reduce((a, b) => {
             return a.y < b.y ? b : a;
         });
+    var q = face2.children
+        .flatMap((e) => {
+            return e.segments.map((f) => {
+                return f.point;
+            });
+        })
+        .reduce((a, b) => {
+            return a.y < b.y ? a : b;
+        });
 
     const A1 = Matrix.inv3([
         [face1.bounds.topCenter.x, face1.bounds.bottomLeft.x, face1.bounds.bottomRight.x],
@@ -723,7 +733,12 @@ function drawIco5(ff, ico, fib, P, opt) {
     ]);
     const A2 = Matrix.inv3([
         [p.x, face2.bounds.topLeft.x, face2.bounds.topRight.x],
-        [p.y, face2.bounds.topLeft.y, face2.bounds.topRight.y],
+        [face2.bounds.bottomLeft.y, face2.bounds.topLeft.y, face2.bounds.topRight.y],
+        [1, 1, 1],
+    ]);
+    const A3 = Matrix.inv3([
+        [q.x, face3.bounds.bottomLeft.x, face3.bounds.bottomRight.x],
+        [face3.bounds.top.y, face3.bounds.bottomLeft.y, face3.bounds.bottomRight.y],
         [1, 1, 1],
     ]);
 
@@ -739,7 +754,7 @@ function drawIco5(ff, ico, fib, P, opt) {
         ico
             .projectFaces(P)
             .map((e, i) => {
-                return { v: e, t: "face", c: ico.isCap(i) };
+                return { v: e, t: "face", i: i, c: ico.isCap(i) };
             })
             .concat(fibers)
             .sort((a, b) => {
@@ -755,8 +770,8 @@ function drawIco5(ff, ico, fib, P, opt) {
                         [e[0][1], e[1][1], e[2][1]],
                         [1, 1, 1],
                     ];
-                    const M = Matrix.mul(B, o.c ? A1 : A2);
-                    var face = o.c ? face1 : face2;
+                    const M = Matrix.mul(B, o.c ? A1 : o.i % 2 ? A3 : A2);
+                    var face = o.c ? face1 : o.c ? A1 : o.i % 2 ? face3 : face2;
                     return face.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
                 } else {
                     var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
