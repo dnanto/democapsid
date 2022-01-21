@@ -150,33 +150,42 @@ function setProjection(name) {
     updateCam();
 }
 
-// function edgeToIcoParams(edge) {
-//     var angle = radians(eid("symmetry").value === "equilateral" ? 60 : hex.tvec().getDirectedAngle(hex.qvec()));
-//     return eid("symmetry").value === "equilateral" //
-//         ? [edge, angle]
-//         : [edge / 2 / Math.cos(angle), angle];
-// }
+function pyth(a, b, C) {
+    return Math.sqrt(b * b + a * a - 2 * b * a * Math.cos(C));
+}
+
+function angle(P1, P2, P3) {
+    // https://stackoverflow.com/a/31334882
+    return Math.atan2(P3.y - P1.y, P3.x - P1.x) - Math.atan2(P2.y - P1.y, P2.x - P1.x);
+}
 
 function updateIco() {
     // set angle based on symmetry
     // var params = edgeToIcoParams(opt.R3);
     // ico.setEdge(opt.R3, params[0], params[1]);
 
+    var p = face.children[1].children
+        .flatMap((e) => {
+            return e.segments.map((f) => {
+                return f.point;
+            });
+        })
+        .reduce((a, b) => {
+            return a.y < b.y ? b : a;
+        });
+
+    const a1 = angle(face.children[1].bounds.topLeft, face.children[1].bounds.topRight, p);
+    const a2 = angle(face.children[1].bounds.topRight, p, face.children[1].bounds.topLeft);
+
     // set angle based on symmetry
     var obj = new Hex(1, opt.h, opt.k, opt.K);
-    var ang = eid("symmetry").value === "equilateral" ? radians(60) : radians(obj.tvec().getDirectedAngle(obj.qvec()));
-    var hyp = eid("symmetry").value === "equilateral" ? opt.R3 : opt.R3 / Math.cos(ang);
+    var ang = eid("symmetry").value === "equilateral" ? radians(60) : a1;
+    var side = eid("symmetry").value === "equilateral" ? opt.R3 : (opt.R3 * Math.sin(a2)) / Math.sin(radians(180) - a1 - a2);
+    console.log(opt.R3, side, degrees(ang));
+    ico.setEdge(opt.R3, side, ang);
 
-    console.log(opt.R3, hyp, -degrees(ang));
-    ico.setEdge(opt.R3, hyp, -ang);
-
-    // var obj2 = new Hex(opt.F / 2, opt.h, opt.k, opt.K);
-    // const y =
-    //     eid("symmetry").value === "equilateral" //
-    //         ? [obj2.R, 60]
-    //         : [obj2.qvec().length, obj2.tvec().getDirectedAngle(obj2.qvec()) % 90];
-    // // console.log(obj2.R, y);
-    // fib.setEdge(obj2.R, y[0], radians(-y[1]));
+    // side = eid("symmetry").value === "equilateral" ? opt.F : (opt.F * Math.sin(a2)) / Math.sin(radians(180) - a1 - a2);
+    // fib.setEdge(opt.F, side, ang);
 }
 
 function updateFib() {
