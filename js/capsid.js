@@ -308,6 +308,7 @@ class Hex {
                     return x;
                 })
                 .filter((f) => {
+                    if (f.length < 1) f.remove();
                     return f.length > 1;
                 })
                 .map((f) => {
@@ -329,12 +330,14 @@ class Hex {
         var T = new Path([[0, 0], tvec, tvec.rotate(-60)]);
         T.closePath();
 
-        var G = new Group(this.intersect_grid(T, Array.from(this.grid(nc, nr)), vt, opt).flat());
+        var g = Array.from(this.grid(nc, nr));
+        var G = new Group(this.intersect_grid(T, g, vt, opt).flat());
         G.style = opt.face;
         G.rotate(-tvec.angle);
         G.scale(opt.levo ? -1 : 1, 1);
 
         T.remove();
+        g.forEach((e) => e.remove());
 
         return G;
     }
@@ -357,6 +360,10 @@ class Hex {
         G.style = opt.face;
         G.rotate(-tvec.angle);
         G.scale(opt.levo ? -1 : 1, 1);
+
+        T1.remove();
+        T2.remove();
+        g.forEach((e) => e.remove());
 
         return G;
     }
@@ -586,9 +593,10 @@ function degrees(radians) {
     return radians * (180 / Math.PI);
 }
 
-function angle(P1, P2, P3) {
-    // https://stackoverflow.com/a/31334882
-    return Math.atan2(P3.y - P1.y, P3.x - P1.x) - Math.atan2(P2.y - P1.y, P2.x - P1.x);
+function angle(B, A, C) {
+    // https://math.stackexchange.com/a/3427603
+    const [BA, BC] = [A.subtract(B), C.subtract(B)];
+    return Math.acos(BA.dot(BC) / (BA.length * BC.length));
 }
 
 /**

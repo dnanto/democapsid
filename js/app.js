@@ -155,25 +155,33 @@ function pyth(a, b, C) {
     return Math.sqrt(b * b + a * a - 2 * b * a * Math.cos(C));
 }
 
+function foo(G, cmp) {
+    return G.flatMap((e) => {
+        return e.segments.map((f) => {
+            return f.point;
+        });
+    }).reduce((a, b) => {
+        return a.y < b.y ? b : a;
+    });
+}
+
 function updateIco() {
     if (eid("symmetry").value === "equilateral") {
         ico.setEdge(opt.R3);
         fib.setEdge(opt.F);
     } else {
-        var p = face.children[1].children
-            .flatMap((e) => {
-                return e.segments.map((f) => {
-                    return f.point;
-                });
-            })
-            .reduce((a, b) => {
-                return a.y < b.y ? b : a;
-            });
-        const a1 = angle(face.children[1].bounds.topLeft, face.children[1].bounds.topRight, p);
-        const a2 = angle(face.children[1].bounds.topRight, p, face.children[1].bounds.topLeft);
-        const d = Math.sin(radians(180) - a1 - a2);
-        ico.setEdge(opt.R3, (opt.R3 * Math.sin(a1)) / d, a2);
-        fib.setEdge(opt.F, (opt.F * Math.sin(a1)) / d, a2);
+        const pa = foo(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
+        const pb = face.children[0].bounds.bottomRight;
+        const pc = face.children[0].bounds.bottomLeft;
+        const C = angle(pc, pa, pb);
+        const B = angle(pb, pa, pc);
+        const A = radians(180) - B - C;
+        const a = opt.R3;
+        const b = (a * Math.sin(B)) / Math.sin(A);
+        const c = (a * Math.sin(C)) / Math.sin(A);
+        console.log(a, b, c, degrees(A), degrees(B), degrees(C));
+        ico.setEdge(a, b, C);
+        fib.setEdge(opt.F, (opt.F * Math.sin(B)) / Math.sin(A), C);
     }
 }
 
