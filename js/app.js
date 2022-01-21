@@ -171,8 +171,8 @@ function updateIco() {
         const a1 = angle(face.children[1].bounds.topLeft, face.children[1].bounds.topRight, p);
         const a2 = angle(face.children[1].bounds.topRight, p, face.children[1].bounds.topLeft);
         const d = Math.sin(radians(180) - a1 - a2);
-        ico.setEdge(opt.R3, (opt.R3 * Math.sin(a2)) / d, a1);
-        fib.setEdge(opt.F, (opt.F * Math.sin(a2)) / d, a1);
+        ico.setEdge(opt.R3, (opt.R3 * Math.sin(a1)) / d, a2);
+        fib.setEdge(opt.F, (opt.F * Math.sin(a1)) / d, a2);
     }
 }
 
