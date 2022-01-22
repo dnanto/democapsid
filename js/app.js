@@ -130,22 +130,26 @@ function setProjection(name) {
     eid("φ").value = 0;
     switch (name) {
         case "Face-1":
-            eid("φ").value = 90 - degrees(Math.atan2((b + 0.5 + 0.5) / 3, 0.5 / 3)) + 90;
+            // TODO: algebraic construction
+            eid("θ").value = 60;
+            eid("φ").value = 10.8123169636;
             break;
         case "Face-2":
-            eid("φ").value = 90 - degrees(Math.atan2((b + 0.5 + 0.5) / 3, 0.5 / 3));
+            // TODO: algebraic construction
+            eid("φ").value = 100.8123169636;
             break;
         case "Edge-1":
-            eid("ψ").value = 90;
-            break;
-        case "Edge-2":
-            // default
-            break;
-        case "Vertex-1":
             eid("φ").value = degrees(Math.atan2(b, 0.5));
             break;
+        case "Edge-2":
+            eid("θ").value = 90;
+            eid("φ").value = degrees(Math.atan2(b, 0.5));
+            break;
+        case "Vertex-1":
+            eid("φ").value = 90;
+            break;
         case "Vertex-2":
-            eid("φ").value = 90 - degrees(Math.atan2(b, 0.5));
+            // default
             break;
     }
     updateCam();
