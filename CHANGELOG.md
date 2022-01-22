@@ -1,3 +1,7 @@
+# v1.1.2
+
+-   fix rotation bug
+
 # v1.1.1
 
 -   remove need for face vertex connectivity index

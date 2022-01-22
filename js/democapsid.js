@@ -621,39 +621,7 @@ function pointReduce(G, cmp) {
     });
 }
 
-/**
- * Draw the icosahedron net.
- * @param {*} face the Group face object
- * @returns the Group net object
- */
 function drawNet(face) {
-    var f1 = face.clone();
-
-    // render first column by rotating
-    var f2 = f1.clone();
-    f2.rotate(300, f1.bounds.bottomRight);
-    var f3 = f1.clone();
-    f3.rotate(240, f1.bounds.bottomRight);
-    var f4 = f3.clone();
-    f4.rotate(300, f3.bounds.bottomRight);
-
-    // copy row and shift over 5 times
-    var c1 = new Group([f1, f2, f3, f4]);
-    var c2 = c1.clone();
-    c2.position.x += f1.bounds.width;
-    var c3 = c1.clone();
-    c3.position.x += 2 * f1.bounds.width;
-    var c4 = c1.clone();
-    c4.position.x += 3 * f1.bounds.width;
-    var c5 = c1.clone();
-    c5.position.x += 4 * f1.bounds.width;
-
-    var net = new Group([c1, c2, c3, c4, c5]);
-    net.position = view.center;
-    return net;
-}
-
-function drawNet5(face) {
     var f2 = face.clone().scale(-1, -1);
     var p = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
 
@@ -675,54 +643,7 @@ function drawNet5(face) {
     return net;
 }
 
-function drawIco(face, ico, F, P, opt) {
-    // affine transform each triangle to the 2D projection of icosahedron face
-    const A = Matrix.inv3([
-        [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],
-        [face.bounds.topCenter.y, face.bounds.bottomLeft.y, face.bounds.bottomRight.y],
-        [1, 1, 1],
-    ]);
-
-    var fibers =
-        F > 0
-            ? ico.calcVertexFibers(P, F).map((e) => {
-                  return { v: e, t: "fiber" };
-              })
-            : [];
-    return new Group(
-        ico
-            .projectFaces(P)
-            .map((e, i) => {
-                return { v: e, t: "face", c: ico.isCap5(i) };
-            })
-            .concat(fibers)
-            .sort((a, b) => {
-                // sort by z-order
-                const [u, v] = [a.v, b.v];
-                return u[0][2] + u[1][2] + (u.length < 3 ? 0 : u[2][2]) - (v[0][2] + v[1][2] + (v.length < 3 ? 0 : v[2][2]));
-            })
-            .map((o) => {
-                const e = o.v;
-                if (o.t === "face") {
-                    const B = [
-                        [e[0][0], e[1][0], e[2][0]],
-                        [e[0][1], e[1][1], e[2][1]],
-                        [1, 1, 1],
-                    ];
-                    const M = Matrix.mul(B, A);
-                    return face.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
-                } else {
-                    var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
-                    fiber.style = opt["fib.mer"];
-                    var knob = new Path.Circle([e[1][0], e[1][1]], opt["knb.mer"].R);
-                    knob.style = opt["knb.mer"]["style"];
-                    return new Group([fiber, knob]);
-                }
-            })
-    );
-}
-
-function drawIco5(ff, ico, F, P, sty) {
+function drawIco(ff, ico, F, P, sty) {
     // affine transform each triangle to the 2D projection of icosahedron face
     var face1 = ff.children[0];
     var face2 = ff.children[1];

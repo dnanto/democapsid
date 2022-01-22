@@ -194,10 +194,13 @@ function drawHex() {
  * Draw the face.
  */
 function drawFace() {
-    face =
-        eid("symmetry").value === "equilateral" //
-            ? hex.face(getFaceStyle())
-            : hex.face5(getFaceStyle());
+    if (eid("symmetry").value === "equilateral") {
+        face = hex.face(getFaceStyle());
+        face = new Group([face, face.clone().rotate(60, face.bounds.bottomLeft)]);
+    } else {
+        face = hex.face5(getFaceStyle());
+    }
+    return face;
 }
 
 /**
@@ -212,20 +215,18 @@ function redraw() {
     var obj;
     switch (eid("mode").value) {
         case "ico":
-            obj =
-                eid("symmetry").value === "equilateral" //
-                    ? drawIco(face, ico, opt.F, cam.P, getIcoStyle())
-                    : drawIco5(face, ico, opt.F, cam.P, getIcoStyle());
+            if (eid("symmetry").value === "equilateral") {
+                obj = drawIco(face.scale(-1, 1), ico, opt.F, cam.P, getIcoStyle());
+                face.scale(-1, 1);
+            } else {
+                obj = drawIco(face, ico, opt.F, cam.P, getIcoStyle());
+            }
             break;
         case "net":
-            obj =
-                eid("symmetry").value === "equilateral" //
-                    ? drawNet(face)
-                    : drawNet5(face);
+            obj = drawNet(face);
             break;
         case "face":
-            drawFace();
-            obj = face;
+            obj = drawFace();
             break;
     }
     obj.position = view.center;
