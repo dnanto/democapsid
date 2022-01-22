@@ -26,7 +26,11 @@ class Matrix {
      * @return {Number} The determinant;
      */
     static det3(A) {
-        return A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+        return (
+            A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - //
+            A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + //
+            A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0])
+        );
     }
 
     /**
@@ -101,54 +105,97 @@ class Camera {
     }
 }
 
-/**
- * Regular Icosahedron math.
- */
-class RegularIcosahedron {
+class Icosahedron {
+    constructor(s, h = undefined, angle = radians(-60)) {
+        this.setEdge(s, h, angle);
+    }
+
     // array of face vertexes
-    static faceIndexes = [
-        [0, 1, 2],
-        [3, 2, 1],
-        [3, 4, 5],
-        [3, 8, 4],
-        [0, 6, 7],
-        [0, 9, 6],
-        [4, 10, 11],
-        [6, 11, 10],
-        [2, 5, 9],
-        [11, 9, 5],
-        [1, 7, 8],
-        [10, 8, 7],
-        [3, 5, 2],
-        [3, 1, 8],
-        [0, 2, 9],
-        [0, 7, 1],
-        [6, 9, 11],
-        [6, 10, 7],
-        [4, 11, 5],
-        [4, 8, 10],
+    faceIndexes = [
+        // cap
+        [0, 2, 1],
+        [0, 1, 4],
+        [0, 4, 3],
+        [0, 3, 5],
+        [0, 5, 2],
+        // mid
+        [1, 2, 6],
+        [1, 6, 7],
+        [1, 7, 4],
+        [4, 7, 8],
+        [4, 8, 3],
+        [3, 8, 9],
+        [3, 9, 5],
+        [5, 9, 10],
+        [5, 10, 2],
+        [2, 10, 6],
+        // cap
+        [6, 11, 7],
+        [7, 11, 8],
+        [8, 11, 9],
+        [9, 11, 10],
+        [10, 11, 6],
     ];
+
+    isCap(i) {
+        return [0, 1, 2, 3, 4, 15, 16, 17, 18, 19].some((e) => e === i);
+    }
+
+    setEdge(s, h, angle) {
+        this.s = s;
+        this.h = h;
+        this.angle = angle;
+
+        h = h === undefined ? s : h;
+
+        const b = s / 2;
+        const a = phi * b;
+
+        var cam = new Camera();
+        cam.φ = radians(90 - degrees(Math.atan2(1 / (2 * phi), 0.5)));
+        cam.update();
+
+        var v = [
+            [0, b, -a, 1],
+            [b, a, 0, 1],
+            [-b, a, 0, 1],
+            [0, -b, -a, 1],
+            [a, 0, -b, 1],
+            [-a, 0, -b, 1],
+        ].map((v) =>
+            Matrix.mul(
+                cam.P,
+                v.map((e) => [e])
+            )
+        );
+
+        const A = [v[2][0][0] + h * Math.cos(angle), v[2][1][0] + h * Math.sin(angle), v[2][2][0]];
+
+        const B = [A[0], v[2][1][0], v[2][2][0]];
+        const r1 = Math.sqrt(v[2][0][0] * v[2][0][0] + v[2][2][0] * v[2][2][0]);
+        const C = [A[0], A[1], Math.sqrt(r1 * r1 - A[0] * A[0])];
+        const r2 = A[1] - B[1];
+        const D = [C[0], B[1] - Math.sqrt(-(B[2] * B[2]) + 2 * B[2] * C[2] + r2 * r2 - C[2] * C[2]), C[2]];
+        const a72 = radians(-72);
+        var cy = (B[1] + D[1]) / 2;
+        this.vertexes = v
+            .map((v) => [v[0][0], v[1][0], v[2][0], 1])
+            .concat([
+                [D[0], D[1], D[2], 1],
+                [Math.cos(a72 * 1) * D[0] - Math.sin(a72 * 1) * D[2], D[1], Math.sin(a72 * 1) * D[0] + Math.cos(a72 * 1) * D[2], 1],
+                [Math.cos(a72 * 2) * D[0] - Math.sin(a72 * 2) * D[2], D[1], Math.sin(a72 * 2) * D[0] + Math.cos(a72 * 2) * D[2], 1],
+                [Math.cos(a72 * 3) * D[0] - Math.sin(a72 * 3) * D[2], D[1], Math.sin(a72 * 3) * D[0] + Math.cos(a72 * 3) * D[2], 1],
+                [Math.cos(a72 * 4) * D[0] - Math.sin(a72 * 4) * D[2], D[1], Math.sin(a72 * 4) * D[0] + Math.cos(a72 * 4) * D[2], 1],
+                [0, cy - (v[0][1][0] - cy), 0, 1],
+            ]);
+    }
 
     /**
      * Calculate the 3D vertex projections.
      * @param {Array} P The camera matrix.
      */
-    static verts(R, P) {
-        const [a, b] = [0.5 * R, (1 / (2 * phi)) * R];
-        return [
-            [0, b, -a, 1],
-            [b, a, 0, 1],
-            [-b, a, 0, 1],
-            [0, b, a, 1],
-            [0, -b, a, 1],
-            [-a, 0, b, 1],
-            [0, -b, -a, 1],
-            [a, 0, -b, 1],
-            [a, 0, b, 1],
-            [-a, 0, -b, 1],
-            [b, -a, 0, 1],
-            [-b, -a, 0, 1],
-        ].map((v) =>
+    projectVertexes(P) {
+        return this.vertexes.map((v) =>
             Matrix.mul(
                 P,
                 v.map((e) => [e])
@@ -160,18 +207,14 @@ class RegularIcosahedron {
      * Calculate the 3D face projections.
      * @param {Array} P The camera matrix.
      */
-    static faces(R, P) {
-        var p = this.verts(R, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+    projectFaces(P) {
+        var p = this.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
         return this.faceIndexes.map((e) => [p[e[0]], p[e[1]], p[e[2]]]);
     }
 }
 
 class Hex {
-    /**
-     * Hex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
+    constructor(R, h = 0, k = 0, K = 0) {
         // hexagonal circumradius
         this.R = R;
         // haxagonal inradius
@@ -188,6 +231,32 @@ class Hex {
         this.ddx = this.r;
         // grid y-offset per row
         this.ddy = 0;
+
+        this.circumradius = this.R;
+
+        this.h = h;
+        this.k = k;
+        this.K = K;
+    }
+
+    hvec() {
+        return new Point(this.dx * this.h, this.ddy * this.h);
+    }
+
+    kvec() {
+        return new Point(this.dx * this.k, this.ddy * this.k).rotate(60);
+    }
+
+    Kvec() {
+        return new Point(this.dx * this.K, this.ddy * this.K).rotate(120);
+    }
+
+    tvec() {
+        return this.hvec().add(this.kvec());
+    }
+
+    qvec() {
+        return this.kvec().add(this.Kvec());
     }
 
     /**
@@ -210,115 +279,99 @@ class Hex {
         return [i * this.dx + j * this.ddx, j * this.dy + i * this.ddy];
     }
 
-    /**
-     * Generate hexagonal grid.
-     * @param {*} nr the number of rows
-     * @param {*} nc the number of columns
-     */
-    *grid(nr, nc) {
+    *grid(xc, xr) {
         const u = new Group(this.unit(this.R));
-        for (var i = 0; i < nr; i++) {
-            for (var j = 0; j < nc; j++) {
+        for (var i = xc[0]; i <= xc[1]; i++) {
+            for (var j = xr[0]; j <= xr[1]; j++) {
                 var v = u.clone();
                 v.position = new Point(this.coor(i, j));
-                v.coordinate = [i, j];
                 yield v;
             }
         }
         u.remove();
     }
 
-    /**
-     * Perform grid walk.
-     * @param {*} h the h-parameter
-     * @param {*} k the k-parameter
-     * @param {*} c the starting column
-     * @param {*} r the starting row
-     * @returns the list of triangular walk coordinates as grid and cartesian values
-     */
-    walk(h, k, c = 0, r = 0) {
-        var [i1, i2, i3] = [
-            [r, c],
-            [r + h, c + k],
-            [r - k, c + k + h],
-        ];
-        var p1 = new Point(this.coor(i1[0], i1[1]));
-        var p2 = new Point(this.coor(i2[0], i2[1]));
-        var p3 = new Point(this.coor(i3[0], i3[1]));
-        return [
-            [i1, i2, i3],
-            [p1, p2, p3],
-        ];
+    intersect_grid(T, G, v, opt) {
+        return G.map((e) => {
+            return e.children
+                .filter((f) => {
+                    return !f.name.startsWith("cir-1");
+                })
+                .map((f) => {
+                    var x = T.intersect(f);
+                    x.name = f.name;
+                    return x;
+                })
+                .filter((f) => {
+                    if (f.length < 1) f.remove();
+                    return f.length > 1;
+                })
+                .map((f) => {
+                    var c = centroid(f.segments);
+                    f.type = v.some((y) => c.getDistance(y) < this.circumradius) ? "pen" : "hex";
+                    f.style = opt[f.type + "." + f.name.split(" ")[0]];
+                    return f;
+                });
+        });
     }
 
-    /**
-     * Calculate the face object.
-     * @param {*} h the h-parameter
-     * @param {*} k the k-parameter
-     * @param {*} opt the style options
-     * @returns the face Group object
-     */
-    face(h, k, opt = {}) {
-        const n = h + k + 1;
+    face(opt = {}) {
+        const tvec = this.tvec();
 
-        var [i, p] = this.walk(h, k, 0, k);
-        var f = new Path(p, { closed: true });
-        f.closed = true;
-        f.style = opt.face;
+        const nc = [0, this.h + this.k];
+        const nr = [-this.h, this.k];
+        const vt = [[0, 0], tvec, tvec.rotate(-60)];
 
-        // computer intersection of triangle with hexagonal grid
-        var g = [];
-        Array.from(this.grid(n, n))
-            .map((u) => {
-                // penton or hexagon
-                var type =
-                    /**/ (u.coordinate[0] === i[0][0] && u.coordinate[1] == i[0][1]) ||
-                    (u.coordinate[0] === i[1][0] && u.coordinate[1] == i[1][1]) ||
-                    (u.coordinate[0] === i[2][0] && u.coordinate[1] == i[2][1])
-                        ? "pen"
-                        : "hex";
-                u.type = type;
-                return u;
-            })
-            // overlay penton elements
-            .sort((a, b) => b.type < a.type)
-            // compute intersection with the computed grid face
-            .forEach((u) => {
-                u.children.forEach((e) => {
-                    var x = f.intersect(e);
-                    if (x.segments.length > 0) {
-                        x.style = opt[u.type + "." + e.name.split(" ")[0]];
-                        g.push(x);
-                    }
-                });
-                u.remove();
-            });
-        f.remove();
-        g = new Group(g);
+        var T = new Path([[0, 0], tvec, tvec.rotate(-60)]);
+        T.closePath();
 
-        // rotate to have flat triangular base
-        var c = p[0]
-            .add(p[1])
-            .add(p[2])
-            .multiply(1 / 3);
-        g.rotate(90 - c.subtract(p[0]).angle, c);
-        g.scale(opt.levo ? -1 : 1, 1);
+        var g = Array.from(this.grid(nc, nr));
+        var G = new Group(this.intersect_grid(T, g, vt, opt).flat());
+        G.style = opt.face;
+        G.rotate(-tvec.angle);
+        G.scale(opt.levo ? -1 : 1, 1);
 
-        return g;
+        T.remove();
+        g.forEach((e) => e.remove());
+
+        return G;
+    }
+
+    face5(opt = {}) {
+        const tvec = this.tvec();
+        const qvec = this.qvec();
+
+        const nc = [-this.K, this.h + this.k];
+        const nr = [-this.h, this.k + this.K];
+        const vt = [[0, 0], tvec, tvec.rotate(-60), qvec];
+
+        var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
+        T1.closePath();
+        var T2 = new Path([0, 0], qvec, tvec);
+        T2.closePath();
+
+        var g = Array.from(this.grid(nc, nr));
+        var G = new Group([new Group(this.intersect_grid(T1, g, vt, opt).flat()), new Group(this.intersect_grid(T2, g, vt, opt).flat())]);
+        G.style = opt.face;
+        G.rotate(-tvec.angle);
+        G.scale(opt.levo ? -1 : 1, 1);
+
+        T1.remove();
+        T2.remove();
+        g.forEach((e) => e.remove());
+
+        return G;
     }
 }
 
 class TriHex extends Hex {
-    /**
-     * TriHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.r = (root3 / 2) * R;
         this.dx = 2 * R;
         this.dy = 2 * this.r;
         this.ddx = R;
+        this.circumradius = this.r + 0.5 * root3 * this.R;
     }
 
     /**
@@ -330,22 +383,21 @@ class TriHex extends Hex {
         tri.name = "mer-2";
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.name = "mer-1";
-        return [tri, [1, 2, 3, 4, 5].map((e) => tri.clone().rotate(60 * e, [0, 0])), hex].flat();
+        var cir = new Path.Circle([0, 0], this.circumradius);
+        cir.name = "cir-1";
+        return [tri, tri.clone().rotate(60, [0, 0]), hex, cir];
     }
 }
 
 class SnubHex extends Hex {
-    /**
-     * SnubHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.r = (root3 / 2) * R;
         this.dx = 2.5 * R;
         this.dy = 3 * this.r;
         this.ddy = this.r;
         this.ddx = 0.5 * R;
+        this.circumradius = 2.0 * this.R;
     }
 
     /**
@@ -359,12 +411,10 @@ class SnubHex extends Hex {
         tri2.name = "mer-2";
         var tri3 = tri2.clone().rotate(-180, tri2.bounds.bottomCenter);
         tri3.name = "mer-2";
-        var tri4 = tri3.clone().rotate(-180, tri3.bounds.bottomRight);
-        tri4.name = "mer-2";
-        var tri5 = tri4.clone().rotate(-180, tri4.bounds.topRight);
-        tri5.name = "mer-2";
         var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
         hex.name = "mer-1";
+        var cir = new Path.Circle([0, 0], this.circumradius);
+        cir.name = "cir-1";
         return [
             tri1,
             tri1.clone().rotate(-60, tri1.bounds.bottomLeft),
@@ -374,32 +424,20 @@ class SnubHex extends Hex {
             tri2.clone().rotate(-120, tri2.bounds.bottomCenter),
             tri3,
             tri3.clone().rotate(-60, tri3.bounds.bottomRight),
-            tri3.clone().rotate(-120, tri3.bounds.bottomRight),
-            tri4,
-            tri4.clone().rotate(-60, tri4.bounds.topRight),
-            tri4.clone().rotate(-120, tri4.bounds.topRight),
-            tri5,
-            tri5.clone().rotate(-60, tri5.bounds.topCenter),
-            tri5.clone().rotate(-120, tri5.bounds.topCenter),
-            tri5.clone().rotate(-180, tri5.bounds.topCenter),
-            tri1.clone().rotate(60, tri1.bounds.bottomRight),
-            tri1.clone().rotate(120, tri1.bounds.bottomRight),
             hex,
+            cir,
         ];
     }
 }
 
 class RhombiTriHex extends Hex {
-    /**
-     * RhombiTriHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.r = (root3 / 2) * R;
         this.dx = 2 * this.r + R;
         this.dy = 0.5 * R + (this.R * root3) / 2 + R;
         this.ddx = this.r + R / 2;
+        this.circumradius = Math.sqrt(Math.pow(this.r + this.R, 2) + Math.pow(this.R / 2, 2));
     }
 
     /**
@@ -415,20 +453,19 @@ class RhombiTriHex extends Hex {
         var tri = new Path.RegularPolygon([0, 0], 3, this.R3);
         tri.position.y = hex.bounds.bottom + (this.R * root3) / 2 / 2;
         tri.name = "mer-2";
-        return [sqr, [1, 2, 3, 4, 5].map((e) => sqr.clone().rotate(60 * e, [0, 0])), tri, [1, 2, 3, 4, 5].map((e) => tri.clone().rotate(60 * e, [0, 0])), hex].flat();
+        var cir = new Path.Circle([0, 0], this.circumradius);
+        cir.name = "cir-1";
+        return [sqr, sqr.clone().rotate(60, [0, 0]), sqr.clone().rotate(120, [0, 0]), tri, tri.clone().rotate(60, [0, 0]), hex, cir];
     }
 }
 
 class DualTriHex extends Hex {
-    /**
-     * DualTriHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.dx = 4 * R;
         this.dy = (4 * R * root3) / 2;
         this.ddx = 2 * R;
+        this.circumradius = 2 * (this.r + this.r3);
     }
 
     /**
@@ -474,16 +511,13 @@ class DualTriHex extends Hex {
 }
 
 class DualSnubHex extends Hex {
-    /**
-     * DualSnubHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
         this.dx = 2.5 * R;
         this.dy = 2 * this.r + 2 * ((this.R * root3) / 3) - (this.R * root3) / 6;
         this.ddx = 0.5 * R;
         this.ddy = this.r;
+        this.circumradius = this.r + this.R3;
     }
 
     /**
@@ -500,17 +534,15 @@ class DualSnubHex extends Hex {
         ]);
         path.closed = true;
         path.name = "mer-1";
-        return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0]))].flat();
+        var cir = new Path.Circle([0, 0], this.circumradius);
+        cir.name = "cir-1";
+        return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0])), cir].flat();
     }
 }
 
 class DualRhombiTriHex extends Hex {
-    /**
-     * DualRhombiHex lattice object.
-     * @param {*} R the circumradius
-     */
-    constructor(R) {
-        super(R);
+    constructor(R, h = 0, k = 0, K = 0) {
+        super(R, h, k, K);
     }
 
     /**
@@ -530,6 +562,17 @@ class DualRhombiTriHex extends Hex {
     }
 }
 
+function centroid(segments) {
+    return segments
+        .map((e) => {
+            return e.point;
+        })
+        .reduce((a, b) => {
+            return a.add(b);
+        })
+        .divide(segments.length);
+}
+
 /**
  * Convert radians to degrees.
  * @param {*} radians the value in degrees
@@ -546,6 +589,12 @@ function radians(degrees) {
  */
 function degrees(radians) {
     return radians * (180 / Math.PI);
+}
+
+function angle(B, A, C) {
+    // https://math.stackexchange.com/a/3427603
+    const [BA, BC] = [A.subtract(B), C.subtract(B)];
+    return Math.acos(BA.dot(BC) / (BA.length * BC.length));
 }
 
 /**
@@ -580,16 +629,37 @@ function drawNet(face) {
     return net;
 }
 
-/**
- * Draw the icosahedron.
- * @param {*} face the Group face object
- * @param {*} R the circumradius
- * @param {*} F the fiber length
- * @param {*} P the camera matrix
- * @param {*} opt the style options
- * @returns the Group icosahedron object
- */
-function drawIco(face, R, F, P, opt) {
+function drawNet5(face) {
+    var f2 = face.clone().scale(-1, -1);
+    var p = face.children[1].children
+        .flatMap((e) => {
+            return e.segments.map((f) => {
+                return f.point;
+            });
+        })
+        .reduce((a, b) => {
+            return a.y < b.y ? b : a;
+        });
+
+    f2.bounds.left = p.x < face.children[0].bounds.right ? p.x : face.children[0].bounds.right;
+    f2.position.y += face.children[0].bounds.height;
+
+    var G1 = new Group([face.clone(), f2]);
+    var G2 = G1.clone();
+    G2.position.x += face.children[0].bounds.width;
+    var G3 = G2.clone();
+    G3.position.x += face.children[0].bounds.width;
+    var G4 = G3.clone();
+    G4.position.x += face.children[0].bounds.width;
+    var G5 = G4.clone();
+    G5.position.x += face.children[0].bounds.width;
+
+    var net = new Group([G1, G2, G3, G4, G5]);
+    net.position = view.center;
+    return net;
+}
+
+function drawIco(face, ico, fib, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
     const A = Matrix.inv3([
         [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],
@@ -598,28 +668,128 @@ function drawIco(face, R, F, P, opt) {
     ]);
 
     var fibers = [];
-    if (F > 0) {
-        var p1 = RegularIcosahedron.verts(R, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        var p2 = RegularIcosahedron.verts(F, P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        fibers = p1.map((_, i) => [p1[i], p2[i]]);
+    if (fib.s > 0) {
+        var p1 = ico.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        var p2 = fib.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        fibers = p1.map((_, i) => {
+            return { v: [p1[i], p2[i]], t: "fiber" };
+        });
     }
-
     return new Group(
-        RegularIcosahedron.faces(R, P)
+        ico
+            .projectFaces(P)
+            .map((e, i) => {
+                return { v: e, t: "face", c: ico.isCap(i) };
+            })
             .concat(fibers)
-            .sort(
-                (a, b) =>
-                    // sort faces by z-order
-                    a[0][2] + a[1][2] + (a.length < 3 ? 0 : a[2][2]) - (b[0][2] + b[1][2] + (b.length < 3 ? 0 : b[2][2]))
-            )
-            .map((e) => {
-                if (e.length == 3) {
+            .sort((a, b) => {
+                // sort by z-order
+                const [u, v] = [a.v, b.v];
+                return u[0][2] + u[1][2] + (u.length < 3 ? 0 : u[2][2]) - (v[0][2] + v[1][2] + (v.length < 3 ? 0 : v[2][2]));
+            })
+            .map((o) => {
+                const e = o.v;
+                if (o.t === "face") {
                     const B = [
                         [e[0][0], e[1][0], e[2][0]],
                         [e[0][1], e[1][1], e[2][1]],
                         [1, 1, 1],
                     ];
                     const M = Matrix.mul(B, A);
+                    return face.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
+                } else {
+                    var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
+                    fiber.style = opt["fib.mer"];
+                    var knob = new Path.Circle([e[1][0], e[1][1]], opt["knb.mer"].R);
+                    knob.style = opt["knb.mer"]["style"];
+                    return new Group([fiber, knob]);
+                }
+            })
+    );
+}
+
+function drawIco5(ff, ico, fib, P, opt) {
+    // affine transform each triangle to the 2D projection of icosahedron face
+    var face1 = ff.children[0];
+    var face2 = ff.children[1];
+    var p = face2.children
+        .flatMap((e) => {
+            return e.segments.map((f) => {
+                return f.point;
+            });
+        })
+        .reduce((a, b) => {
+            return a.y < b.y ? b : a;
+        });
+
+    const A1 = Matrix.inv3([
+        [face1.bounds.bottomLeft.x, face1.bounds.topCenter.x, face1.bounds.bottomRight.x],
+        [face1.bounds.bottomLeft.y, face1.bounds.topCenter.y, face1.bounds.bottomRight.y],
+        [1, 1, 1],
+    ]);
+    const A2 = Matrix.inv3([
+        [face1.bounds.bottomLeft.x, p.x, face1.bounds.bottomRight.x],
+        [face1.bounds.bottomLeft.y, p.y, face1.bounds.bottomRight.y],
+        [1, 1, 1],
+    ]);
+
+    var fibers = [];
+    if (fib.s > 0) {
+        var p1 = ico.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        var p2 = fib.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        fibers = p1.map((_, i) => {
+            return { v: [p1[i], p2[i]], t: "fiber" };
+        });
+    }
+
+    // face vertex transform order
+    var idx = [
+        // cap
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+        // mid
+        [1, 2, 0],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        // cap
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+    ];
+    return new Group(
+        ico
+            .projectFaces(P)
+            .map((e, i) => {
+                return { v: e, t: "face", i: i, c: ico.isCap(i) };
+            })
+            .concat(fibers)
+            .sort((a, b) => {
+                // sort by z-order
+                const [u, v] = [a.v, b.v];
+                return u[0][2] + u[1][2] + (u.length < 3 ? 0 : u[2][2]) - (v[0][2] + v[1][2] + (v.length < 3 ? 0 : v[2][2]));
+            })
+            .map((o) => {
+                const e = o.v;
+                if (o.t === "face") {
+                    const B = [
+                        [e[idx[o.i][0]][0], e[idx[o.i][1]][0], e[idx[o.i][2]][0]],
+                        [e[idx[o.i][0]][1], e[idx[o.i][1]][1], e[idx[o.i][2]][1]],
+                        [1, 1, 1],
+                    ];
+                    const M = Matrix.mul(B, o.c ? A1 : A2);
+                    var face = o.c ? face1 : o.c ? face1 : face2;
                     return face.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
                 } else {
                     var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);

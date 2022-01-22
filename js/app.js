@@ -2,6 +2,8 @@ let opt;
 let cam;
 let hex;
 let face;
+let ico;
+let fib;
 
 /**
  * Alias getElementById
@@ -17,7 +19,7 @@ function eid(id) {
  */
 function tNumber() {
     const [h, k] = [opt.h, opt.k];
-    eid("tnumber").innerHTML = "&nbsp;&nbsp;=&nbsp;" + `${h}<sup>2</sup>&nbsp;+&nbsp;` + `(${h})(${k})&nbsp;+&nbsp;` + `${k}<sup>2</sup><br>&nbsp;&nbsp;=&nbsp;` + `${h * h + h * k + k * k}`;
+    eid("tnumber").innerHTML = `=&nbsp;${h}<sup>2</sup>&nbsp;+&nbsp;(${h})(${k})&nbsp;+&nbsp;${k}<sup>2</sup>&nbsp=&nbsp${h * h + h * k + k * k}`;
 }
 
 /**
@@ -64,12 +66,14 @@ function getOpt() {
     opt = {
         h: parseInt(eid("h").value),
         k: parseInt(eid("k").value),
+        K: parseInt(eid("K").value),
         R2: parseFloat(eid("R2").value),
         R3: parseFloat(eid("R3").value),
         F: parseFloat(eid("F").value),
         θ: radians(parseFloat(eid("θ").value)),
         ψ: radians(parseFloat(eid("ψ").value)),
         φ: radians(parseFloat(eid("φ").value)),
+        rotation: eid("rotation").value,
         interval: parseInt(eid("interval").value),
     };
 }
@@ -126,25 +130,62 @@ function setProjection(name) {
     eid("φ").value = 0;
     switch (name) {
         case "Face-1":
-            eid("φ").value = 90 - degrees(Math.atan2((b + 0.5 + 0.5) / 3, 0.5 / 3)) + 90;
+            // TODO: algebraic construction
+            eid("θ").value = 60;
+            eid("φ").value = 10.8123169636;
             break;
         case "Face-2":
-            eid("φ").value = 90 - degrees(Math.atan2((b + 0.5 + 0.5) / 3, 0.5 / 3));
+            // TODO: algebraic construction
+            eid("φ").value = 100.8123169636;
             break;
         case "Edge-1":
-            eid("ψ").value = 90;
-            break;
-        case "Edge-2":
-            // default
-            break;
-        case "Vertex-1":
             eid("φ").value = degrees(Math.atan2(b, 0.5));
             break;
+        case "Edge-2":
+            eid("θ").value = 90;
+            eid("φ").value = degrees(Math.atan2(b, 0.5));
+            break;
+        case "Vertex-1":
+            eid("φ").value = 90;
+            break;
         case "Vertex-2":
-            eid("φ").value = 90 - degrees(Math.atan2(b, 0.5));
+            // default
             break;
     }
     updateCam();
+}
+
+function pyth(a, b, C) {
+    return Math.sqrt(b * b + a * a - 2 * b * a * Math.cos(C));
+}
+
+function pointReduce(G, cmp) {
+    return G.flatMap((e) => {
+        return e.segments.map((f) => {
+            return f.point;
+        });
+    }).reduce((a, b) => {
+        return a.y < b.y ? b : a;
+    });
+}
+
+function updateIco() {
+    if (eid("symmetry").value === "equilateral") {
+        ico.setEdge(opt.R3, opt.R3, -radians(60));
+        fib.setEdge(opt.F, opt.F, -radians(60));
+    } else {
+        const pa = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
+        const pb = face.children[0].bounds.bottomRight;
+        const pc = face.children[0].bounds.bottomLeft;
+        const C = angle(pc, pa, pb);
+        const B = angle(pb, pa, pc);
+        const A = radians(180) - B - C;
+        const a = opt.R3;
+        const b = (a * Math.sin(B)) / Math.sin(A);
+        const c = (a * Math.sin(C)) / Math.sin(A);
+        ico.setEdge(a, b, -C);
+        fib.setEdge(opt.F, (opt.F * Math.sin(B)) / Math.sin(A), -C);
+    }
 }
 
 /**
@@ -160,28 +201,28 @@ function setProjectionEvent(ele) {
 function drawHex() {
     switch (eid("geometry").value) {
         case "Hex":
-            hex = new Hex(opt.R2);
+            hex = new Hex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "TriHex":
-            hex = new TriHex(opt.R2);
+            hex = new TriHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "SnubHex":
-            hex = new SnubHex(opt.R2);
+            hex = new SnubHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "RhombiTriHex":
-            hex = new RhombiTriHex(opt.R2);
+            hex = new RhombiTriHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "DualHex":
-            hex = new Hex(opt.R2);
+            hex = new Hex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "DualTriHex":
-            hex = new DualTriHex(opt.R2);
+            hex = new DualTriHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "DualSnubHex":
-            hex = new DualSnubHex(opt.R2);
+            hex = new DualSnubHex(opt.R2, opt.h, opt.k, opt.K);
             break;
         case "DualRhombiTriHex":
-            hex = new DualRhombiTriHex(opt.R2);
+            hex = new DualRhombiTriHex(opt.R2, opt.h, opt.k, opt.K);
     }
 }
 
@@ -189,7 +230,10 @@ function drawHex() {
  * Draw the face.
  */
 function drawFace() {
-    face = hex.face(opt.h, opt.k, getFaceStyle());
+    face =
+        eid("symmetry").value === "equilateral" //
+            ? hex.face(getFaceStyle())
+            : hex.face5(getFaceStyle());
 }
 
 /**
@@ -204,10 +248,16 @@ function redraw() {
     var obj;
     switch (eid("mode").value) {
         case "ico":
-            obj = drawIco(face, opt.R3, opt.F, cam.P, getIcoStyle());
+            obj =
+                eid("symmetry").value === "equilateral" //
+                    ? drawIco(face, ico, fib, cam.P, getIcoStyle())
+                    : drawIco5(face, ico, fib, cam.P, getIcoStyle());
             break;
         case "net":
-            obj = drawNet(face);
+            obj =
+                eid("symmetry").value === "equilateral" //
+                    ? drawNet(face)
+                    : drawNet5(face);
             break;
         case "face":
             drawFace();
@@ -225,17 +275,18 @@ window.onload = function () {
     cam = new Camera();
 
     // set event listeners for UI
-    ["geometry", "R2"].map(eid).forEach((e) => e.addEventListener("change", drawHex));
-    ["projection"].map(eid).forEach((e) => e.addEventListener("change", setProjectionEvent));
-    ["h", "k"].map(eid).forEach((e) => e.addEventListener("change", tNumber));
-    ["h", "k", "geometry", "rotation", "R2"]
+    ["h", "k", "K", "geometry", "R2"].map(eid).forEach((e) => e.addEventListener("change", drawHex));
+    eid("projection").addEventListener("change", setProjectionEvent);
+    ["h", "k", "K"].map(eid).forEach((e) => e.addEventListener("change", tNumber));
+    ["h", "k", "K", "geometry", "symmetry", "rotation", "R2"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
         .concat(Array.from(document.querySelectorAll("[id^='hex.']")))
         .concat(Array.from(document.querySelectorAll("[id^='pen.']")))
         .forEach((e) => e.addEventListener("change", drawFace));
     ["θ", "ψ", "φ"].map(eid).forEach((e) => e.addEventListener("change", updateCam));
-    ["h", "k", "geometry", "projection", "rotation", "mode", "R2", "R3", "F", "θ", "ψ", "φ"]
+    ["h", "k", "K", "symmetry", "rotation", "R3", "F"].map(eid).forEach((e) => e.addEventListener("change", updateIco));
+    ["h", "k", "K", "geometry", "projection", "rotation", "mode", "symmetry", "R2", "R3", "F", "θ", "ψ", "φ"]
         .map(eid)
         .concat(Array.from(document.querySelectorAll("[id^='face.']")))
         .concat(Array.from(document.querySelectorAll("[id^='fib.']")))
@@ -248,10 +299,13 @@ window.onload = function () {
     //init
     getOpt();
     setProjection(eid("projection").value);
+    ico = new Icosahedron(opt.R3);
+    fib = new Icosahedron(opt.F);
 
     // draw
     drawHex();
     drawFace();
+    updateIco();
     redraw();
 
     // animate
