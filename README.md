@@ -39,7 +39,7 @@ Please comment on or cite the preprint at [bioRxiv](https://www.biorxiv.org/cont
 
 # demoscene
 
-Got 5th place at Demosplash 2021 5th place for the combined demo/intro category (https://www.pouet.net/prod.php?which=90296) using algorithms from this project.
+Got 5th place at Demosplash 2021 for the combined demo/intro category (https://www.pouet.net/prod.php?which=90296) using algorithms from this project.
 
 # license
 
