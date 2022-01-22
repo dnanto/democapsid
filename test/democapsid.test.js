@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-const [Matrix /*, Hex, TriHex, SnubHex, RhombiTriHex, DualTriHex, DualSnubHex, DualRhombiTriHex*/] = require("../js/capsid");
+const [Matrix /*, Hex, TriHex, SnubHex, RhombiTriHex, DualTriHex, DualSnubHex, DualRhombiTriHex*/] = require("../js/democapsid.js");
 // const paper = require("paper");
 
 // paper.install(window);
