@@ -4,13 +4,13 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 
 # run
 
--   Run main app (v1.1.0): https://dnanto.github.io/capsid/capsid.html.
+-   Run main app (v1.1.0): https://dnanto.github.io/democapsid/capsid.html.
 
 ![screenshot.png](screenshot.png)
 
 # paper
 
-Please comment on or cite the preprint at [bioRxiv](https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1).
+Please comment on or cite the preprint at [bioRxiv](https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1). This work previously went by the name "capsid.js" and is now "democapsid".
 
 ```bibtex
 @article {Negr{\'o}n2020.12.02.408252,
