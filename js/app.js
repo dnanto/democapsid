@@ -3,7 +3,6 @@ let cam;
 let hex;
 let face;
 let ico;
-let fib;
 
 /**
  * Alias getElementById
@@ -149,7 +148,6 @@ function setProjectionEvent(ele) {
 function updateIco() {
     if (eid("symmetry").value === "equilateral") {
         ico.setEdge(opt.R3, opt.R3, -radians(60));
-        fib.setEdge(opt.F, opt.F, -radians(60));
     } else {
         const pa = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
         const pb = face.children[0].bounds.bottomRight;
@@ -158,7 +156,6 @@ function updateIco() {
         const B = angle(pb, pa, pc);
         const A = radians(180) - B - C;
         ico.setEdge(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
-        fib.setEdge(opt.F, (opt.F * Math.sin(B)) / Math.sin(A), -C);
     }
 }
 
@@ -217,8 +214,8 @@ function redraw() {
         case "ico":
             obj =
                 eid("symmetry").value === "equilateral" //
-                    ? drawIco(face, ico, fib, cam.P, getIcoStyle())
-                    : drawIco5(face, ico, fib, cam.P, getIcoStyle());
+                    ? drawIco(face, ico, opt.F, cam.P, getIcoStyle())
+                    : drawIco5(face, ico, opt.F, cam.P, getIcoStyle());
             break;
         case "net":
             obj =
@@ -293,7 +290,6 @@ window.onload = function () {
     getOpt();
     setProjection(eid("projection").value);
     ico = new Icosahedron(opt.R3);
-    fib = new Icosahedron(opt.F);
 
     // draw
     drawHex();

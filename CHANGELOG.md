@@ -1,3 +1,8 @@
+# v1.1.1
+
+-   remove need for face vertex connectivity index
+-   calculate vertex normals for fibers instead of another larger icosahedron
+
 # v1.1.0
 
 -   implement elongated capsid with 5-fold symmetry

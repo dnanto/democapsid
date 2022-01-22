@@ -106,10 +106,6 @@ class Camera {
 }
 
 class Icosahedron {
-    constructor(s, h = undefined, th = radians(-60)) {
-        this.setEdge(s, h, th);
-    }
-
     // array of face vertexes
     faceIndexes = [
         // cap
@@ -137,26 +133,19 @@ class Icosahedron {
         [10, 6, 11],
     ];
 
-    // // mid
-    // [1, 2, 0],
-    // [2, 0, 1],
-    // [0, 1, 2],
-    // [2, 0, 1],
-    // [0, 1, 2],
-    // [2, 0, 1],
-    // [0, 1, 2],
-    // [2, 0, 1],
-    // [0, 1, 2],
-    // [2, 0, 1],
-    // // cap
-    // [0, 2, 1],
-    // [0, 2, 1],
-    // [0, 2, 1],
-    // [0, 2, 1],
-    // [0, 2, 1],
-
-    isCap5(i) {
-        return [0, 1, 2, 3, 4, 15, 16, 17, 18, 19].some((e) => e === i);
+    constructor(s, h = undefined, th = radians(-60)) {
+        this.setEdge(s, h, th);
+        this.vertexNeighbors = [];
+        for (var i = 0; i < 12; i++) this.vertexNeighbors[i] = new Set();
+        this.faceIndexes.forEach((e) => {
+            this.vertexNeighbors[e[0]].add(e[1]);
+            this.vertexNeighbors[e[0]].add(e[2]);
+            this.vertexNeighbors[e[1]].add(e[0]);
+            this.vertexNeighbors[e[1]].add(e[2]);
+            this.vertexNeighbors[e[2]].add(e[0]);
+            this.vertexNeighbors[e[2]].add(e[1]);
+        });
+        this.vertexNeighbors = this.vertexNeighbors.map((e) => Array.from(e));
     }
 
     setEdge(s, h, th) {
@@ -206,6 +195,10 @@ class Icosahedron {
             ]);
     }
 
+    isCap5(i) {
+        return [0, 1, 2, 3, 4, 15, 16, 17, 18, 19].some((e) => e === i);
+    }
+
     /**
      * Calculate the 3D vertex projections.
      * @param {Array} P The camera matrix.
@@ -226,6 +219,17 @@ class Icosahedron {
     projectFaces(P) {
         var p = this.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
         return this.faceIndexes.map((e) => [p[e[0]], p[e[1]], p[e[2]]]);
+    }
+
+    calcVertexFibers(P, F) {
+        var v = this.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        return ico.vertexNeighbors.map((e, i) => {
+            const x = 5 * v[i][0] - (v[e[0]][0] + v[e[1]][0] + v[e[2]][0] + v[e[3]][0] + v[e[4]][0]);
+            const y = 5 * v[i][1] - (v[e[0]][1] + v[e[1]][1] + v[e[2]][1] + v[e[3]][1] + v[e[4]][1]);
+            const z = 5 * v[i][2] - (v[e[0]][2] + v[e[1]][2] + v[e[2]][2] + v[e[3]][2] + v[e[4]][2]);
+            const d = Math.sqrt(x * x + y * y + z * z);
+            return [v[i], [v[i][0] + (x / d) * F, v[i][1] + (y / d) * F, v[i][2] + (z / d) * F]];
+        });
     }
 }
 
@@ -671,7 +675,7 @@ function drawNet5(face) {
     return net;
 }
 
-function drawIco(face, ico, fib, P, opt) {
+function drawIco(face, ico, F, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
     const A = Matrix.inv3([
         [face.bounds.topCenter.x, face.bounds.bottomLeft.x, face.bounds.bottomRight.x],
@@ -679,14 +683,12 @@ function drawIco(face, ico, fib, P, opt) {
         [1, 1, 1],
     ]);
 
-    var fibers = [];
-    if (fib.s > 0) {
-        var p1 = ico.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        var p2 = fib.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        fibers = p1.map((_, i) => {
-            return { v: [p1[i], p2[i]], t: "fiber" };
-        });
-    }
+    var fibers =
+        F > 0
+            ? ico.calcVertexFibers(P, F).map((e) => {
+                  return { v: e, t: "fiber" };
+              })
+            : [];
     return new Group(
         ico
             .projectFaces(P)
@@ -720,11 +722,11 @@ function drawIco(face, ico, fib, P, opt) {
     );
 }
 
-function drawIco5(ff, ico, fib, P, opt) {
+function drawIco5(ff, ico, F, P, sty) {
     // affine transform each triangle to the 2D projection of icosahedron face
     var face1 = ff.children[0];
     var face2 = ff.children[1];
-    var p = pointReduce(face2.children, (a, b) => (a.y > b.y ? a : b));
+    var bottomVertex = pointReduce(face2.children, (a, b) => (a.y > b.y ? a : b));
 
     const A1 = Matrix.inv3([
         [face1.bounds.bottomLeft.x, face1.bounds.topCenter.x, face1.bounds.bottomRight.x],
@@ -732,20 +734,17 @@ function drawIco5(ff, ico, fib, P, opt) {
         [1, 1, 1],
     ]);
     const A2 = Matrix.inv3([
-        [face1.bounds.bottomLeft.x, p.x, face1.bounds.bottomRight.x],
-        [face1.bounds.bottomLeft.y, p.y, face1.bounds.bottomRight.y],
+        [face1.bounds.bottomLeft.x, bottomVertex.x, face1.bounds.bottomRight.x],
+        [face1.bounds.bottomLeft.y, bottomVertex.y, face1.bounds.bottomRight.y],
         [1, 1, 1],
     ]);
 
-    var fibers = [];
-    if (fib.s > 0) {
-        var p1 = ico.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        var p2 = fib.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        fibers = p1.map((_, i) => {
-            return { v: [p1[i], p2[i]], t: "fiber" };
-        });
-    }
-
+    var fibers =
+        F > 0
+            ? ico.calcVertexFibers(P, F).map((e) => {
+                  return { v: e, t: "fiber" };
+              })
+            : [];
     return new Group(
         ico
             .projectFaces(P)
@@ -771,9 +770,9 @@ function drawIco5(ff, ico, fib, P, opt) {
                     return face.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
                 } else {
                     var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
-                    fiber.style = opt["fib.mer"];
-                    var knob = new Path.Circle([e[1][0], e[1][1]], opt["knb.mer"].R);
-                    knob.style = opt["knb.mer"]["style"];
+                    fiber.style = sty["fib.mer"];
+                    var knob = new Path.Circle([e[1][0], e[1][1]], sty["knb.mer"].R);
+                    knob.style = sty["knb.mer"]["style"];
                     return new Group([fiber, knob]);
                 }
             })
