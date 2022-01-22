@@ -15,48 +15,12 @@ function eid(id) {
 }
 
 /**
- * Calculate the capsid T-number
- */
-function tNumber() {
-    const [h, k] = [opt.h, opt.k];
-    eid("tnumber").innerHTML = `=&nbsp;${h}<sup>2</sup>&nbsp;+&nbsp;(${h})(${k})&nbsp;+&nbsp;${k}<sup>2</sup>&nbsp=&nbsp${h * h + h * k + k * k}`;
-}
-
-/**
  * Parse the color alpha value.
  * @param {*} value the value [0 255]
  * @returns the hex value
  */
 function parseAlpha(value) {
     return Number(value).toString(16).padStart(2, "0");
-}
-
-/**
- * Export SVG.
- */
-function exportSVG() {
-    var link = document.createElement("a");
-    link.download = "capsid.svg";
-    link.href =
-        "data:image/svg+xml;utf8," +
-        encodeURIComponent(
-            paper.project.exportSVG({
-                "options.bounds": "content",
-                asString: true,
-                "options.matchShapes": true,
-            })
-        );
-    link.click();
-}
-
-/**
- * Update camera matrix.
- */
-function updateCam() {
-    ["θ", "ψ", "φ"].forEach((e) => {
-        cam[e] = radians(parseFloat(eid(e).value));
-    });
-    cam.update();
 }
 
 /**
@@ -120,6 +84,26 @@ function getIcoStyle() {
     };
 }
 
+function pointReduce(G, cmp) {
+    return G.flatMap((e) => {
+        return e.segments.map((f) => {
+            return f.point;
+        });
+    }).reduce((a, b) => {
+        return a.y < b.y ? b : a;
+    });
+}
+
+/**
+ * Update camera matrix.
+ */
+function updateCam() {
+    ["θ", "ψ", "φ"].forEach((e) => {
+        cam[e] = radians(parseFloat(eid(e).value));
+    });
+    cam.update();
+}
+
 /**
  * Set the projection.
  */
@@ -155,18 +139,11 @@ function setProjection(name) {
     updateCam();
 }
 
-function pyth(a, b, C) {
-    return Math.sqrt(b * b + a * a - 2 * b * a * Math.cos(C));
-}
-
-function pointReduce(G, cmp) {
-    return G.flatMap((e) => {
-        return e.segments.map((f) => {
-            return f.point;
-        });
-    }).reduce((a, b) => {
-        return a.y < b.y ? b : a;
-    });
+/**
+ * Set the projection from event.
+ */
+function setProjectionEvent(ele) {
+    setProjection(ele.target.value);
 }
 
 function updateIco() {
@@ -180,19 +157,9 @@ function updateIco() {
         const C = angle(pc, pa, pb);
         const B = angle(pb, pa, pc);
         const A = radians(180) - B - C;
-        const a = opt.R3;
-        const b = (a * Math.sin(B)) / Math.sin(A);
-        const c = (a * Math.sin(C)) / Math.sin(A);
-        ico.setEdge(a, b, -C);
+        ico.setEdge(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
         fib.setEdge(opt.F, (opt.F * Math.sin(B)) / Math.sin(A), -C);
     }
-}
-
-/**
- * Set the projection from event.
- */
-function setProjectionEvent(ele) {
-    setProjection(ele.target.value);
 }
 
 /**
@@ -265,6 +232,32 @@ function redraw() {
             break;
     }
     obj.position = view.center;
+}
+
+/**
+ * Calculate the capsid T-number
+ */
+function tNumber() {
+    const [h, k] = [opt.h, opt.k];
+    eid("tnumber").innerHTML = `=&nbsp;${h}<sup>2</sup>&nbsp;+&nbsp;(${h})(${k})&nbsp;+&nbsp;${k}<sup>2</sup>&nbsp=&nbsp${h * h + h * k + k * k}`;
+}
+
+/**
+ * Export SVG.
+ */
+function exportSVG() {
+    var link = document.createElement("a");
+    link.download = "capsid.svg";
+    link.href =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+            paper.project.exportSVG({
+                "options.bounds": "content",
+                asString: true,
+                "options.matchShapes": true,
+            })
+        );
+    link.click();
 }
 
 paper.install(window);

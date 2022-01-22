@@ -106,47 +106,63 @@ class Camera {
 }
 
 class Icosahedron {
-    constructor(s, h = undefined, angle = radians(-60)) {
-        this.setEdge(s, h, angle);
+    constructor(s, h = undefined, th = radians(-60)) {
+        this.setEdge(s, h, th);
     }
 
     // array of face vertexes
     faceIndexes = [
         // cap
-        [0, 2, 1],
-        [0, 1, 4],
-        [0, 4, 3],
-        [0, 3, 5],
-        [0, 5, 2],
+        [0, 1, 2],
+        [0, 4, 1],
+        [0, 3, 4],
+        [0, 5, 3],
+        [0, 2, 5],
         // mid
-        [1, 2, 6],
-        [1, 6, 7],
+        [2, 6, 1],
+        [7, 1, 6],
         [1, 7, 4],
-        [4, 7, 8],
+        [8, 4, 7],
         [4, 8, 3],
-        [3, 8, 9],
+        [9, 3, 8],
         [3, 9, 5],
-        [5, 9, 10],
+        [10, 5, 9],
         [5, 10, 2],
-        [2, 10, 6],
+        [6, 2, 10],
         // cap
-        [6, 11, 7],
-        [7, 11, 8],
-        [8, 11, 9],
-        [9, 11, 10],
-        [10, 11, 6],
+        [6, 7, 11],
+        [7, 8, 11],
+        [8, 9, 11],
+        [9, 10, 11],
+        [10, 6, 11],
     ];
 
-    isCap(i) {
+    // // mid
+    // [1, 2, 0],
+    // [2, 0, 1],
+    // [0, 1, 2],
+    // [2, 0, 1],
+    // [0, 1, 2],
+    // [2, 0, 1],
+    // [0, 1, 2],
+    // [2, 0, 1],
+    // [0, 1, 2],
+    // [2, 0, 1],
+    // // cap
+    // [0, 2, 1],
+    // [0, 2, 1],
+    // [0, 2, 1],
+    // [0, 2, 1],
+    // [0, 2, 1],
+
+    isCap5(i) {
         return [0, 1, 2, 3, 4, 15, 16, 17, 18, 19].some((e) => e === i);
     }
 
-    setEdge(s, h, angle) {
+    setEdge(s, h, th) {
         this.s = s;
         this.h = h;
-        this.angle = angle;
-
-        h = h === undefined ? s : h;
+        this.angle = th;
 
         const b = s / 2;
         const a = phi * b;
@@ -162,14 +178,14 @@ class Icosahedron {
             [0, -b, -a, 1],
             [a, 0, -b, 1],
             [-a, 0, -b, 1],
-        ].map((v) =>
+        ].map((vert) =>
             Matrix.mul(
                 cam.P,
-                v.map((e) => [e])
+                vert.map((e) => [e])
             )
         );
 
-        const A = [v[2][0][0] + h * Math.cos(angle), v[2][1][0] + h * Math.sin(angle), v[2][2][0]];
+        const A = [v[2][0][0] + h * Math.cos(th), v[2][1][0] + h * Math.sin(th), v[2][2][0]];
 
         const B = [A[0], v[2][1][0], v[2][2][0]];
         const r1 = Math.sqrt(v[2][0][0] * v[2][0][0] + v[2][2][0] * v[2][2][0]);
@@ -179,7 +195,7 @@ class Icosahedron {
         const a72 = radians(-72);
         var cy = (B[1] + D[1]) / 2;
         this.vertexes = v
-            .map((v) => [v[0][0], v[1][0], v[2][0], 1])
+            .map((e) => [e[0][0], e[1][0], e[2][0], 1])
             .concat([
                 [D[0], D[1], D[2], 1],
                 [Math.cos(a72 * 1) * D[0] - Math.sin(a72 * 1) * D[2], D[1], Math.sin(a72 * 1) * D[0] + Math.cos(a72 * 1) * D[2], 1],
@@ -307,7 +323,7 @@ class Hex {
                     return f.length > 1;
                 })
                 .map((f) => {
-                    var c = centroid(f.segments);
+                    var c = centroidSegments(f.segments);
                     f.type = v.some((y) => c.getDistance(y) < this.circumradius) ? "pen" : "hex";
                     f.style = opt[f.type + "." + f.name.split(" ")[0]];
                     return f;
@@ -562,7 +578,7 @@ class DualRhombiTriHex extends Hex {
     }
 }
 
-function centroid(segments) {
+function centroidSegments(segments) {
     return segments
         .map((e) => {
             return e.point;
@@ -573,28 +589,32 @@ function centroid(segments) {
         .divide(segments.length);
 }
 
-/**
- * Convert radians to degrees.
- * @param {*} radians the value in degrees
- * @returns the value in radians
- */
-function radians(degrees) {
-    return degrees * (Math.PI / 180);
-}
-
-/**
- * Convert degrees to radians.
- * @param {*} radians the value in radians
- * @returns the value in degrees
- */
-function degrees(radians) {
-    return radians * (180 / Math.PI);
+function centroidFace(v) {
+    return [v[0][0] + v[1][0] + v[2][0] / 3, v[0][1] + v[1][1] + v[2][1] / 3, v[0][2] + v[1][2] + v[2][2] / 3];
 }
 
 function angle(B, A, C) {
     // https://math.stackexchange.com/a/3427603
     const [BA, BC] = [A.subtract(B), C.subtract(B)];
     return Math.acos(BA.dot(BC) / (BA.length * BC.length));
+}
+
+function degrees(value) {
+    return value * (180 / Math.PI);
+}
+
+function radians(value) {
+    return value * (Math.PI / 180);
+}
+
+function pointReduce(G, cmp) {
+    return G.flatMap((e) => {
+        return e.segments.map((f) => {
+            return f.point;
+        });
+    }).reduce((a, b) => {
+        return cmp(a, b);
+    });
 }
 
 /**
@@ -631,15 +651,7 @@ function drawNet(face) {
 
 function drawNet5(face) {
     var f2 = face.clone().scale(-1, -1);
-    var p = face.children[1].children
-        .flatMap((e) => {
-            return e.segments.map((f) => {
-                return f.point;
-            });
-        })
-        .reduce((a, b) => {
-            return a.y < b.y ? b : a;
-        });
+    var p = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
 
     f2.bounds.left = p.x < face.children[0].bounds.right ? p.x : face.children[0].bounds.right;
     f2.position.y += face.children[0].bounds.height;
@@ -679,7 +691,7 @@ function drawIco(face, ico, fib, P, opt) {
         ico
             .projectFaces(P)
             .map((e, i) => {
-                return { v: e, t: "face", c: ico.isCap(i) };
+                return { v: e, t: "face", c: ico.isCap5(i) };
             })
             .concat(fibers)
             .sort((a, b) => {
@@ -712,15 +724,7 @@ function drawIco5(ff, ico, fib, P, opt) {
     // affine transform each triangle to the 2D projection of icosahedron face
     var face1 = ff.children[0];
     var face2 = ff.children[1];
-    var p = face2.children
-        .flatMap((e) => {
-            return e.segments.map((f) => {
-                return f.point;
-            });
-        })
-        .reduce((a, b) => {
-            return a.y < b.y ? b : a;
-        });
+    var p = pointReduce(face2.children, (a, b) => (a.y > b.y ? a : b));
 
     const A1 = Matrix.inv3([
         [face1.bounds.bottomLeft.x, face1.bounds.topCenter.x, face1.bounds.bottomRight.x],
@@ -742,37 +746,11 @@ function drawIco5(ff, ico, fib, P, opt) {
         });
     }
 
-    // face vertex transform order
-    var idx = [
-        // cap
-        [0, 2, 1],
-        [0, 2, 1],
-        [0, 2, 1],
-        [0, 2, 1],
-        [0, 2, 1],
-        // mid
-        [1, 2, 0],
-        [2, 0, 1],
-        [0, 1, 2],
-        [2, 0, 1],
-        [0, 1, 2],
-        [2, 0, 1],
-        [0, 1, 2],
-        [2, 0, 1],
-        [0, 1, 2],
-        [2, 0, 1],
-        // cap
-        [0, 2, 1],
-        [0, 2, 1],
-        [0, 2, 1],
-        [0, 2, 1],
-        [0, 2, 1],
-    ];
     return new Group(
         ico
             .projectFaces(P)
             .map((e, i) => {
-                return { v: e, t: "face", i: i, c: ico.isCap(i) };
+                return { v: e, t: "face", c: ico.isCap5(i) };
             })
             .concat(fibers)
             .sort((a, b) => {
@@ -784,12 +762,12 @@ function drawIco5(ff, ico, fib, P, opt) {
                 const e = o.v;
                 if (o.t === "face") {
                     const B = [
-                        [e[idx[o.i][0]][0], e[idx[o.i][1]][0], e[idx[o.i][2]][0]],
-                        [e[idx[o.i][0]][1], e[idx[o.i][1]][1], e[idx[o.i][2]][1]],
+                        [e[0][0], e[1][0], e[2][0]],
+                        [e[0][1], e[1][1], e[2][1]],
                         [1, 1, 1],
                     ];
                     const M = Matrix.mul(B, o.c ? A1 : A2);
-                    var face = o.c ? face1 : o.c ? face1 : face2;
+                    var face = o.c ? face1 : face2;
                     return face.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
                 } else {
                     var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
@@ -802,4 +780,6 @@ function drawIco5(ff, ico, fib, P, opt) {
     );
 }
 
-module.exports = [Matrix, Hex, TriHex, SnubHex, RhombiTriHex, DualTriHex, DualSnubHex, DualRhombiTriHex];
+if (typeof module !== "undefined") {
+    module.exports = [Matrix];
+}
