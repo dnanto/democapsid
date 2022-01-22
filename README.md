@@ -37,6 +37,10 @@ Please comment on or cite the preprint at [bioRxiv](https://www.biorxiv.org/cont
 
 -   Hamann, M. V.; Beschorner, N.; Vu, X.-K.; Hauber, I.; Lange, U. C.; Traenkle, B.; Kaiser, P. D.; Foth, D.; Schneider, C.; Büning, H.; Rothbauer, U.; Hauber, J. Improved Targeting of Human CD4+ T Cells by Nanobody-Modified AAV2 Gene Therapy Vectors. PLOS ONE 2021, 16 (12), e0261269. https://doi.org/10.1371/journal.pone.0261269.
 
+# demoscene
+
+Got 5th place at Demosplash 2021 5th place for the combined demo/intro category (https://www.pouet.net/prod.php?which=90296) using algorithms from this project.
+
 # license
 
 -   [dnanto/capsid](https://github.com/dnanto/capsid): [MIT License](https://github.com/dnanto/capsid/blob/master/LICENSE)
