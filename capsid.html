@@ -12,10 +12,7 @@
     <body>
         <div class="layout">
             <div class="options">
-                <div>
-                    <strong>capsid.js</strong> | <a href="https://github.com/dnanto/capsid">GitHub</a> |
-                    <a href="https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1">Preprint</a>
-                </div>
+                <div><strong>capsid.js</strong> | <a href="https://github.com/dnanto/capsid">GitHub</a> | <a href="https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1">Preprint</a> | ⚗️</div>
                 <br />
 
                 <div>
@@ -28,6 +25,8 @@
                     <div><input type="number" id="h" step="1" value="2" min="0" /></div>
                     <div><label for="k">k</label></div>
                     <div><input type="number" id="k" step="1" value="1" min="0" /></div>
+                    <div><label for="K">K</label></div>
+                    <div><input type="number" id="K" step="1" value="2" min="0" /></div>
                     <div><label for="tnumber">T-Number</label></div>
                     <div id="tnumber">0</div>
                 </div>
@@ -40,6 +39,13 @@
                             <option value="ico" selected>ico</option>
                             <option value="net">net</option>
                             <option value="face">face</option>
+                        </select>
+                    </div>
+                    <div><label for="symmetry">symmetry</label></div>
+                    <div>
+                        <select id="symmetry">
+                            <option value="equilateral" selected>equilateral</option>
+                            <option value="5-fold">5-fold</option>
                         </select>
                     </div>
                     <div><label for="geometry">geometry</label></div>
@@ -74,12 +80,12 @@
                         </select>
                     </div>
 
-                    <div><label for="R3">radius (ico)</label></div>
-                    <div><input type="number" id="R3" step="any" value="500" min="0" /></div>
-                    <div><label for="R2">radius (net)</label></div>
+                    <div><label for="R3">ico edge</label></div>
+                    <div><input type="number" id="R3" step="any" value="250" min="0" /></div>
+                    <div><label for="F">fiber edge</label></div>
+                    <div><input type="number" id="F" step="any" value="350" min="0" /></div>
+                    <div><label for="R2">hex radius </label></div>
                     <div><input type="number" id="R2" step="any" value="25" min="0" /></div>
-                    <div><label for="F">radius (fiber)</label></div>
-                    <div><input type="number" id="F" step="any" value="650" min="0" /></div>
 
                     <div><label for="θ">θ</label></div>
                     <div><input type="number" id="θ" step="any" value="0" /></div>
@@ -101,15 +107,15 @@
                     <div>line</div>
                     <div><input type="color" id="face.color" /></div>
                     <div><input type="number" id="face.alpha" step="1" value="255" min="0" max="255" /></div>
-                    <div><input type="number" id="face.size" value="1" min="0" /></div>
+                    <div><input type="number" id="face.size" step="0.1" value="0.5" min="0" /></div>
                     <div>fiber</div>
                     <div><input type="color" id="fib.color" value="#eded61" /></div>
                     <div><input type="number" id="fib.alpha" step="1" value="255" min="0" max="255" /></div>
-                    <div><input type="number" id="fib.size" value="2" min="0" /></div>
+                    <div><input type="number" id="fib.size" step="0.1" value="2" min="0" /></div>
                     <div>knob</div>
                     <div><input type="color" id="knb.color" value="#ffa500" /></div>
                     <div><input type="number" id="knb.alpha" step="1" value="255" min="0" max="255" /></div>
-                    <div><input type="number" id="knb.size" value="4" min="0" /></div>
+                    <div><input type="number" id="knb.size" step="0.1" value="4" min="0" /></div>
                     <div>hexamer-1</div>
                     <div><input type="color" id="hex.color-1" value="#92be5f" /></div>
                     <div><input type="number" id="hex.alpha-1" step="1" value="255" min="0" max="255" /></div>
