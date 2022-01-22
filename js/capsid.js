@@ -517,6 +517,7 @@ class DualSnubHex extends Hex {
         this.dy = 2 * this.r + 2 * ((this.R * root3) / 3) - (this.R * root3) / 6;
         this.ddx = 0.5 * R;
         this.ddy = this.r;
+        this.circumradius = this.r + this.R3;
     }
 
     /**
@@ -533,7 +534,9 @@ class DualSnubHex extends Hex {
         ]);
         path.closed = true;
         path.name = "mer-1";
-        return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0]))].flat();
+        var cir = new Path.Circle([0, 0], this.circumradius);
+        cir.name = "cir-1";
+        return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0])), cir].flat();
     }
 }
 

@@ -179,7 +179,6 @@ function updateIco() {
         const a = opt.R3;
         const b = (a * Math.sin(B)) / Math.sin(A);
         const c = (a * Math.sin(C)) / Math.sin(A);
-        console.log(a, b, c, degrees(A), degrees(B), degrees(C));
         ico.setEdge(a, b, -C);
         fib.setEdge(opt.F, (opt.F * Math.sin(B)) / Math.sin(A), -C);
     }
@@ -227,7 +226,6 @@ function drawHex() {
  * Draw the face.
  */
 function drawFace() {
-    console.log(eid("symmetry").value);
     face =
         eid("symmetry").value === "equilateral" //
             ? hex.face(getFaceStyle())
