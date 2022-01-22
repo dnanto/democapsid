@@ -155,7 +155,7 @@ function pyth(a, b, C) {
     return Math.sqrt(b * b + a * a - 2 * b * a * Math.cos(C));
 }
 
-function foo(G, cmp) {
+function pointReduce(G, cmp) {
     return G.flatMap((e) => {
         return e.segments.map((f) => {
             return f.point;
@@ -168,9 +168,9 @@ function foo(G, cmp) {
 function updateIco() {
     if (eid("symmetry").value === "equilateral") {
         ico.setEdge(opt.R3, opt.R3, -radians(60));
-        fib.setEdge(opt.F);
+        fib.setEdge(opt.F, opt.F, -radians(60));
     } else {
-        const pa = foo(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
+        const pa = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
         const pb = face.children[0].bounds.bottomRight;
         const pc = face.children[0].bounds.bottomLeft;
         const C = angle(pc, pa, pb);
@@ -181,7 +181,7 @@ function updateIco() {
         const c = (a * Math.sin(C)) / Math.sin(A);
         console.log(a, b, c, degrees(A), degrees(B), degrees(C));
         ico.setEdge(a, b, -C);
-        fib.setEdge(opt.F, (opt.F * Math.sin(B)) / Math.sin(A), C);
+        fib.setEdge(opt.F, (opt.F * Math.sin(B)) / Math.sin(A), -C);
     }
 }
 

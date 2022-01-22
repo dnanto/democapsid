@@ -105,14 +105,6 @@ class Camera {
     }
 }
 
-function rotate2D(x, y, b) {
-    return [
-        //
-        Math.cos(b) * x - Math.sin(b) * y,
-        Math.sin(b) * x + Math.sin(b) * y,
-    ];
-}
-
 class Icosahedron {
     constructor(s, h = undefined, angle = radians(-60)) {
         this.setEdge(s, h, angle);
@@ -120,12 +112,13 @@ class Icosahedron {
 
     // array of face vertexes
     faceIndexes = [
+        // cap
         [0, 2, 1],
         [0, 1, 4],
         [0, 4, 3],
         [0, 3, 5],
         [0, 5, 2],
-        //
+        // mid
         [1, 2, 6],
         [1, 6, 7],
         [1, 7, 4],
@@ -136,6 +129,7 @@ class Icosahedron {
         [5, 9, 10],
         [5, 10, 2],
         [2, 10, 6],
+        // cap
         [6, 11, 7],
         [7, 11, 8],
         [8, 11, 9],
@@ -156,9 +150,6 @@ class Icosahedron {
 
         const b = s / 2;
         const a = phi * b;
-
-        console.log("[a, b]", a, b);
-        console.log("[R, h, beta]", s, h, degrees(angle));
 
         var cam = new Camera();
         cam.φ = radians(90 - degrees(Math.atan2(1 / (2 * phi), 0.5)));
@@ -185,10 +176,8 @@ class Icosahedron {
         const C = [A[0], A[1], Math.sqrt(r1 * r1 - A[0] * A[0])];
         const r2 = A[1] - B[1];
         const D = [C[0], B[1] - Math.sqrt(-(B[2] * B[2]) + 2 * B[2] * C[2] + r2 * r2 - C[2] * C[2]), C[2]];
-        console.log("[A, B, C, D]", A, B, C, D);
         const a72 = radians(-72);
         var cy = (B[1] + D[1]) / 2;
-        console.log([0, cy - (v[0][1][0] - cy), 0, 1]);
         this.vertexes = v
             .map((v) => [v[0][0], v[1][0], v[2][0], 1])
             .concat([
@@ -809,4 +798,5 @@ function drawIco5(ff, ico, fib, P, opt) {
             })
     );
 }
+
 module.exports = [Matrix, Hex, TriHex, SnubHex, RhombiTriHex, DualTriHex, DualSnubHex, DualRhombiTriHex];
