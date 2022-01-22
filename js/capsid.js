@@ -105,6 +105,14 @@ class Camera {
     }
 }
 
+function rotate2D(x, y, b) {
+    return [
+        //
+        Math.cos(b) * x - Math.sin(b) * y,
+        Math.sin(b) * x + Math.sin(b) * y,
+    ];
+}
+
 class Icosahedron {
     constructor(s, h = undefined, angle = radians(-60)) {
         this.setEdge(s, h, angle);
@@ -117,6 +125,7 @@ class Icosahedron {
         [0, 4, 3],
         [0, 3, 5],
         [0, 5, 2],
+        //
         [1, 2, 6],
         [1, 6, 7],
         [1, 7, 4],
@@ -138,7 +147,7 @@ class Icosahedron {
         return [0, 1, 2, 3, 4, 15, 16, 17, 18, 19].some((e) => e === i);
     }
 
-    setEdge(s, h = undefined, angle = radians(-60)) {
+    setEdge(s, h, angle) {
         this.s = s;
         this.h = h;
         this.angle = angle;
@@ -147,6 +156,9 @@ class Icosahedron {
 
         const b = s / 2;
         const a = phi * b;
+
+        console.log("[a, b]", a, b);
+        console.log("[R, h, beta]", s, h, degrees(angle));
 
         var cam = new Camera();
         cam.φ = radians(90 - degrees(Math.atan2(1 / (2 * phi), 0.5)));
@@ -166,23 +178,17 @@ class Icosahedron {
             )
         );
 
-        // console.log("s", s);
-        // console.log("h", h);
         const A = [v[2][0][0] + h * Math.cos(angle), v[2][1][0] + h * Math.sin(angle), v[2][2][0]];
-        // console.log("A", A);
+
         const B = [A[0], v[2][1][0], v[2][2][0]];
-        // console.log("B", B);
         const r1 = Math.sqrt(v[2][0][0] * v[2][0][0] + v[2][2][0] * v[2][2][0]);
-        // console.log("r1", r1);
         const C = [A[0], A[1], Math.sqrt(r1 * r1 - A[0] * A[0])];
-        // console.log("C", C);
         const r2 = A[1] - B[1];
-        // console.log("r2", r2);
         const D = [C[0], B[1] - Math.sqrt(-(B[2] * B[2]) + 2 * B[2] * C[2] + r2 * r2 - C[2] * C[2]), C[2]];
-        // console.log("D", D);
+        console.log("[A, B, C, D]", A, B, C, D);
         const a72 = radians(-72);
         var cy = (B[1] + D[1]) / 2;
-
+        console.log([0, cy - (v[0][1][0] - cy), 0, 1]);
         this.vertexes = v
             .map((v) => [v[0][0], v[1][0], v[2][0], 1])
             .concat([
@@ -730,8 +736,8 @@ function drawIco5(ff, ico, fib, P, opt) {
         [1, 1, 1],
     ]);
     const A2 = Matrix.inv3([
-        [face2.bounds.topLeft.x, p.x, face2.bounds.topRight.x],
-        [face2.bounds.topLeft.y, face2.bounds.bottomLeft.y, face2.bounds.topRight.y],
+        [face1.bounds.bottomLeft.x, p.x, face1.bounds.bottomRight.x],
+        [face1.bounds.bottomLeft.y, p.y, face1.bounds.bottomRight.y],
         [1, 1, 1],
     ]);
 
@@ -747,28 +753,28 @@ function drawIco5(ff, ico, fib, P, opt) {
     // face vertex transform order
     var idx = [
         // cap
-        [0, 1, 2],
-        [0, 1, 2],
-        [0, 1, 2],
-        [0, 1, 2],
-        [0, 1, 2],
-        // mid
         [0, 2, 1],
-        [1, 0, 2],
-        [2, 1, 0],
-        [1, 0, 2],
-        [2, 1, 0],
-        [1, 0, 2],
-        [2, 1, 0],
-        [1, 0, 2],
-        [2, 1, 0],
-        [1, 0, 2],
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+        // mid
+        [1, 2, 0],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
+        [0, 1, 2],
+        [2, 0, 1],
         // cap
-        [0, 1, 2],
-        [0, 1, 2],
-        [0, 1, 2],
-        [0, 1, 2],
-        [0, 1, 2],
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
+        [0, 2, 1],
     ];
     return new Group(
         ico

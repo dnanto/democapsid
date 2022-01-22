@@ -167,7 +167,7 @@ function foo(G, cmp) {
 
 function updateIco() {
     if (eid("symmetry").value === "equilateral") {
-        ico.setEdge(opt.R3);
+        ico.setEdge(opt.R3, opt.R3, -radians(60));
         fib.setEdge(opt.F);
     } else {
         const pa = foo(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
@@ -180,7 +180,7 @@ function updateIco() {
         const b = (a * Math.sin(B)) / Math.sin(A);
         const c = (a * Math.sin(C)) / Math.sin(A);
         console.log(a, b, c, degrees(A), degrees(B), degrees(C));
-        ico.setEdge(a, b, C);
+        ico.setEdge(a, b, -C);
         fib.setEdge(opt.F, (opt.F * Math.sin(B)) / Math.sin(A), C);
     }
 }
