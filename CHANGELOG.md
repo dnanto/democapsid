@@ -1,3 +1,7 @@
+# v1.1.3
+
+-   fix centroid-based vertex coloring
+
 # v1.1.2
 
 -   fix rotation bug
