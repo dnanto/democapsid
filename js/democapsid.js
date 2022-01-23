@@ -236,23 +236,21 @@ class Icosahedron {
 class Hex {
     constructor(R, h = 0, k = 0, K = 0) {
         // hexagonal circumradius
-        this.R = R;
+        this.R6 = R;
         // haxagonal inradius
-        this.r = (root3 / 2) * R;
+        this.r6 = (root3 / 2) * R;
         // triangular circumradius
-        this.R3 = (this.R * root3) / 3;
+        this.R3 = (this.R6 * root3) / 3;
         // triangular inradius
-        this.r3 = (this.R * root3) / 6;
+        this.r3 = (this.R6 * root3) / 6;
         // grid x-offset
-        this.dx = 2 * this.r;
+        this.dx = 2 * this.r6;
         // grid y-offset
-        this.dy = 1.5 * this.R;
-        // grid x-offset per column
-        this.ddx = this.r;
-        // grid y-offset per row
+        this.dy = 1.5 * this.R6;
+        this.ddx = this.r6;
         this.ddy = 0;
 
-        this.circumradius = this.R;
+        this.RU = this.R6;
 
         this.h = h;
         this.k = k;
@@ -284,7 +282,7 @@ class Hex {
      * @returns the array of lattice objects
      */
     unit() {
-        var hex = new Path.RegularPolygon([0, 0], 6, this.R);
+        var hex = new Path.RegularPolygon([0, 0], 6, this.R6);
         hex.name = "mer-1";
         return [hex];
     }
@@ -300,7 +298,7 @@ class Hex {
     }
 
     *grid(xc, xr) {
-        const u = new Group(this.unit(this.R));
+        const u = new Group(this.unit(this.R6));
         for (var i = xc[0]; i <= xc[1]; i++) {
             for (var j = xr[0]; j <= xr[1]; j++) {
                 var v = u.clone();
@@ -319,19 +317,17 @@ class Hex {
                 })
                 .map((f) => {
                     var x = T.intersect(f);
-                    x.name = f.name;
+                    if (x.length > 1) {
+                        x.name = f.name;
+                        const centoid = centroidSegments(f.segments);
+                        x.type = v.some((y) => centoid.getDistance(y) < this.RU) ? "pen" : "hex";
+                        x.style = opt[x.type + "." + x.name.split(" ")[0]];
+                    } else {
+                        x.remove();
+                    }
                     return x;
                 })
-                .filter((f) => {
-                    if (f.length < 1) f.remove();
-                    return f.length > 1;
-                })
-                .map((f) => {
-                    var c = centroidSegments(f.segments);
-                    f.type = v.some((y) => c.getDistance(y) < this.circumradius) ? "pen" : "hex";
-                    f.style = opt[f.type + "." + f.name.split(" ")[0]];
-                    return f;
-                });
+                .filter((f) => f.length > 1);
         });
     }
 
@@ -387,11 +383,11 @@ class Hex {
 class TriHex extends Hex {
     constructor(R, h = 0, k = 0, K = 0) {
         super(R, h, k, K);
-        this.r = (root3 / 2) * R;
+        this.r6 = (root3 / 2) * R;
         this.dx = 2 * R;
-        this.dy = 2 * this.r;
+        this.dy = 2 * this.r6;
         this.ddx = R;
-        this.circumradius = this.r + 0.5 * root3 * this.R;
+        this.RU = this.r6 + 0.5 * root3 * this.R6;
     }
 
     /**
@@ -399,11 +395,11 @@ class TriHex extends Hex {
      * @returns the array of lattice objects
      */
     unit() {
-        var tri = new Path.RegularPolygon([0, -this.r - this.r3], 3, this.R3);
+        var tri = new Path.RegularPolygon([0, -this.r6 - this.r3], 3, this.R3);
         tri.name = "mer-2";
-        var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
+        var hex = new Path.RegularPolygon([0, 0], 6, this.R6).rotate(30);
         hex.name = "mer-1";
-        var cir = new Path.Circle([0, 0], this.circumradius);
+        var cir = new Path.Circle([0, 0], this.RU);
         cir.name = "cir-1";
         return [tri, tri.clone().rotate(60, [0, 0]), hex, cir];
     }
@@ -412,12 +408,12 @@ class TriHex extends Hex {
 class SnubHex extends Hex {
     constructor(R, h = 0, k = 0, K = 0) {
         super(R, h, k, K);
-        this.r = (root3 / 2) * R;
+        this.r6 = (root3 / 2) * R;
         this.dx = 2.5 * R;
-        this.dy = 3 * this.r;
-        this.ddy = this.r;
+        this.dy = 3 * this.r6;
+        this.ddy = this.r6;
         this.ddx = 0.5 * R;
-        this.circumradius = 2.0 * this.R;
+        this.RU = 2.0 * this.R6;
     }
 
     /**
@@ -425,15 +421,15 @@ class SnubHex extends Hex {
      * @returns the array of lattice objects
      */
     unit() {
-        var tri1 = new Path.RegularPolygon([0, -this.r - this.r3], 3, this.R3);
+        var tri1 = new Path.RegularPolygon([0, -this.r6 - this.r3], 3, this.R3);
         tri1.name = "mer-2";
         var tri2 = tri1.clone().rotate(-180, tri1.bounds.bottomLeft);
         tri2.name = "mer-2";
         var tri3 = tri2.clone().rotate(-180, tri2.bounds.bottomCenter);
         tri3.name = "mer-2";
-        var hex = new Path.RegularPolygon([0, 0], 6, this.R).rotate(30);
+        var hex = new Path.RegularPolygon([0, 0], 6, this.R6).rotate(30);
         hex.name = "mer-1";
-        var cir = new Path.Circle([0, 0], this.circumradius);
+        var cir = new Path.Circle([0, 0], this.RU);
         cir.name = "cir-1";
         return [
             tri1,
@@ -453,11 +449,11 @@ class SnubHex extends Hex {
 class RhombiTriHex extends Hex {
     constructor(R, h = 0, k = 0, K = 0) {
         super(R, h, k, K);
-        this.r = (root3 / 2) * R;
-        this.dx = 2 * this.r + R;
-        this.dy = 0.5 * R + (this.R * root3) / 2 + R;
-        this.ddx = this.r + R / 2;
-        this.circumradius = Math.sqrt(Math.pow(this.r + this.R, 2) + Math.pow(this.R / 2, 2));
+        this.r6 = (root3 / 2) * R;
+        this.dx = 2 * this.r6 + R;
+        this.dy = 0.5 * R + (this.R6 * root3) / 2 + R;
+        this.ddx = this.r6 + R / 2;
+        this.RU = Math.sqrt(Math.pow(this.r6 + this.R6, 2) + Math.pow(this.R6 / 2, 2));
     }
 
     /**
@@ -465,15 +461,15 @@ class RhombiTriHex extends Hex {
      * @returns the array of lattice objects
      */
     unit() {
-        var hex = new Path.RegularPolygon([0, 0], 6, this.R);
+        var hex = new Path.RegularPolygon([0, 0], 6, this.R6);
         hex.name = "mer-1";
-        var sqr = new Path.RegularPolygon([0, 0], 4, Math.sqrt(2 * this.R * this.R) / 2);
+        var sqr = new Path.RegularPolygon([0, 0], 4, Math.sqrt(2 * this.R6 * this.R6) / 2);
         sqr.name = "mer-3";
         sqr.bounds.x = hex.bounds.left - sqr.bounds.width;
         var tri = new Path.RegularPolygon([0, 0], 3, this.R3);
-        tri.position.y = hex.bounds.bottom + (this.R * root3) / 2 / 2;
+        tri.position.y = hex.bounds.bottom + (this.R6 * root3) / 2 / 2;
         tri.name = "mer-2";
-        var cir = new Path.Circle([0, 0], this.circumradius);
+        var cir = new Path.Circle([0, 0], this.RU);
         cir.name = "cir-1";
         return [sqr, sqr.clone().rotate(60, [0, 0]), sqr.clone().rotate(120, [0, 0]), tri, tri.clone().rotate(60, [0, 0]), hex, cir];
     }
@@ -485,7 +481,7 @@ class DualTriHex extends Hex {
         this.dx = 4 * R;
         this.dy = (4 * R * root3) / 2;
         this.ddx = 2 * R;
-        this.circumradius = 2 * (this.r + this.r3);
+        this.RU = 2 * (this.r6 + this.r3);
     }
 
     /**
@@ -495,9 +491,9 @@ class DualTriHex extends Hex {
     unit() {
         var path1 = new Path([
             [0, 0],
-            [0, -this.r - this.r3],
-            [-this.R, -2 * this.r],
-            [-this.R, -this.R3],
+            [0, -this.r6 - this.r3],
+            [-this.R6, -2 * this.r6],
+            [-this.R6, -this.R3],
         ]);
         path1.closed = true;
         path1.name = "mer-1";
@@ -534,10 +530,10 @@ class DualSnubHex extends Hex {
     constructor(R, h = 0, k = 0, K = 0) {
         super(R, h, k, K);
         this.dx = 2.5 * R;
-        this.dy = 2 * this.r + 2 * ((this.R * root3) / 3) - (this.R * root3) / 6;
+        this.dy = 2 * this.r6 + 2 * ((this.R6 * root3) / 3) - (this.R6 * root3) / 6;
         this.ddx = 0.5 * R;
-        this.ddy = this.r;
-        this.circumradius = this.r + this.R3;
+        this.ddy = this.r6;
+        this.RU = this.r6 + this.R3;
     }
 
     /**
@@ -547,14 +543,14 @@ class DualSnubHex extends Hex {
     unit() {
         var path = new Path([
             [0, 0],
-            [0, -(this.r + this.r3)],
-            [0.5 * this.R, -(this.r + this.R3)],
-            [this.R, -(this.r + this.r3)],
-            [this.R, -this.R3],
+            [0, -(this.r6 + this.r3)],
+            [0.5 * this.R6, -(this.r6 + this.R3)],
+            [this.R6, -(this.r6 + this.r3)],
+            [this.R6, -this.R3],
         ]);
         path.closed = true;
         path.name = "mer-1";
-        var cir = new Path.Circle([0, 0], this.circumradius);
+        var cir = new Path.Circle([0, 0], this.RU);
         cir.name = "cir-1";
         return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0])), cir].flat();
     }
@@ -572,9 +568,9 @@ class DualRhombiTriHex extends Hex {
     unit() {
         var line = new Path([
             [0, 0],
-            [0, this.r],
+            [0, this.r6],
         ]);
-        var path = new Path([[0, 0], line.rotate(30, [0, 0]).bounds.bottomLeft, [0, this.R], line.rotate(-60, [0, 0]).bounds.bottomRight]);
+        var path = new Path([[0, 0], line.rotate(30, [0, 0]).bounds.bottomLeft, [0, this.R6], line.rotate(-60, [0, 0]).bounds.bottomRight]);
         path.closed = true;
         path.name = "mer-1";
         line.remove();
