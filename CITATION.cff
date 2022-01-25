@@ -56,7 +56,7 @@ preferred-citation:
       affiliation: George Mason University
       orcid: 'https://orcid.org/0000-0002-6123-2441'
   doi: 10.1101/2020.12.02.408252
-  journal: "Journal Title"
+  journal: bioRxiv
   abstract: >-
     This work implements Caspar-Klug Theory to
     generate high-quality, vectorized capsid cartoons 
