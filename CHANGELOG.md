@@ -1,3 +1,10 @@
+# v1.1.4
+
+-   complete 5-fold construction
+-   add h' and k' parameters
+-   add Q-number
+-   improve grid intersection algorithm
+
 # v1.1.3
 
 -   fix centroid-based vertex coloring
