@@ -109,34 +109,36 @@ class Icosahedron {
     // array of face vertexes
     faceIndexes = [
         // cap
-        [0, 1, 2],
-        [0, 4, 1],
-        [0, 3, 4],
-        [0, 5, 3],
-        [0, 2, 5],
+        [1, 0, 2],
+        [4, 0, 1],
+        [3, 0, 4],
+        [5, 0, 3],
+        [2, 0, 5],
         // mid
-        [2, 6, 1],
-        [7, 1, 6],
-        [1, 7, 4],
-        [8, 4, 7],
-        [4, 8, 3],
-        [9, 3, 8],
-        [3, 9, 5],
-        [10, 5, 9],
-        [5, 10, 2],
-        [6, 2, 10],
+        [1, 6, 2],
+        [6, 1, 7],
+        [4, 7, 1],
+        [7, 4, 8],
+        [3, 8, 4],
+        [8, 3, 9],
+        [5, 9, 3],
+        [9, 5, 10],
+        [2, 10, 5],
+        [10, 2, 6],
         // cap
-        [6, 7, 11],
-        [7, 8, 11],
-        [8, 9, 11],
-        [9, 10, 11],
-        [10, 6, 11],
+        [7, 6, 11],
+        [8, 7, 11],
+        [9, 8, 11],
+        [10, 9, 11],
+        [6, 10, 11],
     ];
 
-    constructor(s, h = undefined, th = radians(-60)) {
-        this.setEdge(s, h, th);
+    constructor(edge1, edge2 = undefined, theta = radians(-60)) {
+        this.setEdges(edge1, edge2, theta);
         this.vertexNeighbors = [];
-        for (var i = 0; i < 12; i++) this.vertexNeighbors[i] = new Set();
+        this.vertexNeighbors = Array(12)
+            .fill(0)
+            .map(() => new Set());
         this.faceIndexes.forEach((e) => {
             this.vertexNeighbors[e[0]].add(e[1]);
             this.vertexNeighbors[e[0]].add(e[2]);
@@ -148,12 +150,8 @@ class Icosahedron {
         this.vertexNeighbors = this.vertexNeighbors.map((e) => Array.from(e));
     }
 
-    setEdge(s, h, th) {
-        this.s = s;
-        this.h = h;
-        this.angle = th;
-
-        const b = s / 2;
+    setEdges(edge1, edge2, theta) {
+        const b = edge1 / 2;
         const a = phi * b;
 
         var cam = new Camera();
@@ -174,7 +172,7 @@ class Icosahedron {
             )
         );
 
-        const A = [v[2][0][0] + h * Math.cos(th), v[2][1][0] + h * Math.sin(th), v[2][2][0]];
+        const A = [v[2][0][0] + edge2 * Math.cos(theta), v[2][1][0] + edge2 * Math.sin(theta), v[2][2][0]];
 
         const B = [A[0], v[2][1][0], v[2][2][0]];
         const r1 = Math.sqrt(v[2][0][0] * v[2][0][0] + v[2][2][0] * v[2][2][0]);
@@ -221,7 +219,7 @@ class Icosahedron {
         return this.faceIndexes.map((e) => [p[e[0]], p[e[1]], p[e[2]]]);
     }
 
-    calcVertexFibers(P, F) {
+    projectVertexFibers(P, F) {
         var v = this.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
         return ico.vertexNeighbors.map((e, i) => {
             const x = 5 * v[i][0] - (v[e[0]][0] + v[e[1]][0] + v[e[2]][0] + v[e[3]][0] + v[e[4]][0]);
@@ -234,11 +232,11 @@ class Icosahedron {
 }
 
 class Hex {
-    constructor(R, h = 0, k = 0, K = 0) {
+    constructor(h = 0, k = 0, H = 0, K = 0) {
         // hexagonal circumradius
-        this.R6 = R;
+        this.R6 = 1;
         // haxagonal inradius
-        this.r6 = (root3 / 2) * R;
+        this.r6 = (root3 / 2) * this.R6;
         // triangular circumradius
         this.R3 = (this.R6 * root3) / 3;
         // triangular inradius
@@ -254,6 +252,7 @@ class Hex {
 
         this.h = h;
         this.k = k;
+        this.H = H;
         this.K = K;
     }
 
@@ -265,6 +264,10 @@ class Hex {
         return new Point(this.dx * this.k, this.ddy * this.k).rotate(60);
     }
 
+    Hvec() {
+        return new Point(this.dx * this.H, this.ddy * this.H).rotate(60);
+    }
+
     Kvec() {
         return new Point(this.dx * this.K, this.ddy * this.K).rotate(120);
     }
@@ -274,7 +277,7 @@ class Hex {
     }
 
     qvec() {
-        return this.kvec().add(this.Kvec());
+        return this.Hvec().add(this.Kvec());
     }
 
     /**
@@ -310,14 +313,14 @@ class Hex {
     }
 
     intersect_grid(T, G, v, opt) {
-        return G.map((e) => {
-            return e.children
+        return G.map((u) => {
+            return u.children
                 .filter((f) => {
                     return !f.name.startsWith("cir-1");
                 })
                 .map((f) => {
                     var x = T.intersect(f);
-                    if (x.length > 1) {
+                    if (x.segments.length >= 1) {
                         x.name = f.name;
                         const centoid = centroidSegments(f.segments);
                         x.type = v.some((y) => centoid.getDistance(y) < this.RU) ? "pen" : "hex";
@@ -327,7 +330,7 @@ class Hex {
                     }
                     return x;
                 })
-                .filter((f) => f.length > 1);
+                .filter((f) => f.segments.length >= 1);
         });
     }
 
@@ -358,7 +361,7 @@ class Hex {
         const qvec = this.qvec();
 
         const nc = [-this.K, this.h + this.k];
-        const nr = [-this.h, this.k + this.K];
+        const nr = [-this.h, this.k + (this.H + this.K > this.k ? this.H + this.K - this.k : 0)];
         const vt = [[0, 0], tvec, tvec.rotate(-60), qvec];
 
         var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
@@ -367,7 +370,9 @@ class Hex {
         T2.closePath();
 
         var g = Array.from(this.grid(nc, nr));
-        var G = new Group([new Group(this.intersect_grid(T1, g, vt, opt).flat()), new Group(this.intersect_grid(T2, g, vt, opt).flat())]);
+        var G1 = new Group(this.intersect_grid(T1, g, vt, opt).flat());
+        var G2 = new Group(this.intersect_grid(T2, g, vt, opt).flat());
+        var G = new Group([G1, G2]);
         G.style = opt.face;
         G.rotate(-tvec.angle);
         G.scale(opt.levo ? -1 : 1, 1);
@@ -381,12 +386,12 @@ class Hex {
 }
 
 class TriHex extends Hex {
-    constructor(R, h = 0, k = 0, K = 0) {
-        super(R, h, k, K);
-        this.r6 = (root3 / 2) * R;
-        this.dx = 2 * R;
+    constructor(h = 0, k = 0, H = 0, K = 0) {
+        super(h, k, H, K);
+        this.r6 = (root3 / 2) * this.R6;
+        this.dx = 2 * this.R6;
         this.dy = 2 * this.r6;
-        this.ddx = R;
+        this.ddx = this.R6;
         this.RU = this.r6 + 0.5 * root3 * this.R6;
     }
 
@@ -406,13 +411,13 @@ class TriHex extends Hex {
 }
 
 class SnubHex extends Hex {
-    constructor(R, h = 0, k = 0, K = 0) {
-        super(R, h, k, K);
-        this.r6 = (root3 / 2) * R;
-        this.dx = 2.5 * R;
+    constructor(h = 0, k = 0, H = 0, K = 0) {
+        super(h, k, H, K);
+        this.r6 = (root3 / 2) * this.R6;
+        this.dx = 2.5 * this.R6;
         this.dy = 3 * this.r6;
         this.ddy = this.r6;
-        this.ddx = 0.5 * R;
+        this.ddx = 0.5 * this.R6;
         this.RU = 2.0 * this.R6;
     }
 
@@ -447,12 +452,12 @@ class SnubHex extends Hex {
 }
 
 class RhombiTriHex extends Hex {
-    constructor(R, h = 0, k = 0, K = 0) {
-        super(R, h, k, K);
-        this.r6 = (root3 / 2) * R;
-        this.dx = 2 * this.r6 + R;
-        this.dy = 0.5 * R + (this.R6 * root3) / 2 + R;
-        this.ddx = this.r6 + R / 2;
+    constructor(h = 0, k = 0, H = 0, K = 0) {
+        super(h, k, H, K);
+        this.r6 = (root3 / 2) * this.R6;
+        this.dx = 2 * this.r6 + this.R6;
+        this.dy = 0.5 * this.R6 + (this.R6 * root3) / 2 + this.R6;
+        this.ddx = this.r6 + this.R6 / 2;
         this.RU = Math.sqrt(Math.pow(this.r6 + this.R6, 2) + Math.pow(this.R6 / 2, 2));
     }
 
@@ -475,12 +480,18 @@ class RhombiTriHex extends Hex {
     }
 }
 
+class DualHex extends Hex {
+    constructor(h = 0, k = 0, H = 0, K = 0) {
+        super(h, k, H, K);
+    }
+}
+
 class DualTriHex extends Hex {
-    constructor(R, h = 0, k = 0, K = 0) {
-        super(R, h, k, K);
-        this.dx = 4 * R;
-        this.dy = (4 * R * root3) / 2;
-        this.ddx = 2 * R;
+    constructor(h = 0, k = 0, H = 0, K = 0) {
+        super(h, k, H, K);
+        this.dx = 4 * this.R6;
+        this.dy = (4 * this.R6 * root3) / 2;
+        this.ddx = 2 * this.R6;
         this.RU = 2 * (this.r6 + this.r3);
     }
 
@@ -527,11 +538,11 @@ class DualTriHex extends Hex {
 }
 
 class DualSnubHex extends Hex {
-    constructor(R, h = 0, k = 0, K = 0) {
-        super(R, h, k, K);
-        this.dx = 2.5 * R;
+    constructor(h = 0, k = 0, H = 0, K = 0) {
+        super(h, k, H, K);
+        this.dx = 2.5 * this.R6;
         this.dy = 2 * this.r6 + 2 * ((this.R6 * root3) / 3) - (this.R6 * root3) / 6;
-        this.ddx = 0.5 * R;
+        this.ddx = 0.5 * this.R6;
         this.ddy = this.r6;
         this.RU = this.r6 + this.R3;
     }
@@ -557,8 +568,8 @@ class DualSnubHex extends Hex {
 }
 
 class DualRhombiTriHex extends Hex {
-    constructor(R, h = 0, k = 0, K = 0) {
-        super(R, h, k, K);
+    constructor(h = 0, k = 0, H = 0, K = 0) {
+        super(h, k, H, K);
     }
 
     /**
@@ -575,6 +586,17 @@ class DualRhombiTriHex extends Hex {
         path.name = "mer-1";
         line.remove();
         return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0]))].flat();
+    }
+}
+
+class Capsid {
+    constructor(e, r, m, tile) {
+        this.e = e;
+        this.h = h;
+        this.k = k;
+        this.H = H;
+        this.K = K;
+        this.tile = tile;
     }
 }
 
@@ -618,11 +640,12 @@ function pointReduce(G, cmp) {
 }
 
 function drawNet(face) {
-    var f2 = face.clone().scale(-1, -1);
+    var f2 = face.clone();
     var p = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
 
-    f2.bounds.left = p.x < face.children[0].bounds.right ? p.x : face.children[0].bounds.right;
+    f2.scale(-1, -1);
     f2.position.y += face.children[0].bounds.height;
+    f2.bounds.left = Math.min(face.children[0].bounds.right, p.x);
 
     var G1 = new Group([face.clone(), f2]);
     var G2 = G1.clone();
@@ -641,8 +664,9 @@ function drawNet(face) {
 
 function drawIco(ff, ico, F, P, sty) {
     // affine transform each triangle to the 2D projection of icosahedron face
-    var face1 = ff.children[0];
-    var face2 = ff.children[1];
+    var ffcopy = ff.clone();
+    var face1 = ffcopy.children[0];
+    var face2 = ffcopy.children[1];
     var bottomVertex = pointReduce(face2.children, (a, b) => (a.y > b.y ? a : b));
 
     const A1 = Matrix.inv3([
@@ -658,11 +682,11 @@ function drawIco(ff, ico, F, P, sty) {
 
     var fibers =
         F > 0
-            ? ico.calcVertexFibers(P, F).map((e) => {
+            ? ico.projectVertexFibers(P, F).map((e) => {
                   return { v: e, t: "fiber" };
               })
             : [];
-    return new Group(
+    var result = new Group(
         ico
             .projectFaces(P)
             .map((e, i) => {
@@ -694,6 +718,10 @@ function drawIco(ff, ico, F, P, sty) {
                 }
             })
     );
+
+    ffcopy.remove();
+
+    return result;
 }
 
 if (typeof module !== "undefined") {
