@@ -2,6 +2,8 @@
 const phi = (1 + Math.sqrt(5)) / 2;
 const root3 = Math.sqrt(3);
 
+const MIN_POINT_RADIUS = 0.0001;
+
 /**
  * @class Matrix math.
  */
@@ -323,14 +325,15 @@ class Hex {
                     if (x.segments.length >= 1) {
                         const c = centroidSegments(f.segments);
                         x.name = f.name;
-                        x.type = v.some((y) => c.getDistance(y) < this.RU) ? "pen" : "hex";
+                        x.type = v.some((g) => c.getDistance(g) < this.RU) ? "pen" : "hex";
                         x.style = opt[x.type + "." + x.name.split(" ")[0]];
-                        var y = new Path.Circle(c, 0.05);
-                        y.name = "ctr-1";
-                        y.fillColor = "black";
-                        if (T.contains(c)) {
-                            x = [x, y];
-                        } else {
+                        if (x.type === "hex") {
+                            var y = new Path.Circle(c, MIN_POINT_RADIUS);
+                            if (T.contains(y)) {
+                                var o = T.intersect(y);
+                                o.name = "ctr-1";
+                                x = [x, o];
+                            }
                             y.remove();
                         }
                     } else {
@@ -666,6 +669,19 @@ function drawNet(face) {
     return net;
 }
 
+function faceNormal(A, B, C) {
+    const P = [B[0] - A[0], B[1] - A[1], B[2] - A[2]];
+    const Q = [C[0] - A[0], C[1] - A[1], C[2] - A[2]];
+    const [x, y, z] = [
+        //
+        P[1] * Q[2] - P[2] * Q[1],
+        P[2] * Q[0] - P[0] * Q[2],
+        P[0] * Q[1] - P[1] * Q[0],
+    ];
+    const d = Math.sqrt(x * x + y * y + z * z);
+    return [x / d, y / d, z / d];
+}
+
 function drawIco(face, ico, F, P, sty) {
     // affine transform each triangle to the 2D projection of icosahedron face
     var face1 = face.children[0];
@@ -702,6 +718,7 @@ function drawIco(face, ico, F, P, sty) {
     //               return { v: e, t: "fiber" };
     //           })
     //         : [];
+
     var faces = ico.projectFaces(P);
     var fibers = faces
         .flatMap((e, i) => {
@@ -711,17 +728,18 @@ function drawIco(face, ico, F, P, sty) {
                 [e[0][2], e[1][2], e[2][2]],
             ];
             const M = Matrix.mul(B, ico.isCap5(i) ? A1 : A2);
+            const L = ico.isCap5(i) ? F : -F;
             var f = ico.isCap5(i) ? vc1 : vc2;
             return f.map((g) => {
+                const [dx, dy, dz] = faceNormal(e[0], e[1], e[2]);
                 const [x, y, z] = Matrix.mul(M, g).map((r) => r[0]);
-                const d = Math.sqrt(x * x + y * y + z * z);
-                const [dx, dy, dz] = [(x / d) * F, (y / d) * F, (z / d) * F];
                 return [
                     [x, y, z],
-                    [x + dx, y + dy, z + dz],
+                    [x + dx * L, y + dy * L, z + dz * L],
                 ];
             });
         })
+        .concat(ico.projectVertexFibers(P, F))
         .map((e) => {
             return { v: e, t: "fiber" };
         });
@@ -733,10 +751,10 @@ function drawIco(face, ico, F, P, sty) {
             .concat(fibers)
             .sort((a, b) => {
                 // sort by z-order
-                const p = a.v.map((f) => {
+                var p = a.v.map((f) => {
                     return f[2];
                 });
-                const q = b.v.map((f) => {
+                var q = b.v.map((f) => {
                     return f[2];
                 });
                 return p.reduce((x, y) => x + y) / p.length - q.reduce((x, y) => x + y) / q.length;
