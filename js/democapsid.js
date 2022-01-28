@@ -215,8 +215,8 @@ class Icosahedron {
      * @param {Array} P The camera matrix.
      */
     projectFaces(P) {
-        var p = this.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
-        return this.faceIndexes.map((e) => [p[e[0]], p[e[1]], p[e[2]]]);
+        var v = this.projectVertexes(P).map((e) => [e[0][0], e[1][0], e[2][0]]);
+        return this.faceIndexes.map((e) => [v[e[0]], v[e[1]], v[e[2]]]);
     }
 
     projectVertexFibers(P, F) {
@@ -318,13 +318,21 @@ class Hex {
                 .filter((f) => {
                     return !f.name.startsWith("cir-1");
                 })
-                .map((f) => {
+                .flatMap((f) => {
                     var x = T.intersect(f);
                     if (x.segments.length >= 1) {
+                        const c = centroidSegments(f.segments);
                         x.name = f.name;
-                        const centoid = centroidSegments(f.segments);
-                        x.type = v.some((y) => centoid.getDistance(y) < this.RU) ? "pen" : "hex";
+                        x.type = v.some((y) => c.getDistance(y) < this.RU) ? "pen" : "hex";
                         x.style = opt[x.type + "." + x.name.split(" ")[0]];
+                        var y = new Path.Circle(c, 0.05);
+                        y.name = "ctr-1";
+                        y.fillColor = "black";
+                        if (T.contains(c)) {
+                            x = [x, y];
+                        } else {
+                            y.remove();
+                        }
                     } else {
                         x.remove();
                     }
@@ -607,12 +615,8 @@ function centroidSegments(segments) {
         })
         .reduce((a, b) => {
             return a.add(b);
-        })
+        }, new Point())
         .divide(segments.length);
-}
-
-function centroidFace(v) {
-    return [v[0][0] + v[1][0] + v[2][0] / 3, v[0][1] + v[1][1] + v[2][1] / 3, v[0][2] + v[1][2] + v[2][2] / 3];
 }
 
 function angle(B, A, C) {
@@ -636,7 +640,7 @@ function pointReduce(G, cmp) {
         });
     }).reduce((a, b) => {
         return cmp(a, b);
-    });
+    }, new Point());
 }
 
 function drawNet(face) {
@@ -662,13 +666,25 @@ function drawNet(face) {
     return net;
 }
 
-function drawIco(ff, ico, F, P, sty) {
+function drawIco(face, ico, F, P, sty) {
     // affine transform each triangle to the 2D projection of icosahedron face
-    var ffcopy = ff.clone();
-    var face1 = ffcopy.children[0];
-    var face2 = ffcopy.children[1];
-    var bottomVertex = pointReduce(face2.children, (a, b) => (a.y > b.y ? a : b));
+    var face1 = face.children[0];
+    var face2 = face.children[1];
+    const vc1 = face1.children
+        .filter((e) => e.name.startsWith("ctr-1"))
+        .map((e) => {
+            return [[e.position.x], [e.position.y], [1]];
+        });
+    const vc2 = face2.children
+        .filter((e) => e.name.startsWith("ctr-1"))
+        .map((e) => {
+            return [[e.position.x], [e.position.y], [1]];
+        });
 
+    face1.children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
+    face2.children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
+
+    var bottomVertex = pointReduce(face2.children, (a, b) => (a.y > b.y ? a : b));
     const A1 = Matrix.inv3([
         [face1.bounds.bottomLeft.x, face1.bounds.topCenter.x, face1.bounds.bottomRight.x],
         [face1.bounds.bottomLeft.y, face1.bounds.topCenter.y, face1.bounds.bottomRight.y],
@@ -680,23 +696,50 @@ function drawIco(ff, ico, F, P, sty) {
         [1, 1, 1],
     ]);
 
-    var fibers =
-        F > 0
-            ? ico.projectVertexFibers(P, F).map((e) => {
-                  return { v: e, t: "fiber" };
-              })
-            : [];
-    var result = new Group(
-        ico
-            .projectFaces(P)
+    // var fibers =
+    //     F > 0
+    //         ? ico.projectVertexFibers(P, F).map((e) => {
+    //               return { v: e, t: "fiber" };
+    //           })
+    //         : [];
+    var faces = ico.projectFaces(P);
+    var fibers = faces
+        .flatMap((e, i) => {
+            const B = [
+                [e[0][0], e[1][0], e[2][0]],
+                [e[0][1], e[1][1], e[2][1]],
+                [e[0][2], e[1][2], e[2][2]],
+            ];
+            const M = Matrix.mul(B, ico.isCap5(i) ? A1 : A2);
+            var f = ico.isCap5(i) ? vc1 : vc2;
+            return f.map((g) => {
+                const [x, y, z] = Matrix.mul(M, g).map((r) => r[0]);
+                const d = Math.sqrt(x * x + y * y + z * z);
+                const [dx, dy, dz] = [(x / d) * F, (y / d) * F, (z / d) * F];
+                return [
+                    [x, y, z],
+                    [x + dx, y + dy, z + dz],
+                ];
+            });
+        })
+        .map((e) => {
+            return { v: e, t: "fiber" };
+        });
+    return new Group(
+        faces
             .map((e, i) => {
                 return { v: e, t: "face", c: ico.isCap5(i) };
             })
             .concat(fibers)
             .sort((a, b) => {
                 // sort by z-order
-                const [u, v] = [a.v, b.v];
-                return u[0][2] + u[1][2] + (u.length < 3 ? 0 : u[2][2]) - (v[0][2] + v[1][2] + (v.length < 3 ? 0 : v[2][2]));
+                const p = a.v.map((f) => {
+                    return f[2];
+                });
+                const q = b.v.map((f) => {
+                    return f[2];
+                });
+                return p.reduce((x, y) => x + y) / p.length - q.reduce((x, y) => x + y) / q.length;
             })
             .map((o) => {
                 const e = o.v;
@@ -704,11 +747,11 @@ function drawIco(ff, ico, F, P, sty) {
                     const B = [
                         [e[0][0], e[1][0], e[2][0]],
                         [e[0][1], e[1][1], e[2][1]],
-                        [1, 1, 1],
+                        [e[0][2], e[1][2], e[2][2]],
                     ];
                     const M = Matrix.mul(B, o.c ? A1 : A2);
-                    var face = o.c ? face1 : face2;
-                    return face.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
+                    var face0 = o.c ? face1 : face2;
+                    return face0.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
                 } else {
                     var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
                     fiber.style = sty["fib.mer"];
@@ -718,10 +761,6 @@ function drawIco(ff, ico, F, P, sty) {
                 }
             })
     );
-
-    ffcopy.remove();
-
-    return result;
 }
 
 if (typeof module !== "undefined") {
