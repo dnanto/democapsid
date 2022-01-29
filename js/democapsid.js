@@ -713,7 +713,8 @@ function drawIco(face, ico, F, P, sty) {
     ]);
 
     var faces = ico.projectFaces(P);
-    var fibers = faces
+    // var faceNormals = faces.map((e) => faceNormal(...e));
+    var foo = faces
         .flatMap((e, i) => {
             const B = [
                 [e[0][0], e[1][0], e[2][0]],
@@ -724,7 +725,7 @@ function drawIco(face, ico, F, P, sty) {
             const L = ico.isCap5(i) ? F : -F;
             var f = ico.isCap5(i) ? vc1 : vc2;
             return f.map((g) => {
-                const [dx, dy, dz] = faceNormal(e[0], e[1], e[2]);
+                const [dx, dy, dz] = faceNormal(...e);
                 const [x, y, z] = Matrix.mul(M, g).map((r) => r[0]);
                 return [
                     [x, y, z],
@@ -732,10 +733,28 @@ function drawIco(face, ico, F, P, sty) {
                 ];
             });
         })
-        .concat(ico.projectVertexFibers(P, F))
-        .map((e) => {
-            return { v: e, t: "fiber" };
-        });
+        .sort((a, b) => a[0].reduce((x, y) => x + y) - b[0].reduce((x, y) => x + y));
+
+    var result = [];
+    for (var i = 0; i < foo.length - 1; i++) {
+        const [p, q] = [foo[i][0], foo[i + 1][0]];
+        const [P, Q] = [foo[i][1], foo[i + 1][1]];
+        if ([p[0] - q[0], p[1] - q[1], p[2] - q[2]].every((v) => v < 1)) {
+            // add
+            result.push([
+                //
+                [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2],
+                [(P[0] + Q[0]) / 2, (P[1] + Q[1]) / 2, (P[2] + Q[2]) / 2],
+            ]);
+            i++;
+        } else {
+            result.push(foo[i]);
+        }
+    }
+
+    var fibers = result.concat(ico.projectVertexFibers(P, F)).map((e) => {
+        return { v: e, t: "fiber" };
+    });
     return new Group(
         faces
             .map((e, i) => {
