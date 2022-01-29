@@ -6,6 +6,9 @@
     "jest": "^27.4.7",
     "paper": "^0.12.15"
   },
+  "devDependencies": {
+    "simple-get": ">=4.0.1"
+  },
   "scripts": {
     "test": "jest"
   },
