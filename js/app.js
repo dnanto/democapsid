@@ -69,7 +69,7 @@ function getFaceStyle() {
  * @returns the style object
  */
 function getIcoStyle() {
-    return {
+    var obj = {
         "fib.mer": {
             strokeColor: eid("fib.color").value + parseAlpha(eid("fib.alpha").value),
             strokeWidth: parseFloat(eid("fib.size").value),
@@ -81,6 +81,21 @@ function getIcoStyle() {
             },
         },
     };
+    var fibers = {};
+    [
+        ...[1, 2, 3].map((e) => {
+            return "fib.hex.mer-" + e;
+        }),
+        ...[1, 2, 3].map((e) => {
+            return "fib.pen.mer-" + e;
+        }),
+        "fib.hex.cir-1",
+        "fib.pen.cir-1",
+    ].forEach((e) => {
+        fibers[e] = eid(e).checked;
+    });
+    obj["fibers"] = fibers;
+    return obj;
 }
 
 /**
@@ -222,7 +237,7 @@ function redraw() {
             obj = drawNet(face).scale(opt.R2);
             break;
         case "face":
-            obj = drawFace().scale(opt.R2);
+            obj = removeFaceAuxMers(drawFace().scale(opt.R2));
             break;
     }
     obj.position = view.center;

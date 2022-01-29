@@ -290,7 +290,9 @@ class Hex {
     unit() {
         var hex = new Path.RegularPolygon([0, 0], 6, this.R6);
         hex.name = "mer-1";
-        return [hex];
+        var cir = new Path.Circle([0, 0], this.RU);
+        cir.name = "cir-1";
+        return [hex, cir];
     }
 
     /**
@@ -318,9 +320,6 @@ class Hex {
     intersect_grid(T, G, v, opt) {
         return G.map((u) => {
             return u.children
-                .filter((f) => {
-                    return !f.name.startsWith("cir-1");
-                })
                 .flatMap((f) => {
                     var x = T.intersect(f);
                     if (x.segments.length >= 1) {
@@ -332,6 +331,8 @@ class Hex {
                         if (T.contains(y)) {
                             var o = T.intersect(y);
                             o.name = "ctr-1";
+                            o.data["type"] = x.type;
+                            o.data["name"] = x.name.split(" ")[0];
                             x = [x, o];
                         }
                         y.remove();
@@ -530,6 +531,8 @@ class DualTriHex extends Hex {
         path6.name = "mer-2";
         var path7 = path2.clone().rotate(240, path2.bounds.rightCenter);
         path7.name = "mer-2";
+        var cir = new Path.Circle([0, 0], this.RU);
+        cir.name = "cir-1";
         return [
             path1,
             path1.clone().rotate(-60, [0, 0]),
@@ -543,6 +546,7 @@ class DualTriHex extends Hex {
             path5,
             path6,
             path7,
+            cir,
         ];
     }
 }
@@ -595,7 +599,9 @@ class DualRhombiTriHex extends Hex {
         path.closed = true;
         path.name = "mer-1";
         line.remove();
-        return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0]))].flat();
+        var cir = new Path.Circle([0, 0], this.RU);
+        cir.name = "cir-1";
+        return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0])), cir].flat();
     }
 }
 
@@ -687,15 +693,24 @@ function collapseFibers(fibers) {
     });
 }
 
+function removeFaceAuxMers(face) {
+    face.children[0].children.filter((e) => e.name.startsWith("cir-1")).forEach((e) => e.remove());
+    face.children[0].children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
+    face.children[1].children.filter((e) => e.name.startsWith("cir-1")).forEach((e) => e.remove());
+    face.children[1].children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
+    return face;
+}
+
 function drawNet(face) {
-    var f2 = face.clone();
+    var f2 = removeFaceAuxMers(face.clone());
+
     var p = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
 
     f2.scale(-1, -1);
     f2.position.y += face.children[0].bounds.height;
     f2.bounds.left = Math.min(face.children[0].bounds.right, p.x);
 
-    var G1 = new Group([face.clone(), f2]);
+    var G1 = new Group([removeFaceAuxMers(face.clone()), f2]);
     var G2 = G1.clone();
     G2.position.x += face.children[0].bounds.width;
     var G3 = G2.clone();
@@ -711,20 +726,22 @@ function drawNet(face) {
 }
 
 function drawIco(face, ico, F, P, sty) {
-    // affine transform each triangle to the 2D projection of icosahedron face
     var face1 = face.children[0];
     var face2 = face.children[1];
+
     const vc1 = face1.children
-        .filter((e) => e.name.startsWith("ctr-1"))
+        .filter((e) => sty.fibers[`fib.${e.data.type}.${e.data.name}`])
         .map((e) => {
             return [[e.position.x], [e.position.y], [1]];
         });
     const vc2 = face2.children
-        .filter((e) => e.name.startsWith("ctr-1"))
+        .filter((e) => sty.fibers[`fib.${e.data.type}.${e.data.name}`])
         .map((e) => {
             return [[e.position.x], [e.position.y], [1]];
         });
 
+    face1.children.filter((e) => e.name.startsWith("cir-1")).forEach((e) => e.remove());
+    face2.children.filter((e) => e.name.startsWith("cir-1")).forEach((e) => e.remove());
     face1.children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
     face2.children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
 
