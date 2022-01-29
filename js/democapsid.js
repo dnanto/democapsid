@@ -3,6 +3,7 @@ const phi = (1 + Math.sqrt(5)) / 2;
 const root3 = Math.sqrt(3);
 
 const MIN_POINT_RADIUS = 0.0001;
+const COLLAPSE_THRESHOLD = 1;
 
 /**
  * @class Matrix math.
@@ -327,15 +328,13 @@ class Hex {
                         x.name = f.name;
                         x.type = v.some((g) => c.getDistance(g) < this.RU) ? "pen" : "hex";
                         x.style = opt[x.type + "." + x.name.split(" ")[0]];
-                        if (x.type === "hex") {
-                            var y = new Path.Circle(c, MIN_POINT_RADIUS);
-                            if (T.contains(y)) {
-                                var o = T.intersect(y);
-                                o.name = "ctr-1";
-                                x = [x, o];
-                            }
-                            y.remove();
+                        var y = new Path.Circle(c, MIN_POINT_RADIUS);
+                        if (T.contains(y)) {
+                            var o = T.intersect(y);
+                            o.name = "ctr-1";
+                            x = [x, o];
                         }
+                        y.remove();
                     } else {
                         x.remove();
                     }
@@ -646,6 +645,48 @@ function pointReduce(G, cmp) {
     }, new Point());
 }
 
+function faceNormal(A, B, C) {
+    const P = [B[0] - A[0], B[1] - A[1], B[2] - A[2]];
+    const Q = [C[0] - A[0], C[1] - A[1], C[2] - A[2]];
+    const [x, y, z] = [
+        //
+        P[1] * Q[2] - P[2] * Q[1],
+        P[2] * Q[0] - P[0] * Q[2],
+        P[0] * Q[1] - P[1] * Q[0],
+    ];
+    const d = Math.sqrt(x * x + y * y + z * z);
+    return [x / d, y / d, z / d];
+}
+
+function collapseFibers(fibers) {
+    var groups = [];
+    fibers.forEach((e) => {
+        var flag = true;
+        const p = e[0];
+        for (var j = 0; j < groups.length; j++) {
+            const q = groups[j][0][0];
+            if (Math.abs(p[0] - q[0]) < COLLAPSE_THRESHOLD && Math.abs(p[1] - q[1]) < COLLAPSE_THRESHOLD && Math.abs(p[2] - q[2]) < COLLAPSE_THRESHOLD) {
+                groups[j].push(e);
+                flag = false;
+                break;
+            }
+        }
+        if (flag) groups.push([e]);
+    });
+    return groups.map((e) => {
+        return [0, 1].map((i) => {
+            return e
+                .map((g) => {
+                    return g[i];
+                })
+                .reduce((a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]])
+                .map((c) => {
+                    return c / e.length;
+                });
+        });
+    });
+}
+
 function drawNet(face) {
     var f2 = face.clone();
     var p = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
@@ -667,19 +708,6 @@ function drawNet(face) {
     var net = new Group([G1, G2, G3, G4, G5]);
     net.position = view.center;
     return net;
-}
-
-function faceNormal(A, B, C) {
-    const P = [B[0] - A[0], B[1] - A[1], B[2] - A[2]];
-    const Q = [C[0] - A[0], C[1] - A[1], C[2] - A[2]];
-    const [x, y, z] = [
-        //
-        P[1] * Q[2] - P[2] * Q[1],
-        P[2] * Q[0] - P[0] * Q[2],
-        P[0] * Q[1] - P[1] * Q[0],
-    ];
-    const d = Math.sqrt(x * x + y * y + z * z);
-    return [x / d, y / d, z / d];
 }
 
 function drawIco(face, ico, F, P, sty) {
@@ -713,48 +741,29 @@ function drawIco(face, ico, F, P, sty) {
     ]);
 
     var faces = ico.projectFaces(P);
-    // var faceNormals = faces.map((e) => faceNormal(...e));
-    var foo = faces
-        .flatMap((e, i) => {
-            const B = [
-                [e[0][0], e[1][0], e[2][0]],
-                [e[0][1], e[1][1], e[2][1]],
-                [e[0][2], e[1][2], e[2][2]],
+    var fibers = faces.flatMap((e, i) => {
+        const B = [
+            [e[0][0], e[1][0], e[2][0]],
+            [e[0][1], e[1][1], e[2][1]],
+            [e[0][2], e[1][2], e[2][2]],
+        ];
+        const M = Matrix.mul(B, ico.isCap5(i) ? A1 : A2);
+        const L = ico.isCap5(i) ? F : -F;
+        var f = ico.isCap5(i) ? vc1 : vc2;
+        return f.map((g) => {
+            const [dx, dy, dz] = faceNormal(...e);
+            const [x, y, z] = Matrix.mul(M, g).map((r) => r[0]);
+            return [
+                [x, y, z],
+                [x + dx * L, y + dy * L, z + dz * L],
             ];
-            const M = Matrix.mul(B, ico.isCap5(i) ? A1 : A2);
-            const L = ico.isCap5(i) ? F : -F;
-            var f = ico.isCap5(i) ? vc1 : vc2;
-            return f.map((g) => {
-                const [dx, dy, dz] = faceNormal(...e);
-                const [x, y, z] = Matrix.mul(M, g).map((r) => r[0]);
-                return [
-                    [x, y, z],
-                    [x + dx * L, y + dy * L, z + dz * L],
-                ];
-            });
-        })
-        .sort((a, b) => a[0].reduce((x, y) => x + y) - b[0].reduce((x, y) => x + y));
+        });
+    });
 
-    var result = [];
-    for (var i = 0; i < foo.length - 1; i++) {
-        const [p, q] = [foo[i][0], foo[i + 1][0]];
-        const [P, Q] = [foo[i][1], foo[i + 1][1]];
-        if ([p[0] - q[0], p[1] - q[1], p[2] - q[2]].every((v) => v < 1)) {
-            // add
-            result.push([
-                //
-                [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2],
-                [(P[0] + Q[0]) / 2, (P[1] + Q[1]) / 2, (P[2] + Q[2]) / 2],
-            ]);
-            i++;
-        } else {
-            result.push(foo[i]);
-        }
-    }
-
-    var fibers = result.concat(ico.projectVertexFibers(P, F)).map((e) => {
+    fibers = collapseFibers(fibers).map((e) => {
         return { v: e, t: "fiber" };
     });
+
     return new Group(
         faces
             .map((e, i) => {
