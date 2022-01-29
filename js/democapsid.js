@@ -712,13 +712,6 @@ function drawIco(face, ico, F, P, sty) {
         [1, 1, 1],
     ]);
 
-    // var fibers =
-    //     F > 0
-    //         ? ico.projectVertexFibers(P, F).map((e) => {
-    //               return { v: e, t: "fiber" };
-    //           })
-    //         : [];
-
     var faces = ico.projectFaces(P);
     var fibers = faces
         .flatMap((e, i) => {
