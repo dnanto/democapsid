@@ -234,10 +234,10 @@ function redraw() {
             }
             break;
         case "net":
-            obj = drawNet(face).scale(opt.R2);
+            obj = drawNet(removeAuxMers(face)).scale(opt.R2);
             break;
         case "face":
-            obj = removeFaceAuxMers(drawFace().scale(opt.R2));
+            obj = removeAuxMers(drawFace()).scale(opt.R2);
             break;
     }
     obj.position = view.center;

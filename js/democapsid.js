@@ -321,25 +321,27 @@ class Hex {
         return G.map((u) => {
             return u.children
                 .flatMap((f) => {
+                    var result = [];
                     var x = T.intersect(f);
                     if (x.segments.length >= 1) {
                         const c = centroidSegments(f.segments);
                         x.name = f.name;
                         x.type = v.some((g) => c.getDistance(g) < this.RU) ? "pen" : "hex";
                         x.style = opt[x.type + "." + x.name.split(" ")[0]];
+                        result.push(x);
                         var y = new Path.Circle(c, MIN_POINT_RADIUS);
                         if (T.contains(y)) {
                             var o = T.intersect(y);
                             o.name = "ctr-1";
                             o.data["type"] = x.type;
                             o.data["name"] = x.name.split(" ")[0];
-                            x = [x, o];
+                            result.push(o);
+                            o.remove();
                         }
                         y.remove();
-                    } else {
-                        x.remove();
                     }
-                    return x;
+                    x.remove();
+                    return result;
                 })
                 .filter((f) => f.segments.length >= 1);
         });
@@ -693,16 +695,16 @@ function collapseFibers(fibers) {
     });
 }
 
-function removeFaceAuxMers(face) {
-    face.children[0].children.filter((e) => e.name.startsWith("cir-1")).forEach((e) => e.remove());
-    face.children[0].children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
-    face.children[1].children.filter((e) => e.name.startsWith("cir-1")).forEach((e) => e.remove());
-    face.children[1].children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
+function removeAuxMers(face) {
+    [0, 1].forEach((i) => {
+        face.children[i].children.filter((e) => e.name.startsWith("cir")).forEach((e) => e.remove());
+        face.children[i].children.filter((e) => e.name.startsWith("ctr")).forEach((e) => e.remove());
+    });
     return face;
 }
 
 function drawNet(face) {
-    var f2 = removeFaceAuxMers(face.clone());
+    var f2 = face.clone();
 
     var p = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
 
@@ -710,7 +712,7 @@ function drawNet(face) {
     f2.position.y += face.children[0].bounds.height;
     f2.bounds.left = Math.min(face.children[0].bounds.right, p.x);
 
-    var G1 = new Group([removeFaceAuxMers(face.clone()), f2]);
+    var G1 = new Group([face.clone(), f2]);
     var G2 = G1.clone();
     G2.position.x += face.children[0].bounds.width;
     var G3 = G2.clone();
@@ -740,10 +742,7 @@ function drawIco(face, ico, F, P, sty) {
             return [[e.position.x], [e.position.y], [1]];
         });
 
-    face1.children.filter((e) => e.name.startsWith("cir-1")).forEach((e) => e.remove());
-    face2.children.filter((e) => e.name.startsWith("cir-1")).forEach((e) => e.remove());
-    face1.children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
-    face2.children.filter((e) => e.name.startsWith("ctr-1")).forEach((e) => e.remove());
+    removeAuxMers(face);
 
     var bottomVertex = pointReduce(face2.children, (a, b) => (a.y > b.y ? a : b));
     const A1 = Matrix.inv3([
