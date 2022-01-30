@@ -13,7 +13,7 @@
         <div class="layout">
             <div class="options">
                 <div>
-                    <strong>democapsid v1.1.4</strong> | <a href="https://github.com/dnanto/democapsid">GitHub</a> |
+                    <strong>democapsid v1.1.5</strong> | <a href="https://github.com/dnanto/democapsid">GitHub</a> |
                     <a href="https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1">Preprint</a> | ⚗️
                 </div>
                 <br />
@@ -86,7 +86,9 @@
                             <option value="dextro">dextro</option>
                         </select>
                     </div>
-
+                </div>
+                <br />
+                <div class="table2">
                     <div><label for="R3">ico size</label></div>
                     <div><input type="number" id="R3" step="any" value="250" min="0" /></div>
                     <div><label for="F">fiber size</label></div>
@@ -110,7 +112,7 @@
                     <div></div>
                     <div class="header">color</div>
                     <div class="header">alpha</div>
-                    <div class="header">size</div>
+                    <div class="header">width</div>
                     <div>line</div>
                     <div><input type="color" id="face.color" /></div>
                     <div><input type="number" id="face.alpha" step="1" value="255" min="0" max="255" /></div>
@@ -123,30 +125,46 @@
                     <div><input type="color" id="knb.color" value="#ffa500" /></div>
                     <div><input type="number" id="knb.alpha" step="1" value="255" min="0" max="255" /></div>
                     <div><input type="number" id="knb.size" step="0.1" value="4" min="0" /></div>
+                </div>
+                <br />
+
+                <div class="table4">
+                    <div></div>
+                    <div class="header">color</div>
+                    <div class="header">alpha</div>
+                    <div class="header">fiber</div>
                     <div>hexamer-1</div>
                     <div><input type="color" id="hex.color-1" value="#92be5f" /></div>
                     <div><input type="number" id="hex.alpha-1" step="1" value="255" min="0" max="255" /></div>
-                    <div></div>
+                    <div><input type="checkbox" id="fib.hex.mer-1" /></div>
                     <div>hexamer-2</div>
                     <div><input type="color" id="hex.color-2" value="#44782c" /></div>
                     <div><input type="number" id="hex.alpha-2" step="1" value="255" min="0" max="255" /></div>
-                    <div></div>
+                    <div><input type="checkbox" id="fib.hex.mer-2" /></div>
                     <div>hexamer-3</div>
                     <div><input type="color" id="hex.color-3" value="#3278ad" /></div>
                     <div><input type="number" id="hex.alpha-3" step="1" value="255" min="0" max="255" /></div>
-                    <div></div>
+                    <div><input type="checkbox" id="fib.hex.mer-3" /></div>
                     <div>pentamer-1</div>
                     <div><input type="color" id="pen.color-1" value="#6da59b" /></div>
                     <div><input type="number" id="pen.alpha-1" step="1" value="255" min="0" max="255" /></div>
-                    <div></div>
+                    <div><input type="checkbox" id="fib.pen.mer-1" checked /></div>
                     <div>pentamer-2</div>
                     <div><input type="color" id="pen.color-2" value="#aed6d4" /></div>
                     <div><input type="number" id="pen.alpha-2" step="1" value="255" min="0" max="255" /></div>
-                    <div></div>
+                    <div><input type="checkbox" id="fib.pen.mer-2" /></div>
                     <div>pentamer-3</div>
                     <div><input type="color" id="pen.color-3" value="#8291c2" /></div>
                     <div><input type="number" id="pen.alpha-3" step="1" value="255" min="0" max="255" /></div>
+                    <div><input type="checkbox" id="fib.pen.mer-3" /></div>
+                    <div>hexon-unit</div>
                     <div></div>
+                    <div></div>
+                    <div><input type="checkbox" id="fib.hex.cir-1" /></div>
+                    <div>penton-unit</div>
+                    <div></div>
+                    <div></div>
+                    <div><input type="checkbox" id="fib.pen.cir-1" /></div>
                 </div>
             </div>
             <div class="view">

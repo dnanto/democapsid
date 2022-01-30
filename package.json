@@ -1,10 +1,13 @@
 {
   "name": "democapsid",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "dependencies": {
     "canvas": "^2.7.0",
     "jest": "^27.4.7",
     "paper": "^0.12.15"
+  },
+  "devDependencies": {
+    "simple-get": ">=4.0.1"
   },
   "scripts": {
     "test": "jest"

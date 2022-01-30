@@ -1,3 +1,10 @@
+# v1.1.5
+
+-   algorithm to group and collapse fiber base points by distance threshold
+-   algorithm for face normal calculation
+-   some improvements to z-order algorithm
+-   conditional, centroid-based fiber placement
+
 # v1.1.4
 
 -   complete 5-fold construction
