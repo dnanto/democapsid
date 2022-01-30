@@ -4,7 +4,7 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 
 # run
 
--   Run democapsid (v1.1.5): https://dnanto.github.io/democapsid/capsid.html.
+-   Run democapsid (v1.1.5): [https://dnanto.github.io/democapsid/capsid.html](https://dnanto.github.io/democapsid/capsid.html).
 
 ![screenshot.png](screenshot.png)
 
@@ -14,8 +14,8 @@ Please comment on or cite the preprint at [bioRxiv](https://www.biorxiv.org/cont
 
 # poster
 
--   [Fall 2020 SSB Student Research Day 2020 @ GMU](https://github.com/dnanto/capsid/blob/master/poster/poster2020.pdf)
--   [Spring 2021 GMU SSB Student Research Day 2021 @ GMU](https://github.com/dnanto/capsid/blob/master/poster/poster2021.pdf)
+-   [Fall 2020 SSB Student Research Day 2020 @ GMU](https://github.com/dnanto/democapsid/blob/master/poster/poster2020.pdf)
+-   [Spring 2021 GMU SSB Student Research Day 2021 @ GMU](https://github.com/dnanto/democapsid/blob/master/poster/poster2021.pdf)
 
 # cited by
 
