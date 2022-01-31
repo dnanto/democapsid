@@ -1,19 +1,51 @@
 {
   "name": "democapsid",
   "version": "1.1.5",
+  "description": "Render viral capsids in the browser and export SVG.",
+  "main": "js/democapsid.js",
   "dependencies": {
-    "canvas": "^2.7.0",
-    "jest": "^27.4.7",
     "paper": "^0.12.15"
   },
   "devDependencies": {
-    "simple-get": ">=4.0.1"
+    "canvas": "^2.9.0",
+    "jest": "^27.4.7"
+  },
+  "directories": {
+    "test": "test"
   },
   "scripts": {
     "test": "jest"
   },
-  "jest": {
-    "verbose": true,
-    "collectCoverage": true
-  }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dnanto/democapsid.git"
+  },
+  "keywords": [
+    "svg",
+    "virus",
+    "demoscene",
+    "biology",
+    "graphics",
+    "render",
+    "projection",
+    "capsid",
+    "perspective",
+    "publication",
+    "figure",
+    "lattice",
+    "3d",
+    "2d",
+    "prolate",
+    "icosahedron",
+    "moody",
+    "caspar-klug",
+    "oblate",
+    "elongated"
+  ],
+  "author": "Daniel Antonio Negrón",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dnanto/democapsid/issues"
+  },
+  "homepage": "https://github.com/dnanto/democapsid#readme"
 }
