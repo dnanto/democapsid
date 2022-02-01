@@ -279,6 +279,8 @@ paper.install(window);
 
 window.onload = function () {
     paper.setup("canvas");
+    paper.project.currentStyle.strokeCap = "round";
+    paper.project.currentStyle.strokeJoin = "round";
 
     cam = new Camera();
 
