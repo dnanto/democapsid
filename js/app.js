@@ -151,18 +151,22 @@ function setProjectionEvent(ele) {
 }
 
 function updateIco() {
+    const face = drawFace();
+    const pa = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
+    const pb = face.children[0].bounds.bottomRight;
+    const pc = face.children[0].bounds.bottomLeft;
+    const C = angle(pc, pa, pb);
+    const B = angle(pb, pa, pc);
+    const A = radians(180) - B - C;
+    console.log(degrees(A), degrees(B), degrees(C));
+    face.remove();
     if (eid("symmetry").value === "equilateral") {
         ico.setEdges(opt.R3, opt.R3, -radians(60));
-    } else {
-        const face = drawFace();
-        const pa = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
-        const pb = face.children[0].bounds.bottomRight;
-        const pc = face.children[0].bounds.bottomLeft;
-        const C = angle(pc, pa, pb);
-        const B = angle(pb, pa, pc);
-        const A = radians(180) - B - C;
+    } else if (eid("symmetry").value === "5-fold") {
         ico.setEdges(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
-        face.remove();
+    } else if (eid("symmetry").value === "3-fold") {
+        console.log(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), degrees(C));
+        ico.setEdges3(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
     }
 }
 
@@ -205,8 +209,14 @@ function drawFace() {
     if (eid("symmetry").value === "equilateral") {
         face = hex.face(getFaceStyle());
         face = new Group([face, face.clone().rotate(60, face.bounds.bottomLeft)]);
-    } else {
+    } else if (eid("symmetry").value === "5-fold") {
         face = hex.face5(getFaceStyle());
+    } else if (eid("symmetry").value === "3-fold") {
+        face = hex.face3(getFaceStyle());
+        // face.children[0].fillColor = "#FF0000";
+        // face.children[1].fillColor = "#FF0000";
+        // face.children[2].fillColor = "#FF0000";
+        // console.log(pointReduce(face.children[2], (a, b) => (a.y > b.y ? a : b)));
     }
     return face;
 }
@@ -307,7 +317,8 @@ window.onload = function () {
     //init
     getOpt();
     setProjection(eid("projection").value);
-    ico = new Icosahedron(opt.R3);
+    ico = new Icosahedron();
+    // ico.setEdges(opt.R3);
 
     // draw
     drawHex();

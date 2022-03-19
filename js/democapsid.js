@@ -109,48 +109,8 @@ class Camera {
 }
 
 class Icosahedron {
-    // array of face vertexes
-    faceIndexes = [
-        // cap
-        [1, 0, 2],
-        [4, 0, 1],
-        [3, 0, 4],
-        [5, 0, 3],
-        [2, 0, 5],
-        // mid
-        [1, 6, 2],
-        [6, 1, 7],
-        [4, 7, 1],
-        [7, 4, 8],
-        [3, 8, 4],
-        [8, 3, 9],
-        [5, 9, 3],
-        [9, 5, 10],
-        [2, 10, 5],
-        [10, 2, 6],
-        // cap
-        [7, 6, 11],
-        [8, 7, 11],
-        [9, 8, 11],
-        [10, 9, 11],
-        [6, 10, 11],
-    ];
-
     constructor(edge1, edge2 = undefined, theta = radians(-60)) {
         this.setEdges(edge1, edge2, theta);
-        this.vertexNeighbors = [];
-        this.vertexNeighbors = Array(12)
-            .fill(0)
-            .map(() => new Set());
-        this.faceIndexes.forEach((e) => {
-            this.vertexNeighbors[e[0]].add(e[1]);
-            this.vertexNeighbors[e[0]].add(e[2]);
-            this.vertexNeighbors[e[1]].add(e[0]);
-            this.vertexNeighbors[e[1]].add(e[2]);
-            this.vertexNeighbors[e[2]].add(e[0]);
-            this.vertexNeighbors[e[2]].add(e[1]);
-        });
-        this.vertexNeighbors = this.vertexNeighbors.map((e) => Array.from(e));
     }
 
     setEdges(edge1, edge2, theta) {
@@ -159,9 +119,10 @@ class Icosahedron {
 
         var cam = new Camera();
         cam.φ = radians(90 - degrees(Math.atan2(1 / (2 * phi), 0.5)));
+        // this.setEdges2(edge1, edge2, theta);
         cam.update();
 
-        var v = [
+        const v = [
             [0, b, -a, 1],
             [b, a, 0, 1],
             [-b, a, 0, 1],
@@ -194,10 +155,175 @@ class Icosahedron {
                 [Math.cos(a72 * 4) * D[0] - Math.sin(a72 * 4) * D[2], D[1], Math.sin(a72 * 4) * D[0] + Math.cos(a72 * 4) * D[2], 1],
                 [0, cy - (v[0][1][0] - cy), 0, 1],
             ]);
+
+        this.faceIndexes = [
+            // cap
+            [1, 0, 2],
+            [4, 0, 1],
+            [3, 0, 4],
+            [5, 0, 3],
+            [2, 0, 5],
+            // mid
+            [1, 6, 2],
+            [6, 1, 7],
+            [4, 7, 1],
+            [7, 4, 8],
+            [3, 8, 4],
+            [8, 3, 9],
+            [5, 9, 3],
+            [9, 5, 10],
+            [2, 10, 5],
+            [10, 2, 6],
+            // cap
+            [7, 6, 11],
+            [8, 7, 11],
+            [9, 8, 11],
+            [10, 9, 11],
+            [6, 10, 11],
+        ];
+        this.vertexNeighbors = [];
+        this.vertexNeighbors = Array(12)
+            .fill(0)
+            .map(() => new Set());
+        this.faceIndexes.forEach((e) => {
+            this.vertexNeighbors[e[0]].add(e[1]);
+            this.vertexNeighbors[e[0]].add(e[2]);
+            this.vertexNeighbors[e[1]].add(e[0]);
+            this.vertexNeighbors[e[1]].add(e[2]);
+            this.vertexNeighbors[e[2]].add(e[0]);
+            this.vertexNeighbors[e[2]].add(e[1]);
+        });
+        this.vertexNeighbors = this.vertexNeighbors.map((e) => Array.from(e));
+        this.cap = [0, 1, 2, 3, 4, 15, 16, 17, 18, 19];
     }
 
-    isCap5(i) {
-        return [0, 1, 2, 3, 4, 15, 16, 17, 18, 19].some((e) => e === i);
+    setEdges3(edge1, edge2, theta) {
+        console.log(edge1, edge2);
+        const b = edge1 / 2;
+        const a = phi * b;
+
+        // default points
+        var p = [
+            [0, b, -a, 1],
+            [b, a, 0, 1],
+            [-b, a, 0, 1],
+            [0, b, a, 1],
+            [a, 0, -b, 1],
+            [-a, 0, -b, 1],
+        ];
+
+        // transform points
+        var c = centroid([p[1], p[2], p[3]]).slice(0, -1);
+        var cam = new Camera();
+        cam.φ = angle2([0, 0, 0], [0, c[1], 0], c);
+        cam.update();
+        p = p.map((vert) =>
+            Matrix.mul(
+                cam.P,
+                vert.map((e) => [e])
+            )
+        );
+
+        var u = unitVector(subtract(p[1], p[3]));
+        var v = [u[1], -u[0], 0];
+        var w = sarrus(u, v);
+        var K = unitVector(w);
+        // console.log(u, v, w);
+
+        // u cos(β) + (K ⊗ u) sin(β) + K (K u) (1-cos(β));
+        var beta = Math.abs(theta);
+        var B1 = u.map((e) => e * Math.cos(beta));
+        var B2 = sarrus(K, u).map((e) => e * Math.sin(beta));
+        var B3 = K.map((e) => e * dot(K, u)).map((e) => e * (1 - Math.cos(beta)));
+        var h = edge2;
+        var p4 = p[3].map((e) => e[0]);
+        var B = add(
+            p4,
+            add(add(B1, B2), B3).map((e) => h * e)
+        );
+        // console.log(B);
+        var d = subtract(B, p4);
+        var C = add(
+            p4,
+            u.map((e) => (e * dot(d, u)) / dot(u, u))
+        );
+        // console.log(C);
+        var r = length(subtract(B, C));
+        var e = unitVector(subtract(B, C));
+        var uxe = unitVector(sarrus(u, e));
+        const f = (t, i) => {
+            return r * e[i] * Math.cos(t) + r * uxe[i] * Math.sin(t) + C[i];
+        };
+        const ff = (t) => {
+            return Math.pow(p[3][2][0], 2) - (Math.pow(f(t, 0), 2) + Math.pow(f(t, 2), 2));
+        };
+        console.log(f(0, 0), f(1, 0));
+        const tt = bisection(ff, 0, (1 / 2) * Math.PI, Number.EPSILON, 1000);
+        const a120 = radians(-120);
+        const a60 = radians(-60);
+        var E = [f(tt, 0), f(tt, 1), f(tt, 2), 1];
+        // console.log(">E", E);
+        var yval = E[1] - (p[0][1] - p[3][1]);
+        var F = [E[0], yval, E[2]];
+        F = [Math.cos(a60 * 1) * F[0] - Math.sin(a60 * 1) * F[2], F[1], Math.sin(a60 * 1) * F[0] + Math.cos(a60 * 1) * F[2]];
+        F = unitVector(subtract(F, [0, yval, 0])).map((e) => e * Math.abs(p[0][2][0]));
+        F = [F[0], yval, F[2], 1];
+        console.log(F);
+        this.vertexes = p
+            .map((e) => [e[0][0], e[1][0], e[2][0], 1])
+            .concat([
+                [E[0], E[1], E[2], 1],
+                [Math.cos(a120 * 1) * E[0] - Math.sin(a120 * 1) * E[2], E[1], Math.sin(a120 * 1) * E[0] + Math.cos(a120 * 1) * E[2], 1],
+                [Math.cos(a120 * 2) * E[0] - Math.sin(a120 * 2) * E[2], E[1], Math.sin(a120 * 2) * E[0] + Math.cos(a120 * 2) * E[2], 1],
+                [F[0], F[1], F[2], 1],
+                [Math.cos(a120 * 1) * F[0] - Math.sin(a120 * 1) * F[2], F[1], Math.sin(a120 * 1) * F[0] + Math.cos(a120 * 1) * F[2], 1],
+                [Math.cos(a120 * 2) * F[0] - Math.sin(a120 * 2) * F[2], F[1], Math.sin(a120 * 2) * F[0] + Math.cos(a120 * 2) * F[2], 1],
+            ]);
+
+        this.faceIndexes = [
+            // cap
+            [0, 1, 2],
+            [2, 3, 1],
+            [1, 4, 0],
+            [0, 5, 2],
+            // mid
+            [1, 6, 3],
+            [1, 6, 4], // 5
+            [4, 7, 0],
+            [0, 7, 5], // 7
+            [5, 8, 2],
+            [2, 8, 3], // 9
+            [6, 9, 4], // A
+            [9, 4, 7],
+            [7, 10, 5], // C
+            [10, 5, 8],
+            [8, 11, 3], // E
+            [11, 3, 6],
+            // // cap
+            [9, 10, 11],
+            [9, 11, 6],
+            [9, 10, 7],
+            [10, 11, 8],
+        ];
+        this.vertexNeighbors = [];
+        this.vertexNeighbors = Array(12)
+            .fill(0)
+            .map(() => new Set());
+        this.faceIndexes.forEach((e) => {
+            this.vertexNeighbors[e[0]].add(e[1]);
+            this.vertexNeighbors[e[0]].add(e[2]);
+            this.vertexNeighbors[e[1]].add(e[0]);
+            this.vertexNeighbors[e[1]].add(e[2]);
+            this.vertexNeighbors[e[2]].add(e[0]);
+            this.vertexNeighbors[e[2]].add(e[1]);
+        });
+        this.vertexNeighbors = this.vertexNeighbors.map((e) => Array.from(e));
+        this.cap = [0, 1, 2, 3, 16, 17, 18, 19];
+        this.cap2 = [5, 7, 9, 10, 12, 14];
+    }
+
+    isCap(i) {
+        return this.cap.some((e) => e === i);
     }
 
     /**
@@ -281,6 +407,10 @@ class Hex {
 
     qvec() {
         return this.Hvec().add(this.Kvec());
+    }
+
+    Tvec() {
+        return this.tvec().clone().rotate(120);
     }
 
     /**
@@ -396,6 +526,44 @@ class Hex {
 
         return G;
     }
+
+    face3(opt = {}) {
+        const tvec = this.tvec();
+        const qvec = this.qvec();
+        const Tvec = this.Tvec();
+
+        const nc = [-(this.h + this.k > this.K ? this.h + this.k : this.K), this.h + this.k];
+        const nr = [-this.h - this.k, this.h > this.k + this.K ? this.h : this.k + this.K];
+        const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec];
+
+        var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
+        T1.closePath();
+        var T2 = new Path([0, 0], qvec, tvec);
+        T2.closePath();
+        var T3 = new Path([0, 0], Tvec, qvec);
+        T3.closePath();
+        var T4 = T1.clone().rotate(-60, [0, 0]);
+
+        var g = Array.from(this.grid(nc, nr));
+        var G = new Group(
+            new Group(this.intersect_grid(T1, g, vt, opt).flat()),
+            new Group(this.intersect_grid(T2, g, vt, opt).flat()),
+            new Group(this.intersect_grid(T3, g, vt, opt).flat()),
+            new Group(this.intersect_grid(T4, g, vt, opt).flat())
+        );
+        G.style = opt.face;
+        G.rotate(-tvec.angle);
+
+        T1.remove();
+        T2.remove();
+        T3.remove();
+        T4.remove();
+        g.forEach((e) => e.remove());
+
+        return G;
+    }
+
+    face2(opt = {}) {}
 }
 
 class TriHex extends Hex {
@@ -607,15 +775,53 @@ class DualRhombiTriHex extends Hex {
     }
 }
 
-class Capsid {
-    constructor(e, r, m, tile) {
-        this.e = e;
-        this.h = h;
-        this.k = k;
-        this.H = H;
-        this.K = K;
-        this.tile = tile;
+function sign(a) {
+    return (a > 0) - (a < 0);
+}
+
+function bisection(f, a, b, tol, nmax) {
+    for (var i = 0; i < nmax; i++) {
+        var c = (a + b) / 2;
+        var f_of_c = f(c);
+        if (f_of_c === 0 || (b - a) / 2 < tol) {
+            return c;
+        }
+        if (sign(f_of_c) === sign(f(a))) {
+            a = c;
+        } else {
+            b = c;
+        }
     }
+}
+
+function add(A, B) {
+    return A.map((e, i) => {
+        return e + B[i];
+    });
+}
+
+function subtract(A, B) {
+    return A.map((e, i) => {
+        return e - B[i];
+    });
+}
+
+function dot(A, B) {
+    return A.map((e, i) => {
+        return e * B[i];
+    }).reduce((a, b) => {
+        return a + b;
+    });
+}
+
+function sarrus(u, v) {
+    return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+}
+
+function centroid(p) {
+    return p.reduce(add).map((e) => {
+        return e / p.length;
+    });
 }
 
 function centroidSegments(segments) {
@@ -629,10 +835,33 @@ function centroidSegments(segments) {
         .divide(segments.length);
 }
 
+function length(v) {
+    return Math.sqrt(
+        v
+            .map((e) => {
+                return e * e;
+            })
+            .reduce((a, b) => {
+                return a + b;
+            })
+    );
+}
+
+function unitVector(v) {
+    var len = length(v);
+    return v.map((e) => e / len);
+}
+
 function angle(B, A, C) {
     // https://math.stackexchange.com/a/3427603
     const [BA, BC] = [A.subtract(B), C.subtract(B)];
     return Math.acos(BA.dot(BC) / (BA.length * BC.length));
+}
+
+function angle2(B, A, C) {
+    // https://math.stackexchange.com/a/3427603
+    const [BA, BC] = [subtract(B, A), subtract(B, C)];
+    return Math.acos(dot(BA, BC) / (length(BA) * length(BC)));
 }
 
 function degrees(value) {
@@ -671,10 +900,10 @@ function collapseFibers(fibers) {
     fibers.forEach((e) => {
         var flag = true;
         const p = e[0];
-        for (var j = 0; j < groups.length; j++) {
-            const q = groups[j][0][0];
+        for (let group of groups) {
+            const q = group[0][0];
             if (Math.abs(p[0] - q[0]) < COLLAPSE_THRESHOLD && Math.abs(p[1] - q[1]) < COLLAPSE_THRESHOLD && Math.abs(p[2] - q[2]) < COLLAPSE_THRESHOLD) {
-                groups[j].push(e);
+                group.push(e);
                 flag = false;
                 break;
             }
@@ -763,9 +992,9 @@ function drawIco(face, ico, F, P, sty) {
             [e[0][1], e[1][1], e[2][1]],
             [e[0][2], e[1][2], e[2][2]],
         ];
-        const M = Matrix.mul(B, ico.isCap5(i) ? A1 : A2);
-        const L = ico.isCap5(i) ? F : -F;
-        var f = ico.isCap5(i) ? vc1 : vc2;
+        const M = Matrix.mul(B, ico.isCap(i) ? A1 : A2);
+        const L = ico.isCap(i) ? F : -F;
+        var f = ico.isCap(i) ? vc1 : vc2;
         return f.map((g) => {
             const [dx, dy, dz] = faceNormal(...e);
             const [x, y, z] = Matrix.mul(M, g).map((r) => r[0]);
@@ -783,7 +1012,7 @@ function drawIco(face, ico, F, P, sty) {
     return new Group(
         faces
             .map((e, i) => {
-                return { v: e, t: "face", c: ico.isCap5(i) };
+                return { v: e, t: "face", c: ico.isCap(i) };
             })
             .concat(fibers)
             .sort((a, b) => {
