@@ -1,7 +1,11 @@
-// mathematical constants
+// constants
+//// math
 const phi = (1 + Math.sqrt(5)) / 2;
 const root3 = Math.sqrt(3);
-
+//// numerical
+const BRACKET_ITER = 10000;
+const BISECTION_ITER = 10000;
+//// render
 const MIN_POINT_RADIUS = 0.0001;
 const COLLAPSE_THRESHOLD = 1;
 
@@ -255,10 +259,12 @@ class Icosahedron {
             return r * e[i] * Math.cos(t) + r * uxe[i] * Math.sin(t) + C[i];
         };
         const ff = (t) => {
-            return Math.pow(p[3][2][0], 2) - (Math.pow(f(t, 0), 2) + Math.pow(f(t, 2), 2));
+            // return Math.pow(p[3][2][0], 2) - (Math.pow(f(t, 0), 2) + Math.pow(f(t, 2), 2));
+            return r * r - (Math.pow(f(t, 0), 2) + Math.pow(f(t, 2), 2));
         };
-        console.log(f(0, 0), f(1, 0));
-        const tt = bisection(ff, 0, (1 / 2) * Math.PI, Number.EPSILON, 1000);
+        const tt = Array.from(brackets(ff, 0, 2 * Math.PI, BRACKET_ITER))
+            .map((e) => bisection(ff, e[0], e[1], Number.EPSILON, BISECTION_ITER))
+            .reduce((a, b) => (f(a, 1) < f(b, 1) ? a : b));
         const a120 = radians(-120);
         const a60 = radians(-60);
         var E = [f(tt, 0), f(tt, 1), f(tt, 2), 1];
@@ -319,7 +325,7 @@ class Icosahedron {
         });
         this.vertexNeighbors = this.vertexNeighbors.map((e) => Array.from(e));
         this.cap = [0, 1, 2, 3, 16, 17, 18, 19];
-        this.cap2 = [5, 7, 9, 10, 12, 14];
+        this.face2 = [5, 7, 9, 10, 12, 14];
     }
 
     isCap(i) {
@@ -779,6 +785,19 @@ function sign(a) {
     return (a > 0) - (a < 0);
 }
 
+function* brackets(f, a, b, iter) {
+    var frac = (b - a) / iter;
+    var prev = sign(f(a));
+    for (var i = 0; i < iter; i++) {
+        var x = a + i * frac;
+        var curr = sign(f(x));
+        if (prev != curr) {
+            yield [a + (i - 1) * frac, x];
+            prev = curr;
+        }
+    }
+}
+
 function bisection(f, a, b, tol, nmax) {
     for (var i = 0; i < nmax; i++) {
         var c = (a + b) / 2;
@@ -1012,7 +1031,7 @@ function drawIco(face, ico, F, P, sty) {
     return new Group(
         faces
             .map((e, i) => {
-                return { v: e, t: "face", c: ico.isCap(i) };
+                return { v: e, t: "face", i: i, c: ico.isCap(i) };
             })
             .concat(fibers)
             .sort((a, b) => {
@@ -1045,8 +1064,4 @@ function drawIco(face, ico, F, P, sty) {
                 }
             })
     );
-}
-
-if (typeof module !== "undefined") {
-    module.exports = [Matrix];
 }
