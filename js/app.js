@@ -165,7 +165,7 @@ function updateIco() {
     } else if (eid("symmetry").value === "5-fold") {
         ico.setEdges(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
     } else if (eid("symmetry").value === "3-fold") {
-        console.log(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), degrees(C));
+        // console.log(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), degrees(C));
         ico.setEdges3(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
     }
 }
@@ -213,10 +213,6 @@ function drawFace() {
         face = hex.face5(getFaceStyle());
     } else if (eid("symmetry").value === "3-fold") {
         face = hex.face3(getFaceStyle());
-        // face.children[0].fillColor = "#FF0000";
-        // face.children[1].fillColor = "#FF0000";
-        // face.children[2].fillColor = "#FF0000";
-        // console.log(pointReduce(face.children[2], (a, b) => (a.y > b.y ? a : b)));
     }
     return face;
 }
@@ -237,9 +233,12 @@ function redraw() {
         case "ico":
             if (eid("symmetry").value === "equilateral") {
                 obj = drawIco(face, ico, opt.F, cam.P, getIcoStyle());
-            } else {
+            } else if (eid("symmetry").value === "5-fold") {
                 // NOTE: not sure why scale(-1, 1) is necessary here, need to refactor, etc...
                 obj = drawIco(face.scale(-1, 1), ico, opt.F, cam.P, getIcoStyle());
+                obj.scale(-1, 1);
+            } else if (eid("symmetry").value === "3-fold") {
+                obj = drawIco3(face, ico, opt.F, cam.P, getIcoStyle());
                 obj.scale(-1, 1);
             }
             break;
