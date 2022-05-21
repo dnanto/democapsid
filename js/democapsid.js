@@ -123,7 +123,6 @@ class Icosahedron {
 
         var cam = new Camera();
         cam.φ = radians(90 - degrees(Math.atan2(1 / (2 * phi), 0.5)));
-        // this.setEdges2(edge1, edge2, theta);
         cam.update();
 
         const v = [
@@ -232,7 +231,7 @@ class Icosahedron {
         var v = [u[1], -u[0], 0];
         var w = sarrus(u, v);
         var K = unitVector(w);
-        // console.log(u, v, w);
+        console.log("u, v, w", u, v, w);
 
         // u cos(β) + (K ⊗ u) sin(β) + K (K u) (1-cos(β));
         var beta = Math.abs(theta);
@@ -240,35 +239,43 @@ class Icosahedron {
         var B2 = sarrus(K, u).map((e) => e * Math.sin(beta));
         var B3 = K.map((e) => e * dot(K, u)).map((e) => e * (1 - Math.cos(beta)));
         var h = edge2;
+        console.log("h", edge2, "beta", degrees(beta));
+        console.log("a, b", a, b);
         var p4 = p[3].map((e) => e[0]);
         var B = add(
             p4,
             add(add(B1, B2), B3).map((e) => h * e)
         );
-        // console.log(B);
+        console.log("B", B);
         var d = subtract(B, p4);
         var C = add(
             p4,
             u.map((e) => (e * dot(d, u)) / dot(u, u))
         );
-        // console.log(C);
-        var r = length(subtract(B, C));
+        console.log("C", C);
+        var c1 = [0, p4[1], 0];
+        console.log("c1", c1);
+        var R2 = Math.pow(length(subtract(c1, p4)), 2);
+        var radius = length(subtract(B, C));
         var e = unitVector(subtract(B, C));
         var uxe = unitVector(sarrus(u, e));
+        console.log("radius, e, uxe, R2", radius, e, uxe, R2);
         const f = (t, i) => {
-            return r * e[i] * Math.cos(t) + r * uxe[i] * Math.sin(t) + C[i];
+            return radius * e[i] * Math.cos(t) + radius * uxe[i] * Math.sin(t) + C[i];
         };
         const ff = (t) => {
             // return Math.pow(p[3][2][0], 2) - (Math.pow(f(t, 0), 2) + Math.pow(f(t, 2), 2));
-            return r * r - (Math.pow(f(t, 0), 2) + Math.pow(f(t, 2), 2));
+            return R2 - (Math.pow(f(t, 0), 2) + Math.pow(f(t, 2), 2));
         };
         const tt = Array.from(brackets(ff, 0, 2 * Math.PI, BRACKET_ITER))
-            .map((e) => bisection(ff, e[0], e[1], Number.EPSILON, BISECTION_ITER))
+            // .map((e) => bisection(ff, e[0], e[1], Number.EPSILON, BISECTION_ITER))
+            // .filter(Number)
+            .map((e) => (e[0] + e[1]) / 2.0)
             .reduce((a, b) => (f(a, 1) < f(b, 1) ? a : b));
         const a120 = radians(-120);
         const a60 = radians(-60);
         var E = [f(tt, 0), f(tt, 1), f(tt, 2), 1];
-        // console.log(">E", E);
+        console.log(">E", E);
         var yval = E[1] - (p[0][1] - p[3][1]);
         var F = [E[0], yval, E[2]];
         F = [Math.cos(a60 * 1) * F[0] - Math.sin(a60 * 1) * F[2], F[1], Math.sin(a60 * 1) * F[0] + Math.cos(a60 * 1) * F[2]];
@@ -285,31 +292,32 @@ class Icosahedron {
                 [Math.cos(a120 * 1) * F[0] - Math.sin(a120 * 1) * F[2], F[1], Math.sin(a120 * 1) * F[0] + Math.cos(a120 * 1) * F[2], 1],
                 [Math.cos(a120 * 2) * F[0] - Math.sin(a120 * 2) * F[2], F[1], Math.sin(a120 * 2) * F[0] + Math.cos(a120 * 2) * F[2], 1],
             ]);
-
+        console.log(this.vertexes.map(JSON.stringify));
         this.faceIndexes = [
             // cap
             [0, 1, 2],
-            [2, 3, 1],
-            [1, 4, 0],
-            [0, 5, 2],
+            [1, 3, 2],
+            [4, 1, 0],
+            [5, 0, 2],
             // mid
-            [1, 6, 3],
-            [1, 6, 4], // 5
-            [4, 7, 0],
-            [0, 7, 5], // 7
-            [5, 8, 2],
-            [2, 8, 3], // 9
-            [6, 9, 4], // A
-            [9, 4, 7],
-            [7, 10, 5], // C
-            [10, 5, 8],
-            [8, 11, 3], // E
-            [11, 3, 6],
-            // // cap
+            [3, 6, 1], // T1
+            [1, 6, 4], // 5 T2
+            [4, 7, 0], // T1
+            [0, 7, 5], // 7 T2
+            [5, 8, 2], // T1
+            [2, 8, 3], // 9 T2
+            // mid
+            [9, 4, 6], // A T2
+            [7, 4, 9], // T1
+            [10, 5, 7], // C T2
+            [8, 5, 10], // T1
+            [11, 3, 8], // E T2
+            [6, 3, 11], // T1
+            // cap
             [9, 10, 11],
-            [9, 11, 6],
-            [9, 10, 7],
-            [10, 11, 8],
+            [6, 9, 11],
+            [7, 10, 9],
+            [8, 11, 10],
         ];
         this.vertexNeighbors = [];
         this.vertexNeighbors = Array(12)
@@ -325,7 +333,8 @@ class Icosahedron {
         });
         this.vertexNeighbors = this.vertexNeighbors.map((e) => Array.from(e));
         this.cap = [0, 1, 2, 3, 16, 17, 18, 19];
-        this.face2 = [5, 7, 9, 10, 12, 14];
+        this.tri1 = [4, 6, 8, 11, 13, 15];
+        this.tri2 = [5, 7, 9, 10, 12, 14];
     }
 
     isCap(i) {
@@ -539,7 +548,9 @@ class Hex {
         const Tvec = this.Tvec();
 
         const nc = [-(this.h + this.k > this.K ? this.h + this.k : this.K), this.h + this.k];
-        const nr = [-this.h - this.k, this.h > this.k + this.K ? this.h : this.k + this.K];
+        const nr = [-this.h - this.k - this.H - this.K, this.h + this.k + this.H + this.K];
+        // const nc = [-10, 10];
+        // const nr = [-10, 10];
         const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec];
 
         var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
@@ -566,7 +577,7 @@ class Hex {
         T4.remove();
         g.forEach((e) => e.remove());
 
-        return G;
+        return G.scale(-1, 1);
     }
 
     face2(opt = {}) {}
@@ -944,9 +955,9 @@ function collapseFibers(fibers) {
 }
 
 function removeAuxMers(face) {
-    [0, 1].forEach((i) => {
-        face.children[i].children.filter((e) => e.name.startsWith("cir")).forEach((e) => e.remove());
-        face.children[i].children.filter((e) => e.name.startsWith("ctr")).forEach((e) => e.remove());
+    face.children.forEach((e) => {
+        e.children.filter((f) => f.name.startsWith("cir")).forEach((f) => f.remove());
+        e.children.filter((f) => f.name.startsWith("ctr")).forEach((f) => f.remove());
     });
     return face;
 }
@@ -1054,6 +1065,77 @@ function drawIco(face, ico, F, P, sty) {
                     ];
                     const M = Matrix.mul(B, o.c ? A1 : A2);
                     var face0 = o.c ? face1 : face2;
+                    return face0.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
+                } else {
+                    var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
+                    fiber.style = sty["fib.mer"];
+                    var knob = new Path.Circle([e[1][0], e[1][1]], sty["knb.mer"].R);
+                    knob.style = sty["knb.mer"]["style"];
+                    return new Group([fiber, knob]);
+                }
+            })
+    );
+}
+
+function drawIco3(face, ico, F, P, sty) {
+    var face1 = face.children[0];
+    var face2 = face.children[1];
+    var face3 = face.children[2];
+
+    removeAuxMers(face);
+
+    var bottomVertex = pointReduce(face2.children, (a, b) => (a.y > b.y ? a : b));
+    var rightVertex = pointReduce(face3.children, (a, b) => (a.x > b.x ? a : b));
+    const A1 = Matrix.inv3([
+        [face1.bounds.bottomLeft.x, face1.bounds.topCenter.x, face1.bounds.bottomRight.x],
+        [face1.bounds.bottomLeft.y, face1.bounds.topCenter.y, face1.bounds.bottomRight.y],
+        [1, 1, 1],
+    ]);
+    const A2 = Matrix.inv3([
+        [face1.bounds.bottomLeft.x, bottomVertex.x, face1.bounds.bottomRight.x],
+        [face1.bounds.bottomLeft.y, bottomVertex.y, face1.bounds.bottomRight.y],
+        [1, 1, 1],
+    ]);
+    const A3 = Matrix.inv3([
+        [face1.bounds.bottomRight.x, bottomVertex.x, rightVertex.x],
+        [face1.bounds.bottomRight.y, bottomVertex.y, rightVertex.y],
+        [1, 1, 1],
+    ]);
+    // console.log(A1, A2, A3);
+
+    var faces = ico.projectFaces(P);
+
+    return new Group(
+        faces
+            .map((e, i) => {
+                return { v: e, t: "face", i: i, c: ico.isCap(i) };
+            })
+            // .concat(fibers)
+            .sort((a, b) => {
+                // sort by z-order
+                var p = a.v.map((f) => {
+                    return f[2];
+                });
+                var q = b.v.map((f) => {
+                    return f[2];
+                });
+                return p.reduce((x, y) => x + y) / p.length - q.reduce((x, y) => x + y) / q.length;
+            })
+            .map((o) => {
+                const e = o.v;
+                if (o.t === "face") {
+                    const B = [
+                        [e[0][0], e[1][0], e[2][0]],
+                        [e[0][1], e[1][1], e[2][1]],
+                        [e[0][2], e[1][2], e[2][2]],
+                    ];
+                    var A = A1;
+                    A = ico.tri1.some((e) => e == o.i) ? A2 : A;
+                    A = ico.tri2.some((e) => e == o.i) ? A3 : A;
+                    const M = Matrix.mul(B, A);
+                    var face0 = face1;
+                    face0 = ico.tri1.some((e) => e == o.i) ? face2 : face0;
+                    face0 = ico.tri2.some((e) => e == o.i) ? face3 : face0;
                     return face0.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
                 } else {
                     var fiber = new Path.Line([e[0][0], e[0][1]], [e[1][0], e[1][1]]);
