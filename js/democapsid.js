@@ -472,6 +472,7 @@ class Hex {
                         const c = centroidSegments(f.segments);
                         x.name = f.name;
                         x.type = v.some((g) => c.getDistance(g) < this.RU) ? "pen" : "hex";
+                        x.data["type"] = x.type;
                         x.style = opt[x.type + "." + x.name.split(" ")[0]];
                         result.push(x);
                         var y = new Path.Circle(c, MIN_POINT_RADIUS);
