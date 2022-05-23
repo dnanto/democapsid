@@ -471,16 +471,15 @@ class Hex {
                     if (x.segments.length >= 1) {
                         const c = centroidSegments(f.segments);
                         x.name = f.name;
-                        x.type = v.some((g) => c.getDistance(g) < this.RU) ? "pen" : "hex";
-                        x.data["type"] = x.type;
-                        x.style = opt[x.type + "." + x.name.split(" ")[0]];
+                        x.data.type = v.some((g) => c.getDistance(g) < this.RU) ? "pen" : "hex";
+                        x.style = opt[x.data.type + "." + x.name.split(" ")[0]];
                         result.push(x);
                         var y = new Path.Circle(c, MIN_POINT_RADIUS);
                         if (T.contains(y)) {
                             var o = T.intersect(y);
                             o.name = "ctr-1";
-                            o.data["type"] = x.type;
-                            o.data["name"] = x.name.split(" ")[0];
+                            o.data.type = x.data.type;
+                            o.data.name = x.name.split(" ")[0];
                             result.push(o);
                             o.remove();
                         }
