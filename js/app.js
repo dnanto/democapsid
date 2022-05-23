@@ -234,16 +234,17 @@ function redraw() {
             if (eid("symmetry").value === "equilateral") {
                 obj = drawIco(face, ico, opt.F, cam.P, getIcoStyle());
             } else if (eid("symmetry").value === "5-fold") {
-                // NOTE: not sure why scale(-1, 1) is necessary here, need to refactor, etc...
-                obj = drawIco(face.scale(-1, 1), ico, opt.F, cam.P, getIcoStyle());
-                obj.scale(-1, 1);
+                obj = drawIco(face, ico, opt.F, cam.P, getIcoStyle());
             } else if (eid("symmetry").value === "3-fold") {
                 obj = drawIco3(face, ico, opt.F, cam.P, getIcoStyle());
-                obj.scale(-1, 1);
             }
             break;
         case "net":
-            obj = drawNet(removeAuxMers(face)).scale(opt.R2);
+            if (eid("symmetry").value === "3-fold") {
+                obj = drawNet3(removeAuxMers(face), hex).scale(opt.R2);
+            } else {
+                obj = drawNet(removeAuxMers(face)).scale(opt.R2);
+            }
             break;
         case "face":
             obj = removeAuxMers(drawFace()).scale(opt.R2);

@@ -986,6 +986,32 @@ function drawNet(face) {
     return net;
 }
 
+function drawNet3(face, hex) {
+    var f = face.clone();
+    var bounds = f.children[3].bounds;
+    var c = centroid([bounds.bottomCenter, bounds.topLeft, bounds.topRight].map((e) => [e.x, e.y]));
+    var G1 = new Group(
+        //
+        f,
+        new Group(f.children.slice(0, -1).map((e) => e.clone())).rotate(120, c),
+        new Group(f.children.slice(0, -1).map((e) => e.clone())).rotate(240, c)
+    );
+    var start = G1.children[0].children[3].bounds.topRight;
+    G1.rotate(-hex.tvec().angle, c);
+    start = start.rotate(-hex.tvec().angle, c);
+    var p = start.add(hex.qvec().rotate(-60).multiply([1, -1]));
+    var q = start.add(hex.tvec().rotate(60).multiply([1, -1]));
+    var T = new Group(
+        G1,
+        G1.clone()
+            .rotate(180, c)
+            .translate(q.subtract(p.rotate(180, c)))
+    );
+    T.rotate(hex.tvec().angle, c);
+    T.position = view.center;
+    return T;
+}
+
 function drawIco(face, ico, F, P, sty) {
     var face1 = face.children[0];
     var face2 = face.children[1];
