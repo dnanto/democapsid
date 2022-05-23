@@ -1108,6 +1108,22 @@ function drawIco3(face, ico, F, P, sty) {
     var face2 = face.children[1];
     var face3 = face.children[2];
 
+    const vc1 = face1.children
+        .filter((e) => sty.fibers[`fib.${e.data.type}.${e.data.name}`])
+        .map((e) => {
+            return [[e.position.x], [e.position.y], [1]];
+        });
+    const vc2 = face2.children
+        .filter((e) => sty.fibers[`fib.${e.data.type}.${e.data.name}`])
+        .map((e) => {
+            return [[e.position.x], [e.position.y], [1]];
+        });
+    const vc3 = face3.children
+        .filter((e) => sty.fibers[`fib.${e.data.type}.${e.data.name}`])
+        .map((e) => {
+            return [[e.position.x], [e.position.y], [1]];
+        });
+
     removeAuxMers(face);
 
     var bottomVertex = pointReduce(face2.children, (a, b) => (a.y > b.y ? a : b));
@@ -1127,16 +1143,45 @@ function drawIco3(face, ico, F, P, sty) {
         [face1.bounds.bottomRight.y, bottomVertex.y, rightVertex.y],
         [1, 1, 1],
     ]);
-    // console.log(A1, A2, A3);
 
     var faces = ico.projectFaces(P);
+
+    var fibers = faces.flatMap((e, i) => {
+        const L = ico.isCap(i) ? -F : F;
+
+        const B = [
+            [e[0][0], e[1][0], e[2][0]],
+            [e[0][1], e[1][1], e[2][1]],
+            [e[0][2], e[1][2], e[2][2]],
+        ];
+        var A = A1;
+        A = ico.tri1.some((e) => e == i) ? A2 : A;
+        A = ico.tri2.some((e) => e == i) ? A3 : A;
+        const M = Matrix.mul(B, A);
+        var f = vc1;
+        f = ico.tri1.some((e) => e == i) ? vc2 : f;
+        f = ico.tri2.some((e) => e == i) ? vc3 : f;
+
+        return f.map((g) => {
+            const [dx, dy, dz] = faceNormal(...e);
+            const [x, y, z] = Matrix.mul(M, g).map((r) => r[0]);
+            return [
+                [x, y, z],
+                [x + dx * L, y + dy * L, z + dz * L],
+            ];
+        });
+    });
+
+    fibers = collapseFibers(fibers).map((e) => {
+        return { v: e, t: "fiber" };
+    });
 
     return new Group(
         faces
             .map((e, i) => {
                 return { v: e, t: "face", i: i, c: ico.isCap(i) };
             })
-            // .concat(fibers)
+            .concat(fibers)
             .sort((a, b) => {
                 // sort by z-order
                 var p = a.v.map((f) => {
