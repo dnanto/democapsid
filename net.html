@@ -15,33 +15,32 @@
         <script type="text/javascript">
             paper.install(window);
 
-            const opt = {
-                face: {
-                    strokeColor: "#000000ff",
-                    strokeWidth: 0.5,
-                },
-                levo: true,
-                "hex.mer-1": {
-                    fillColor: "#92be5f5a",
-                },
-                "pen.mer-1": {
-                    fillColor: "#6da59bff",
-                },
-                "hex.mer-2": {
-                    fillColor: "#44782cff",
-                },
-                "pen.mer-2": {
-                    fillColor: "#aed6d4ff",
-                },
-                "hex.mer-3": {
-                    fillColor: "#3278adff",
-                },
-                "pen.mer-3": {
-                    fillColor: "#8291c2ff",
-                },
-            };
-
             function drawFace(hex) {
+                const opt = {
+                    face: {
+                        strokeColor: "#000000ff",
+                        strokeWidth: 0.5,
+                    },
+                    levo: document.getElementById("r").value === "levo",
+                    "hex.mer-1": {
+                        fillColor: "#92be5f5a",
+                    },
+                    "pen.mer-1": {
+                        fillColor: "#6da59bff",
+                    },
+                    "hex.mer-2": {
+                        fillColor: "#44782cff",
+                    },
+                    "pen.mer-2": {
+                        fillColor: "#aed6d4ff",
+                    },
+                    "hex.mer-3": {
+                        fillColor: "#3278adff",
+                    },
+                    "pen.mer-3": {
+                        fillColor: "#8291c2ff",
+                    },
+                };
                 switch (document.getElementById("a").value) {
                     case "i":
                         face = hex.face(opt);
@@ -64,13 +63,15 @@
                 const H = parseInt(document.getElementById("H").value);
                 const K = parseInt(document.getElementById("K").value);
                 const R = parseInt(document.getElementById("R").value);
-
+                const a = document.getElementById("a").value;
+                const r = document.getElementById("r").value === "levo";
                 var hex = new Hex(h, k, H, K);
 
                 {
                     paper.setup("canvas1");
                     var face = drawFace(hex);
                     var T = face.scale(R);
+                    T = r ? T.scale(-1, 1) : T;
                     T.position = view.center;
                 }
                 {
@@ -82,12 +83,13 @@
                         T = drawNet(face).scale(R);
                     }
                     face.remove();
+                    T = r ? T.scale(-1, 1) : T;
                     T.position = view.center;
                 }
             }
 
             window.onload = function (opt) {
-                ["h", "k", "H", "K", "R", "a"].forEach((e) => document.getElementById(e).addEventListener("change", draw));
+                ["h", "k", "H", "K", "R", "a", "r"].forEach((e) => document.getElementById(e).addEventListener("change", draw));
                 draw();
             };
         </script>
@@ -110,7 +112,11 @@
                 <option value="i">i</option>
                 <option value="5">5</option>
                 <option value="3">3</option>
-                <!-- <option value="2">2</option> -->
+            </select>
+            <label for="r"></label>
+            <select id="r">
+                <option value="levo">levo</option>
+                <option value="dextro">dextro</option>
             </select>
         </div>
         <div>

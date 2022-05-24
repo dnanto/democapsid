@@ -51,7 +51,6 @@ function getFaceStyle() {
             strokeColor: eid("face.color").value + parseAlpha(eid("face.alpha").value),
             strokeWidth: parseFloat(eid("face.size").value),
         },
-        levo: eid("rotation").value === "levo",
     };
     for (var i = 1; i <= 3; i++) {
         style["hex.mer-" + i] = {
@@ -158,14 +157,12 @@ function updateIco() {
     const C = angle(pc, pa, pb);
     const B = angle(pb, pa, pc);
     const A = radians(180) - B - C;
-    console.log(degrees(A), degrees(B), degrees(C));
     face.remove();
     if (eid("symmetry").value === "equilateral") {
         ico.setEdges(opt.R3, opt.R3, -radians(60));
     } else if (eid("symmetry").value === "5-fold") {
         ico.setEdges(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
     } else if (eid("symmetry").value === "3-fold") {
-        // console.log(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), degrees(C));
         ico.setEdges3(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
     }
 }
@@ -234,9 +231,9 @@ function redraw() {
             if (eid("symmetry").value === "equilateral") {
                 obj = drawIco(face, ico, opt.F, cam.P, getIcoStyle());
             } else if (eid("symmetry").value === "5-fold") {
-                obj = drawIco(face, ico, opt.F, cam.P, getIcoStyle());
+                obj = drawIco(face.scale(-1, 1), ico, opt.F, cam.P, getIcoStyle());
             } else if (eid("symmetry").value === "3-fold") {
-                obj = drawIco3(face, ico, opt.F, cam.P, getIcoStyle());
+                obj = drawIco3(face.scale(-1, 1), ico, opt.F, cam.P, getIcoStyle());
             }
             break;
         case "net":
@@ -250,7 +247,10 @@ function redraw() {
             obj = removeAuxMers(drawFace()).scale(opt.R2);
             break;
     }
-    obj.position = view.center;
+    if (obj) {
+        obj = eid("rotation").value === "levo" ? obj.scale(-1, 1) : obj;
+        obj.position = view.center;
+    }
     face.remove();
 }
 
@@ -293,7 +293,7 @@ window.onload = function () {
     cam = new Camera();
 
     // set event listeners for UI
-    ["h", "k", "H", "K", "geometry", "R2"].map(eid).forEach((e) => e.addEventListener("change", drawHex));
+    ["h", "k", "H", "K", "geometry", "rotation", "R2"].map(eid).forEach((e) => e.addEventListener("change", drawHex));
     eid("projection").addEventListener("change", setProjectionEvent);
     ["h", "k", "H", "K"].map(eid).forEach((e) => e.addEventListener("change", tNumber));
     ["h", "k", "H", "K", "geometry", "symmetry", "rotation", "R2"]
@@ -318,7 +318,6 @@ window.onload = function () {
     getOpt();
     setProjection(eid("projection").value);
     ico = new Icosahedron();
-    // ico.setEdges(opt.R3);
 
     // draw
     drawHex();
