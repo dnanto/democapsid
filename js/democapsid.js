@@ -245,6 +245,7 @@ class Icosahedron {
         var B2 = sarrus(K, u).map((e) => e * Math.sin(beta));
         var B3 = K.map((e) => e * dot(K, u)).map((e) => e * (1 - Math.cos(beta)));
         var h = edge2;
+        console.log(degrees(beta), h);
         var p4 = p[3].map((e) => e[0]);
         var B = add(
             p4,
@@ -260,6 +261,7 @@ class Icosahedron {
         var radius = length(subtract(B, C));
         var e = unitVector(subtract(B, C));
         var uxe = unitVector(sarrus(u, e));
+
         const f = (t, i) => {
             return radius * e[i] * Math.cos(t) + radius * uxe[i] * Math.sin(t) + C[i];
         };
@@ -271,14 +273,18 @@ class Icosahedron {
         if (tt1.length === 0) {
             return;
         }
-        const tt2 = tt1
-            // .map((e) => bisection(ff, e[0], e[1], Number.EPSILON, BISECTION_ITER))
-            // .filter(Number)
-            .map((e) => (e[0] + e[1]) / 2.0)
-            .reduce((a, b) => (f(a, 1) < f(b, 1) ? a : b));
+        const tt2 = tt1.map((e) => bisection(ff, e[0], e[1], Number.EPSILON, BISECTION_ITER)).filter(Number);
+        if (tt2.length === 0) {
+            return;
+        }
+        const tt3 = tt2.reduce((a, b) => (f(a, 1) < f(b, 1) ? a : b));
+        if (tt3.length === 0) {
+            return;
+        }
+
         const a120 = radians(-120);
         const a60 = radians(-60);
-        var E = [f(tt2, 0), f(tt2, 1), f(tt2, 2), 1];
+        var E = [f(tt3, 0), f(tt3, 1), f(tt3, 2), 1];
         var yval = E[1] - (p[0][1] - p[3][1]);
         var F = [E[0], yval, E[2]];
         F = [Math.cos(a60 * 1) * F[0] - Math.sin(a60 * 1) * F[2], F[1], Math.sin(a60 * 1) * F[0] + Math.cos(a60 * 1) * F[2]];
@@ -294,6 +300,11 @@ class Icosahedron {
                 [Math.cos(a120 * 1) * F[0] - Math.sin(a120 * 1) * F[2], F[1], Math.sin(a120 * 1) * F[0] + Math.cos(a120 * 1) * F[2], 1],
                 [Math.cos(a120 * 2) * F[0] - Math.sin(a120 * 2) * F[2], F[1], Math.sin(a120 * 2) * F[0] + Math.cos(a120 * 2) * F[2], 1],
             ]);
+        console.log(
+            this.vertexes.map((e) => {
+                return [e[0], e[1]];
+            })
+        );
         this.faceIndexes = [
             // cap
             [0, 1, 2],
@@ -427,7 +438,8 @@ class Hex {
     }
 
     Tvec() {
-        return this.tvec().clone().rotate(120);
+        // return this.tvec().clone().rotate(120); ?
+        return this.hvec().multiply(-1, 1).add(this.kvec().rotate(60));
     }
 
     /**
@@ -547,7 +559,9 @@ class Hex {
         const qvec = this.qvec();
         const Tvec = this.Tvec();
 
-        const nc = [-(this.h + this.k > this.K ? this.h + this.k : this.K), this.h + this.k];
+        // const nc = [-(this.h + this.k > this.K ? this.h + this.k : this.K), this.h + this.k];
+        // const nr = [-this.h - this.k - this.H - this.K, this.h + this.k + this.H + this.K];
+        const nc = [-this.h - this.k - this.H - this.K, this.h + this.k + this.H + this.K];
         const nr = [-this.h - this.k - this.H - this.K, this.h + this.k + this.H + this.K];
         const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec];
 
@@ -995,12 +1009,13 @@ function drawNet3(face, hex) {
         new Group(f.children.slice(0, -1).map((e) => e.clone())).rotate(240, c)
     );
 
-    var start = G1.children[0].children[3].bounds.topRight;
+    var s = G1.children[0].children[3].bounds.topRight;
     G1.rotate(hex.tvec().angle, c);
-    start = start.rotate(hex.tvec().angle, c);
     var qvec = hex.qvec();
-    var p = start.add(new Point(qvec.y, qvec.x).multiply(1, -1)).rotate(-30, start);
-    var q = start.add(hex.tvec());
+    var tvec = hex.tvec();
+    s = s.rotate(hex.tvec().angle, c);
+    var p = s.add(new Point(qvec.y, qvec.x).multiply(1, -1)).rotate(-30, s);
+    var q = s.add(new Point(tvec.y, tvec.x)).rotate(-30, s);
     var T = new Group(
         G1,
         G1.clone()

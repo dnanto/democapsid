@@ -151,20 +151,33 @@ function setProjectionEvent(ele) {
 
 function updateIco() {
     const face = drawFace();
-    const pa = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
-    const pb = face.children[0].bounds.bottomRight;
-    const pc = face.children[0].bounds.bottomLeft;
-    const C = angle(pc, pa, pb);
-    const B = angle(pb, pa, pc);
-    const A = radians(180) - B - C;
-    face.remove();
+
     if (eid("symmetry").value === "equilateral") {
+        const pa = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
+        const pb = face.children[0].bounds.bottomRight;
+        const pc = face.children[0].bounds.bottomLeft;
+        const C = angle(pc, pa, pb);
+        const B = angle(pb, pa, pc);
+        const A = radians(180) - B - C;
         ico.setEdges(opt.R3, opt.R3, -radians(60));
     } else if (eid("symmetry").value === "5-fold") {
+        const pa = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
+        const pb = face.children[0].bounds.bottomRight;
+        const pc = face.children[0].bounds.bottomLeft;
+        const C = angle(pc, pa, pb);
+        const B = angle(pb, pa, pc);
+        const A = radians(180) - B - C;
         ico.setEdges(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
     } else if (eid("symmetry").value === "3-fold") {
-        ico.setEdges3(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
+        const pa = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
+        const pb = face.children[1].bounds.topRight;
+        const pc = face.children[1].bounds.topLeft;
+        const C = angle(pc, pa, pb);
+        const B = angle(pb, pa, pc);
+        const A = radians(180) - B - C;
+        ico.setEdges3(opt.R3, (opt.R3 * Math.sin(C)) / Math.sin(A), -B);
     }
+    face.remove();
 }
 
 /**
