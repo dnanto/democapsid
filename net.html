@@ -1,443 +1,127 @@
 <!DOCTYPE html>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <html lang="en">
-
-<head>
-    <title>capsid</title>
-    <style>
-        canvas {
-            height: 250px;
-            width: 575px;
-            border: 1px solid blue;
-        }
-    </style>
-    <script type="text/javascript" src="js/lib/paper-core.min.js"></script>
-    <script type="text/javascript">
-        paper.install(window);
-
-        const root3 = Math.sqrt(3);
-
-        class Hex {
-
-            constructor(R) {
-                this.R = R;
-                this.r = root3 / 2 * R;
-                this.dx = 2 * this.r;
-                this.dy = 1.5 * this.R;
-                this.ddx = this.r;
-                this.ddy = 0;
-                this.fx = 0;
-                this.fy = 0;
+    <head>
+        <title>capsid</title>
+        <style>
+            canvas {
+                height: 250px;
+                width: 575px;
+                border: 1px solid blue;
             }
+        </style>
+        <script type="text/javascript" src="js/lib/paper-core.min.js"></script>
+        <script type="text/javascript" src="js/democapsid.js"></script>
+        <script type="text/javascript">
+            paper.install(window);
 
-            unit() {
-                var hex = new Path.RegularPolygon([0, 0], 6, this.R);
-                hex.name = "mer-1";
-                return [hex];
-            }
-
-            inradius() {
-                return this.r;
-            }
-
-            circumradius() {
-                return this.R;
-            }
-
-            // map hexagon grid row/col to cartesian coordinates
-            coor(i, j) {
-                return [i * this.dx + j * this.ddx, j * this.dy + i * this.ddy];
-            }
-
-            * grid(xc, xr) {
-                const u = new Group(this.unit(this.R));
-                for (var i = xc[0]; i <= xc[1]; i++) {
-                    for (var j = xr[0]; j <= xr[1]; j++) {
-                        var v = u.clone();
-                        v.position = new Point(this.coor(i, j));
-                        yield v;
-                    }
+            function drawFace(hex) {
+                const opt = {
+                    face: {
+                        strokeColor: "#000000ff",
+                        strokeWidth: 0.5,
+                    },
+                    levo: document.getElementById("r").value === "levo",
+                    "hex.mer-1": {
+                        fillColor: "#92be5f5a",
+                    },
+                    "pen.mer-1": {
+                        fillColor: "#6da59bff",
+                    },
+                    "hex.mer-2": {
+                        fillColor: "#44782cff",
+                    },
+                    "pen.mer-2": {
+                        fillColor: "#aed6d4ff",
+                    },
+                    "hex.mer-3": {
+                        fillColor: "#3278adff",
+                    },
+                    "pen.mer-3": {
+                        fillColor: "#8291c2ff",
+                    },
+                };
+                switch (document.getElementById("a").value) {
+                    case "i":
+                        face = hex.face(opt);
+                        face = new Group([face, face.clone().rotate(60, face.bounds.bottomLeft)]);
+                        return removeAuxMers(face);
+                    case "5":
+                        face = hex.face5(opt);
+                        return removeAuxMers(face);
+                    case "3":
+                        face = hex.face3(opt);
+                        return removeAuxMers(face);
                 }
             }
 
-        }
+            function draw() {
+                paper.clear();
 
-        function intersect_grid(T, G, v, opt) {
-            return G.map(e => {
-                return e.children.map(f => {
-                    var x = T.intersect(f);
-                    var t = v.some(y => x.contains(y)) ? "pen" : "hex";
-                    x.fillColor = opt["fill." + t];
-                    return x;
-                });
-            })
-        }
+                const h = parseInt(document.getElementById("h").value);
+                const k = parseInt(document.getElementById("k").value);
+                const H = parseInt(document.getElementById("H").value);
+                const K = parseInt(document.getElementById("K").value);
+                const R = parseInt(document.getElementById("R").value);
+                const a = document.getElementById("a").value;
+                const r = document.getElementById("r").value === "levo";
+                var hex = new Hex(h, k, H, K);
 
-        function exportSVG(e) {
-            var num = e.target.id.charAt(e.target.id.length - 1);
-            var link = document.createElement("a");
-            console.log(paper.projects)
-            link.download = "capsid-" + num + ".svg";
-            link.href = "" +
-                "data:image/svg+xml;utf8," +
-                encodeURIComponent(paper.projects[parseInt(num) - 1].exportSVG({
-                    "options.bounds": "content",
-                    asString: true,
-                    "options.matchShapes": true
-                }));
-            link.click();
-        }
+                {
+                    paper.setup("canvas1");
+                    var face = drawFace(hex);
+                    var T = face.scale(R);
+                    T = r ? T.scale(-1, 1) : T;
+                    T.position = view.center;
+                }
+                {
+                    paper.setup("canvas2");
+                    var face = drawFace(hex);
+                    if (document.getElementById("a").value === "3") {
+                        T = drawNet3(face, hex).scale(R);
+                    } else {
+                        T = drawNet(face).scale(R);
+                    }
+                    face.remove();
+                    T = r ? T.scale(-1, 1) : T;
+                    T.position = view.center;
+                }
+            }
 
-        function draw() {
-            paper.clear();
-
-            const h = parseInt(document.getElementById("h").value);
-            const k = parseInt(document.getElementById("k").value);
-            const K = parseInt(document.getElementById("K").value);
-            const R = parseInt(document.getElementById("R").value);
-
-            const unit = new Hex(R);
-
-            const r = unit.r;
-            const d = 2 * r;
-            const D = 2 * unit.R;
-
-            const hvec = new Point(d * h, 0);
-            const kvec = new Point(d * k, 0).rotate(60);
-            const Kvec = new Point(d * K, 0).rotate(120);
-
-            const tvec = hvec.add(kvec);
-            const qvec = kvec.add(Kvec);
-            const Tvec = tvec.clone().rotate(120);
-
-            var opt = {
-                "fill.hex": "#006633",
-                "fill.pen": "#FFCC33"
+            window.onload = function (opt) {
+                ["h", "k", "H", "K", "R", "a", "r"].forEach((e) => document.getElementById(e).addEventListener("change", draw));
+                draw();
             };
+        </script>
+    </head>
 
-            // isometric
-            {
-                paper.setup("canvas1");
-
-                const nc = [0, h + k];
-                const nr = [-h, k];
-                const vt = [[0, 0], tvec, tvec.rotate(-60)]
-
-                var T = new Path([[0, 0], tvec, tvec.rotate(-60)]);
-                T.closePath();
-
-                T = new Group(intersect_grid(T, Array.from(unit.grid(nc, nr)), vt, opt).flat())
-                T.position = view.center;
-                T.strokeColor = "black";
-            }
-            {
-                paper.setup("canvas2");
-
-                const nc = [0, h + k];
-                const nr = [-h, k];
-                const vt = [[0, 0], tvec, tvec.rotate(-60)]
-
-                // triangle
-                var T = new Path([[0, 0], tvec, tvec.rotate(-60)]);
-                T.closePath();
-
-                T = new Group(
-                    intersect_grid(T, Array.from(unit.grid(nc, nr)), vt, opt).flat()
-                ).rotate(-Tvec.angle);
-
-                // unit
-                var G = [
-                    T,
-                    T.clone().rotate(300, T.bounds.bottomRight),
-                    T.clone().rotate(240, T.bounds.bottomRight)
-                ];
-                G.push(G[2].clone().rotate(300, G[2].bounds.bottomRight));
-                G = new Group(G);
-
-                // net
-                var G = new Group([
-                    G,
-                    G.clone().translate(T.bounds.width, 0),
-                    G.clone().translate(T.bounds.width * 2, 0),
-                    G.clone().translate(T.bounds.width * 3, 0),
-                    G.clone().translate(T.bounds.width * 4, 0)
-                ]);
-                G.strokeColor = "black";
-                G.position = view.center;
-            }
-
-            // 5-symmetry
-            {
-                paper.setup("canvas3");
-
-                const nc = [-K, h + k];
-                const nr = [-h, k + K];
-                const vt = [[0, 0], tvec, tvec.rotate(-60), qvec];
-
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
-                T1.closePath();
-                var T2 = new Path([0, 0], qvec, tvec);
-                T2.closePath();
-
-                var g = Array.from(unit.grid(nc, nr));
-                var G = new Group(
-                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
-                    /**/ intersect_grid(T2, g, vt, opt).flat())
-                )
-
-                G.strokeColor = "black";
-                G.position = view.center;
-            }
-            {
-                paper.setup("canvas4");
-
-                const nc = [-K, h + k];
-                const nr = [-h, k + K];
-                const vt = [[0, 0], tvec, tvec.rotate(-60), qvec];
-
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
-                T1.closePath();
-                var T2 = new Path([0, 0], qvec, tvec);
-                T2.closePath();
-
-                var g = Array.from(unit.grid(nc, nr));
-                var G1 = new Group(
-                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
-                    /**/ intersect_grid(T2, g, vt, opt).flat())
-                )
-                var G2 = G1.clone().scale(-1, -1)
-
-                var dx = 0;
-                dx = (k > K) ? (k - K) * r : dx;
-                dx -= (k > h) ? (k - h) * r : 0;
-                G = new Group([G1, G2.translate(dx, T1.bounds.height)]).rotate(-tvec.angle);
-
-                // net
-                dx = Math.sqrt(
-                    Math.pow(h * d, 2) +
-                    Math.pow(k * d, 2) -
-                    2 * (h * d) * (k * d) * Math.cos(120 * Math.PI / 180)
-                );
-
-                G = new Group([
-                    G,
-                    G.clone().translate(dx, 0),
-                    G.clone().translate(dx * 2, 0),
-                    G.clone().translate(dx * 3, 0),
-                    G.clone().translate(dx * 4, 0)
-                ]);
-
-                G.strokeColor = "black";
-                G.position = view.center;
-            }
-
-            // 3-symmetry
-            {
-                paper.setup("canvas5");
-
-                const nc = [-((h + k) > K ? (h + k) : K), h + k];
-                const nr = [-h - k, h > (k + K) ? h : (k + K)];
-                const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec];
-
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
-                T1.closePath();
-                var T2 = new Path([0, 0], qvec, tvec);
-                T2.closePath();
-                var T3 = T1.clone().rotate(-60, [0, 0]);
-                var T4 = new Path([0, 0], Tvec, qvec);
-                T4.closePath();
-
-                var g = Array.from(unit.grid(nc, nr));
-                var G = new Group(
-                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
-                    /**/ intersect_grid(T2, g, vt, opt).flat(),
-                    /**/ intersect_grid(T3, g, vt, opt).flat(),
-                    /**/ intersect_grid(T4, g, vt, opt).flat())
-                )
-
-                G.strokeColor = "black";
-                G.position = view.center;
-            }
-            {
-                paper.setup("canvas6");
-
-                const nc = [-((h + k) > K ? (h + k) : K), h + k];
-                const nr = [-h - k, h > (k + K) ? h : (k + K)];
-                const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec];
-
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
-                T1.closePath();
-                var T2 = new Path([0, 0], qvec, tvec);
-                T2.closePath();
-                var T3 = T1.clone().rotate(-60, [0, 0]);
-                var T4 = new Path([0, 0], Tvec, qvec);
-                T4.closePath();
-
-                var g = Array.from(unit.grid(nc, nr));
-                var G = new Group(
-                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
-                    /**/ intersect_grid(T2, g, vt, opt).flat(),
-                    /**/ intersect_grid(T4, g, vt, opt).flat())
-                )
-
-                const p = [
-                    T3.segments.map(e => e.point.x).reduce((a, b) => a + b) / 3,
-                    T3.segments.map(e => e.point.y).reduce((a, b) => a + b) / 3,
-                ];
-
-                G = new Group([
-                    new Group(intersect_grid(T3, g, vt, opt).flat()),
-                    G,
-                    G.clone().rotate(120, p),
-                    G.clone().rotate(240, p)
-                ]);
-
-                const p1 = qvec.rotate(240, p);
-                const p2 = Tvec.rotate(240, p);
-                G = new Group([
-                    G,
-                    G.clone().rotate(-180, p1).translate(p2.subtract(p1))
-                ]).rotate(-tvec.angle);;
-
-                G.strokeColor = "black";
-                G.position = view.center;
-            }
-
-            {
-                paper.setup("canvas7");
-
-                const nc = [-2 * (h + k + K), 2 * (h + k + K)];
-                const nr = nc;
-
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
-                T1.closePath();
-                var T2 = new Path([0, 0], qvec, tvec);
-                T2.closePath();
-                var T3 = T1.clone().rotate(60, tvec);
-                var T4 = new Path([0, 0], Tvec, qvec);
-                T4.closePath();
-                var T5 = T2.clone().translate(tvec);
-
-                // const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec];
-                const vt = [T1, T2, T3, T4, T5].map(e => e.segments.map(f => f.point)).flat();
-                console.log(vt)
-                var g = Array.from(unit.grid(nc, nr));
-                var G = new Group(
-                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
-                    /**/ intersect_grid(T2, g, vt, opt).flat(),
-                    /**/ intersect_grid(T3, g, vt, opt).flat(),
-                    /**/ intersect_grid(T4, g, vt, opt).flat(),
-                    /**/ intersect_grid(T5, g, vt, opt).flat())
-                );
-
-                G.strokeColor = "black";
-                G.position = view.center;
-            }
-            {
-                paper.setup("canvas8");
-
-                const nc = [-2 * (h + k + K), 2 * (h + k + K)];
-                const nr = nc;
-                const vt = [T1, T2, T3, T4, T5].map(e => e.segments.map(f => f.point)).flat();
-
-                var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
-                T1.closePath();
-                var T2 = new Path([0, 0], qvec, tvec);
-                T2.closePath();
-                var T3 = T1.clone().rotate(60, tvec);
-                var T4 = new Path([0, 0], Tvec, qvec);
-                T4.closePath();
-                var T5 = T2.clone().translate(tvec);
-
-                var g = Array.from(unit.grid(nc, nr));
-                var G = new Group(
-                    /**/ intersect_grid(T1, g, vt, opt).flat().concat(
-                    /**/ intersect_grid(T2, g, vt, opt).flat(),
-                    /**/ intersect_grid(T1, g, vt, opt).flat(),
-                    /**/ intersect_grid(T4, g, vt, opt).flat(),
-                    /**/ intersect_grid(T5, g, vt, opt).flat(),
-                    T1,
-                    T5)
-                ).scale(1, -1).rotate(-90);
-
-                const p1 = [
-                    T1.segments.map(e => e.point.x).reduce((a, b) => a + b) / 3,
-                    T1.segments.map(e => e.point.y).reduce((a, b) => a + b) / 3,
-                ];
-                const p2 = T1.segments[0].point.add(T1.segments[2]?.point).divide(2);
-                var G2 = G.clone().scale(-1, -1, p1).translate(p2.subtract(p1).multiply(2));
-                var x = G2.children[G2.children.length - 1];
-                G = new Group(
-                    G,
-                    G2
-                );
-
-                G = new Group([
-                    G,
-                    G.clone().translate(x.segments[0].point.subtract(T5.segments[1].point))
-                ]);
-
-                G.strokeColor = "black";
-                G.position = view.center;
-            }
-
-        }
-
-        window.onload = function (opt) {
-            ["h", "k", "K", "R"].forEach(e => document.getElementById(e).addEventListener("change", draw));
-            ["1", "2", "3", "4", "5", "6", "7", "8"].forEach(e => document.getElementById("e" + e).addEventListener("click", exportSVG));
-            draw();
-        }
-
-    </script>
-</head>
-
-<body>
-    <label for="h">h&nbsp;=&nbsp;</label><input type="number" id="h" step="1" value="1" min="0">
-    <label for="k">k&nbsp;=&nbsp;</label><input type="number" id="k" step="1" value="1" min="0">
-    <label for="K">K&nbsp;=&nbsp;</label><input type="number" id="K" step="1" value="2" min="0">
-    <label for="R">R&nbsp;=&nbsp;</label><input type="number" id="R" step="1" value="10" min="0">
-    <button id="e1">s1</button>
-    <button id="e2">s2</button>
-    <button id="e3">s3</button>
-    <button id="e4">s4</button>
-    <button id="e5">s5</button>
-    <button id="e6">s6</button>
-    <button id="e7">s7</button>
-    <button id="e8">s8</button>
-    <br>
-    <div>
-        <canvas id="canvas1" resize>
-            Your browser does not support the HTML canvas tag.
-        </canvas>
-        <canvas id="canvas2" resize>
-            Your browser does not support the HTML canvas tag.
-        </canvas>
-    </div>
-    <div>
-        <canvas id="canvas3" resize>
-            Your browser does not support the HTML canvas tag.
-        </canvas>
-        <canvas id="canvas4" resize>
-            Your browser does not support the HTML canvas tag.
-        </canvas>
-    </div>
-    <div>
-        <canvas id="canvas5" resize>
-            Your browser does not support the HTML canvas tag.
-        </canvas>
-        <canvas id="canvas6" resize>
-            Your browser does not support the HTML canvas tag.
-        </canvas>
-    </div>
-    <div>
-        <canvas id="canvas7" resize>
-            Your browser does not support the HTML canvas tag.
-        </canvas>
-        <canvas id="canvas8" resize>
-            Your browser does not support the HTML canvas tag.
-        </canvas>
-    </div>
-</body>
-
+    <body>
+        <div>
+            <label for="h">h&nbsp;=&nbsp;</label>
+            <input type="number" id="h" step="1" value="1" min="0" />
+            <label for="k">k&nbsp;=&nbsp;</label>
+            <input type="number" id="k" step="1" value="1" min="0" />
+            <label for="H">H&nbsp;=&nbsp;</label>
+            <input type="number" id="H" step="1" value="1" min="0" />
+            <label for="K">K&nbsp;=&nbsp;</label>
+            <input type="number" id="K" step="1" value="2" min="0" />
+            <label for="R">R&nbsp;=&nbsp;</label>
+            <input type="number" id="R" step="1" value="10" min="0" />
+            <label for="a"></label>
+            <select id="a">
+                <option value="i">i</option>
+                <option value="5">5</option>
+                <option value="3">3</option>
+            </select>
+            <label for="r"></label>
+            <select id="r">
+                <option value="levo">levo</option>
+                <option value="dextro">dextro</option>
+            </select>
+        </div>
+        <div>
+            <canvas id="canvas1" resize> Your browser does not support the HTML canvas tag. </canvas>
+            <canvas id="canvas2" resize> Your browser does not support the HTML canvas tag. </canvas>
+        </div>
+    </body>
 </html>
