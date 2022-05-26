@@ -974,7 +974,7 @@ function drawNet(face) {
 
     var f2 = face.clone().scale(-1, -1);
     f2.position.y += face.children[0].bounds.height;
-    f2.bounds.left = Math.min(face.children[0].bounds.right, p.x);
+    f2.bounds.right = p.x;
 
     var G1 = new Group([face.clone(), f2]);
     var G2 = G1.clone();
@@ -1008,7 +1008,7 @@ function drawNet3(face, hex) {
     var tvec = hex.tvec();
     s = s.rotate(hex.tvec().angle, c);
     var p = s.add(new Point(qvec.y, qvec.x).multiply(1, -1)).rotate(-30, s);
-    var q = s.add(new Point(tvec.y, tvec.x)).rotate(-30, s);
+    var q = s.add(tvec);
     var T = new Group(
         G1,
         G1.clone()

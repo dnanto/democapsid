@@ -250,6 +250,8 @@ function redraw() {
             break;
     }
     if (obj) {
+        obj.strokeCap = "round";
+        obj.strokeJoin = "round";
         obj = eid("rotation").value === "levo" ? obj.scale(-1, 1) : obj;
         obj.position = view.center;
     }

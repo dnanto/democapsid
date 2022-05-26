@@ -1,3 +1,10 @@
+# v1.1.6
+
+-   complete 3-fold construction
+-   circle-cylinder intersection via hybrid bracket/bisection method
+-   set default line stroke to round
+-   manual testing for now
+
 # v1.1.5
 
 -   algorithm to group and collapse fiber base points by distance threshold
