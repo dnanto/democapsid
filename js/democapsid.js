@@ -3,8 +3,8 @@
 const phi = (1 + Math.sqrt(5)) / 2;
 const root3 = Math.sqrt(3);
 //// numerical
-const BRACKET_ITER = 10000;
-const BISECTION_ITER = 10000;
+const BRACKET_ITER = 10;
+const BISECTION_ITER = 1000;
 //// render
 const MIN_POINT_RADIUS = 0.0001;
 const COLLAPSE_THRESHOLD = 1;
