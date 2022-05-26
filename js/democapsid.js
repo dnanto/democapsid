@@ -974,7 +974,8 @@ function drawNet(face) {
 
     var f2 = face.clone().scale(-1, -1);
     f2.position.y += face.children[0].bounds.height;
-    f2.bounds.right = p.x;
+    console.log(p.x, face.children[0].bounds.right);
+    f2.bounds.right = face.children[0].bounds.left < p.x ? p.x : face.children[0].bounds.right;
 
     var G1 = new Group([face.clone(), f2]);
     var G2 = G1.clone();
@@ -986,7 +987,7 @@ function drawNet(face) {
     var G5 = G4.clone();
     G5.position.x += face.children[0].bounds.width;
 
-    var net = new Group([G1, G2, G3, G4, G5]);
+    var net = new Group(G1, G2, G3, G4, G5);
     net.position = view.center;
     return net;
 }
