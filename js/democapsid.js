@@ -245,7 +245,7 @@ class Icosahedron {
         var B2 = sarrus(K, u).map((e) => e * Math.sin(beta));
         var B3 = K.map((e) => e * dot(K, u)).map((e) => e * (1 - Math.cos(beta)));
         var h = edge2;
-        console.log(degrees(beta), h);
+        // console.log(degrees(beta), h);
         var p4 = p[3].map((e) => e[0]);
         var B = add(
             p4,
@@ -300,11 +300,6 @@ class Icosahedron {
                 [Math.cos(a120 * 1) * F[0] - Math.sin(a120 * 1) * F[2], F[1], Math.sin(a120 * 1) * F[0] + Math.cos(a120 * 1) * F[2], 1],
                 [Math.cos(a120 * 2) * F[0] - Math.sin(a120 * 2) * F[2], F[1], Math.sin(a120 * 2) * F[0] + Math.cos(a120 * 2) * F[2], 1],
             ]);
-        console.log(
-            this.vertexes.map((e) => {
-                return [e[0], e[1]];
-            })
-        );
         this.faceIndexes = [
             // cap
             [0, 1, 2],
@@ -438,8 +433,8 @@ class Hex {
     }
 
     Tvec() {
-        // return this.tvec().clone().rotate(120); ?
-        return this.hvec().multiply(-1, 1).add(this.kvec().rotate(60));
+        return this.tvec().clone().rotate(120);
+        // return this.hvec().multiply(-1, 1).add(this.kvec().rotate(60));
     }
 
     /**
@@ -975,11 +970,9 @@ function removeAuxMers(face) {
 }
 
 function drawNet(face) {
-    var f2 = face.clone();
-
     var p = pointReduce(face.children[1].children, (a, b) => (a.y > b.y ? a : b));
 
-    f2.scale(-1, -1);
+    var f2 = face.clone().scale(-1, -1);
     f2.position.y += face.children[0].bounds.height;
     f2.bounds.left = Math.min(face.children[0].bounds.right, p.x);
 
