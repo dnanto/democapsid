@@ -434,7 +434,6 @@ class Hex {
 
     Tvec() {
         return this.tvec().clone().rotate(120);
-        // return this.hvec().multiply(-1, 1).add(this.kvec().rotate(60));
     }
 
     /**
@@ -587,7 +586,46 @@ class Hex {
         return G;
     }
 
-    face2(opt = {}) {}
+    face2(opt = {}) {
+        const tvec = this.tvec();
+        const qvec = this.qvec();
+        const Tvec = this.Tvec();
+
+        // const nc = [-(this.h + this.k > this.K ? this.h + this.k : this.K), this.h + this.k];
+        // const nr = [-this.h - this.k - this.H - this.K, this.h + this.k + this.H + this.K];
+        const nc = [-2 * (this.h + this.k) - 2 * (this.H + this.K), 2 * (this.h + this.k) + 2 * (this.H + this.K)];
+        const nr = [-2 * (this.h + this.k) - 2 * (this.H + this.K), 2 * (this.h + this.k) + 2 * (this.H + this.K)];
+        const vt = [[0, 0], tvec, tvec.rotate(-60), tvec.rotate(-120), qvec, Tvec, tvec.add(tvec.rotate(-60)), qvec.add(tvec), tvec.multiply(2)];
+
+        var T1 = new Path([[0, 0], tvec, tvec.rotate(-60)]);
+        T1.closePath();
+        var T2 = new Path([0, 0], qvec, tvec);
+        T2.closePath();
+        var T3 = new Path([0, 0], Tvec, qvec);
+        T3.closePath();
+        var T4 = T1.clone().rotate(60, tvec);
+        var T5 = T2.clone().translate(tvec);
+
+        var g = Array.from(this.grid(nc, nr));
+        var G = new Group(
+            new Group(this.intersect_grid(T1, g, vt, opt).flat()),
+            new Group(this.intersect_grid(T2, g, vt, opt).flat()),
+            new Group(this.intersect_grid(T3, g, vt, opt).flat()),
+            new Group(this.intersect_grid(T4, g, vt, opt).flat()),
+            new Group(this.intersect_grid(T5, g, vt, opt).flat())
+        );
+        G.style = opt.face;
+        G.rotate(-tvec.angle);
+
+        T1.remove();
+        T2.remove();
+        T3.remove();
+        T4.remove();
+        T5.remove();
+        g.forEach((e) => e.remove());
+
+        return G;
+    }
 }
 
 class TriHex extends Hex {
@@ -1018,6 +1056,40 @@ function drawNet3(face, hex) {
     );
 
     T.position = view.center;
+    return T;
+}
+
+function drawNet2(face, hex) {
+    var f = face.clone();
+    f.children[0].fillColor = "red";
+    f.children[4].fillColor = "blue";
+    const c0 = f.children[0].bounds;
+    const c1 = f.children[1].bounds;
+
+    const p = pointReduce(f.children[4].children, (a, b) => (a.y > b.y ? a : b));
+    var g = f.clone().translate(c0.topLeft.add(-c0.width / 2, 0).subtract(p));
+    console.log(g.children[0].bounds);
+    var T = new Group(
+        //
+        f,
+        f
+            .clone()
+            .rotate(180, c0.topCenter)
+            .translate(-c0.width / 2, c0.height),
+        g,
+        g
+            .clone()
+            .rotate(180, g.children[0].bounds.topCenter)
+            .translate(-c0.width / 2, c0.height)
+
+        // f
+        //     .clone()
+        //     .rotate(180, c0.topCenter)
+        //     .translate(0 * c0.width, -c1.height)
+    );
+
+    T.position = view.center;
+
     return T;
 }
 

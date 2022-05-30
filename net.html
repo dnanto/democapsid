@@ -52,6 +52,9 @@
                     case "3":
                         face = hex.face3(opt);
                         return removeAuxMers(face);
+                    case "2":
+                        face = hex.face2(opt);
+                        return removeAuxMers(face);
                 }
             }
 
@@ -77,7 +80,9 @@
                 {
                     paper.setup("canvas2");
                     var face = drawFace(hex);
-                    if (document.getElementById("a").value === "3") {
+                    if (document.getElementById("a").value === "2") {
+                        T = drawNet2(face, hex).scale(R);
+                    } else if (document.getElementById("a").value === "3") {
                         T = drawNet3(face, hex).scale(R);
                     } else {
                         T = drawNet(face).scale(R);
@@ -112,6 +117,7 @@
                 <option value="i">i</option>
                 <option value="5">5</option>
                 <option value="3">3</option>
+                <option value="2">2</option>
             </select>
             <label for="r"></label>
             <select id="r">
