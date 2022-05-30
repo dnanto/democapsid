@@ -1061,10 +1061,7 @@ function drawNet3(face, hex) {
 
 function drawNet2(face, hex) {
     var f = face.clone();
-    f.children[0].fillColor = "red";
-    f.children[4].fillColor = "blue";
     const c0 = f.children[0].bounds;
-    const c1 = f.children[1].bounds;
 
     const p = pointReduce(f.children[4].children, (a, b) => (a.y > b.y ? a : b));
     var g = f.clone().translate(c0.topLeft.add(-c0.width / 2, 0).subtract(p));
@@ -1081,13 +1078,9 @@ function drawNet2(face, hex) {
             .clone()
             .rotate(180, g.children[0].bounds.topCenter)
             .translate(-c0.width / 2, c0.height)
-
-        // f
-        //     .clone()
-        //     .rotate(180, c0.topCenter)
-        //     .translate(0 * c0.width, -c1.height)
     );
 
+    T.rotate(-hex.kvec().angle);
     T.position = view.center;
 
     return T;
