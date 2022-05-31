@@ -165,6 +165,8 @@ function updateIco() {
         ico.setEdges(opt.R3, (opt.R3 * Math.sin(B)) / Math.sin(A), -C);
     } else if (eid("symmetry").value === "3-fold") {
         ico.setEdges3(opt.R3, (opt.R3 * Math.sin(C)) / Math.sin(A), -B);
+    } else if (eid("symmetry").value === "2-fold") {
+        ico.setEdges2(opt.R3, (opt.R3 * Math.sin(C)) / Math.sin(A), -B);
     }
     face.remove();
 }
@@ -212,6 +214,8 @@ function drawFace() {
         face = hex.face5(getFaceStyle());
     } else if (eid("symmetry").value === "3-fold") {
         face = hex.face3(getFaceStyle());
+    } else if (eid("symmetry").value === "2-fold") {
+        face = hex.face2(getFaceStyle());
     }
     return face;
 }
@@ -236,11 +240,15 @@ function redraw() {
                 obj = drawIco(face.scale(-1, 1), ico, opt.F, cam.P, getIcoStyle()).scale(-1, 1);
             } else if (eid("symmetry").value === "3-fold") {
                 obj = drawIco3(face.scale(-1, 1), ico, opt.F, cam.P, getIcoStyle());
+            } else if (eid("symmetry").value === "2-fold") {
+                obj = drawIco3(face.scale(-1, 1), ico, opt.F, cam.P, getIcoStyle());
             }
             break;
         case "net":
             if (eid("symmetry").value === "3-fold") {
                 obj = drawNet3(removeAuxMers(face), hex).scale(opt.R2);
+            } else if (eid("symmetry").value === "2-fold") {
+                obj = drawNet2(removeAuxMers(face), hex).scale(opt.R2);
             } else {
                 obj = drawNet(removeAuxMers(face)).scale(opt.R2);
             }
