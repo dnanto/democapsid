@@ -1,3 +1,7 @@
+# v1.1.8
+
+-   complete 2-fold construction
+
 # v1.1.7
 
 -   fix 5-fold net construction
