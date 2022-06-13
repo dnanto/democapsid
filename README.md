@@ -15,8 +15,9 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 
 # Poster
 
--   [Fall 2020 SSB Student Research Day 2020 @ GMU](https://github.com/dnanto/democapsid/blob/master/poster/poster2020.pdf)
+-   [ASM Microbe 2022 @ DC](https://github.com/dnanto/democapsid/blob/master/poster/poster2022.pdf)
 -   [Spring 2021 GMU SSB Student Research Day 2021 @ GMU](https://github.com/dnanto/democapsid/blob/master/poster/poster2021.pdf)
+-   [Fall 2020 SSB Student Research Day 2020 @ GMU](https://github.com/dnanto/democapsid/blob/master/poster/poster2020.pdf)
 
 # Demoscene
 
