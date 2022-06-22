@@ -1,3 +1,7 @@
+# v1.1.9
+
+-   implement dual hex
+
 # v1.1.8
 
 -   complete 2-fold construction

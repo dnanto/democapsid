@@ -533,9 +533,9 @@ class Hex {
         this.r3 = (this.R6 * root3) / 6;
         // grid x-offset
         this.dx = 2 * this.r6;
+        this.ddx = this.r6;
         // grid y-offset
         this.dy = 1.5 * this.R6;
-        this.ddx = this.r6;
         this.ddy = 0;
 
         this.RU = this.R6;
@@ -864,6 +864,20 @@ class RhombiTriHex extends Hex {
 class DualHex extends Hex {
     constructor(h = 0, k = 0, H = 0, K = 0) {
         super(h, k, H, K);
+    }
+
+    unit() {
+        var line = new Path([
+            [0, 0],
+            [this.R6 / 2, this.r6],
+        ]);
+        var path = new Path([[0, 0], line.rotate(30, [0, 0]).bounds.bottomLeft, [0, this.R6], line.rotate(-60, [0, 0]).bounds.bottomRight]);
+        path.closed = true;
+        path.name = "mer-1";
+        line.remove();
+        var cir = new Path.Circle([0, 0], this.RU);
+        cir.name = "cir-1";
+        return [path, [1, 2, 3, 4, 5].map((e) => path.clone().rotate(e * 60, [0, 0])), cir].flat();
     }
 }
 
