@@ -206,7 +206,7 @@ class Capsid(object):
             )
         )
         
-        return coor
+        return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
 
     def lattice(self, points):
         # change of basis to lattice coordinates
@@ -390,6 +390,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "1", "1", "1", "2", "-s", "3"])
+        main(["capsid", "3", "1", "2", "4", "-s", "3"])
     else:
         sys.exit(main(sys.argv))
