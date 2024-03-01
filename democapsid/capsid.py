@@ -167,7 +167,7 @@ class Capsid(object):
             k = uvec(pB - pC)
             pD = np.array([0, -(a * (SQRT3 / 6)), 0]) + roro(v, k, t)
             pF = roro(pD, np.array([0, 0, 1]), (2 / 3) * np.pi)
-            # phase 2
+
             t = angle(self.C1, self.C2)
             v, k = b * uvec(pD - pB), uvec(np.cross(pD, pB))
             o = roro(v, k, t)
@@ -184,13 +184,13 @@ class Capsid(object):
 
         ## find a good starting point
         
-        for t in np.arange(0, np.pi / 2, np.pi / 180):
+        for t in np.arange(0, np.pi / 2, np.pi / 180 / 10):
             try:
                 fold(t)
                 break
             except StopIteration:
                 pass
-        _, __, t = bisection(obj, t, np.pi / 4, tol=tol, iter=iter)
+        t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
         pD, pF, pG, _ = fold(t)
 
         t = (2 / 3) * np.pi
@@ -374,8 +374,8 @@ def main(argv):
     if "bpy" in sys.modules:
         # facets    
         for idx, ele in enumerate(facets, start=1):
-            verts, edges, idn = ele
-            mesh = bpy.data.meshes.new(name=f"Facet[{h}, {k}, {H}, {K}, T={idn}, i={idx}]")
+            verts, edges, T = ele
+            mesh = bpy.data.meshes.new(name=f"Facet[{h}, {k}, {H}, {K}, T={T}, i={idx}]")
             mesh.from_pydata(verts, edges, [])
             mesh.validate(verbose=True)
             # create the object with the mesh just created
@@ -390,6 +390,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "3", "1", "2", "4", "-s", "3"])
+        main(["capsid", "0", "1", "1", "1", "-s", "3"])
     else:
         sys.exit(main(sys.argv))
