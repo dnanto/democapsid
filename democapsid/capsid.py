@@ -152,7 +152,7 @@ class Capsid(object):
     def __str__(self):
         return f"Capsid({h}, {k}, {H}, {K})"
 
-    def verts(self, s=2, iter=1000, tol=1E-15):
+    def verts3(self, iter=100, tol=1E-15):
         a = np.linalg.norm(self.C1)
         b = np.linalg.norm(self.C2)
         c = np.linalg.norm(self.C3 - self.C2)
@@ -203,6 +203,62 @@ class Capsid(object):
                 pD, roro(pF, k, t), pF,
                 pG, pH, roro(pH, k, -t),
                 pJ, roro(pJ, k, -t), roro(pJ, k, -2 * t),
+            )
+        )
+        
+        return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
+
+    def verts2(self, iter=100, tol=1E-15):
+        a = np.linalg.norm(self.C1)
+        b = np.linalg.norm(self.C2)
+        c = np.linalg.norm(self.C3 - self.C2)
+        pA = np.array([a / 2, 0, 0])
+        pB = np.array([-(a / 2), 0, 0])
+        pC = np.array([0, -((a * PHI) / 2), -(((a * PHI) - a) / 2)])
+        pD = np.array([0, ((a * PHI) / 2), -(((a * PHI) - a) / 2)])
+        print("pA>", pA)
+        print("pB>", pB)
+        print("pC>", pC)
+        print("pD>", pD)
+
+        def fold(t):
+            p = (pB + pC) / 2
+            v, k = p - pA, uvec(pC - pB)
+            pE = p + roro(v, k, t)
+            pF = roro(pE, np.array([0, 0, 1]), np.pi)
+            print("pE>", pE)
+            print("pF>", pF)
+
+            t = angle(self.C1, self.C2)
+            v, k = b * uvec(pC - pA), uvec(np.cross(pC, pA))
+            o = roro(v, k, t)
+            p, q = pA + proj(o, v), pA + o
+            v, k = q - p, uvec(pA - pC)
+            f = lambda t: c - np.linalg.norm((p + roro(v, k, t)) - pF)
+            t = next(bisection(f, a, b, tol=tol, iter=iter)[2] for a, b in brackets(f, 0, 2 * np.pi, iter))
+            pG = p + roro(v, k, t)
+            return pE, pF, pG, np.linalg.norm(pE - np.array([0, 0, pE[2]])) - np.linalg.norm(pG - np.array([0, 0, pG[2]]))
+
+        def obj(t):
+            # objective: |y(p_{D})| == |p_{G} - (0, 0, z(p_{G}))| @ t = ?
+            return fold(t)[-1]
+
+        ## find a good starting point
+        
+        for t in np.arange(0, np.pi / 2, np.pi / 180 / 10):
+            try:
+                fold(t)
+                break
+            except StopIteration:
+                pass
+        t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
+        pE, pF, pG, _ = fold(t)
+
+        coor = np.vstack(
+            (
+                pA, pB, pC, 
+                pD, pE, pF,
+                pG, roro(pG, np.array([0, 0, 1]), np.pi)
             )
         )
         
@@ -275,7 +331,7 @@ class Capsid(object):
         s = 3
         th = (2 * np.pi) / s
         z = np.array([0, 0, 1])
-        coor = self.verts(s)
+        coor = self.verts3()
         
         from string import ascii_uppercase
         for item in zip(ascii_uppercase, coor):
@@ -342,7 +398,22 @@ class Capsid(object):
             yield facet, edges, "T3-▲"
          
     def f2(self):
-        pass
+        s = 3
+        th = np.pi
+        z = np.array([0, 0, 1])
+        coor = self.verts2()
+        
+        from string import ascii_uppercase
+        for item in zip(ascii_uppercase, coor):
+            print(*item)
+
+        points, lattice = self.t1()
+        
+        idx = (0, 1, 2)
+        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+        verts, edges = lattice
+        facet = [t + c * R @ ele for ele in verts]
+        yield facet, edges, "T1-▔"
         
     def facets(self, s=2):
         if s == 5:
@@ -390,6 +461,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "0", "1", "1", "1", "-s", "3"])
+        main(["capsid", "1", "1", "1", "2", "-s", "2"])
     else:
         sys.exit(main(sys.argv))
