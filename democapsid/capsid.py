@@ -350,8 +350,7 @@ class Capsid(object):
         pass
         
     def f3(self):
-        s = 3
-        th = (2 * np.pi) / s
+        th = (2 * np.pi) / 3
         z = np.array([0, 0, 1])
         coor = self.verts3()
         
@@ -420,7 +419,6 @@ class Capsid(object):
             yield facet, edges, "T3-▲"
          
     def f2(self):
-        s = 3
         th = np.pi
         z = np.array([0, 0, 1])
         coor = self.verts2()
@@ -434,28 +432,24 @@ class Capsid(object):
         
         idx = (0, 1, 2)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T1-▔"
         
         idx = (1, 2, 4)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T1-▔"
         
         idx = (9, 6, 10)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T1▁"
         
         idx = (9, 10, 11)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T1▁"
@@ -465,28 +459,24 @@ class Capsid(object):
         
         idx = (0, 6, 2)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T2-▼"
         
         idx = (9, 2, 6)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T2-▲"
         
         idx = (4, 9, 2)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T2-▼"
         
         idx = (9, 4, 11)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T2-▲"
@@ -496,14 +486,12 @@ class Capsid(object):
         
         idx = (0, 5, 6)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T3-▼"
         
         idx = (10, 6, 5)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        facet = [t + c * R @ ele for ele in verts]
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T3-▲"
