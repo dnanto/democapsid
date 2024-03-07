@@ -254,6 +254,26 @@ class Capsid(object):
         t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
         pE, pF, pG, _ = fold(t)
 
+
+        vGF = pF - pG
+        pX = pA - pG
+        PG = pG + proj(pX, vGF)
+        PH = pA + pG + pF - 2 * PG
+        
+        
+        k = uvec(vGF)
+        v = a * uvec(np.cross(pG, pF))
+        
+        def obj(t):
+            p = pG + roro(v, k, t)
+            return np.linalg.norm(p - np.array([0, 0, p[2]])) - pA[0]
+            
+        t = bisection(obj, 0, 2 * np.pi, tol=tol, iter=iter)[2]
+        pK = pG + roro(v, k, t)
+        pL = roro(pK, np.array([0, 0, 1]), np.pi)
+        print(pK)
+        
+
         coor = np.vstack(
             (
                 pA, pB, pC, 
@@ -262,7 +282,7 @@ class Capsid(object):
             )
         )
         
-        return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
+        return coor #+ np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
 
     def lattice(self, points):
         # change of basis to lattice coordinates
@@ -413,7 +433,39 @@ class Capsid(object):
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
         verts, edges = lattice
         facet = [t + c * R @ ele for ele in verts]
-        yield facet, edges, "T1-▔"
+        for i in range(2):
+            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+            yield facet, edges, "T1-▔"
+        
+        idx = (1, 2, 4)
+        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+        verts, edges = lattice
+        facet = [t + c * R @ ele for ele in verts]
+        for i in range(2):
+            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+            yield facet, edges, "T1-▔"
+        
+        
+        
+        points, lattice = self.t2()
+        
+        idx = (0, 6, 2)
+        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+        verts, edges = lattice
+        facet = [t + c * R @ ele for ele in verts]
+        for i in range(2):
+            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+            yield facet, edges, "T2-▼"
+        
+        points, lattice = self.t3()
+        
+        idx = (0, 5, 6)
+        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+        verts, edges = lattice
+        facet = [t + c * R @ ele for ele in verts]
+        for i in range(2):
+            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+            yield facet, edges, "T4-▼"
         
     def facets(self, s=2):
         if s == 5:
