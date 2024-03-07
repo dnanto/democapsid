@@ -226,8 +226,6 @@ class Capsid(object):
             v, k = p - pA, uvec(pC - pB)
             pE = p + roro(v, k, t)
             pF = roro(pE, np.array([0, 0, 1]), np.pi)
-            print("pE>", pE)
-            print("pF>", pF)
 
             t = angle(self.C1, self.C2)
             v, k = b * uvec(pC - pA), uvec(np.cross(pC, pA))
@@ -252,26 +250,29 @@ class Capsid(object):
             except StopIteration:
                 pass
         t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
+        print("t1>", t)
         pE, pF, pG, _ = fold(t)
 
 
         vGF = pF - pG
-        pX = pA - pG
-        PG = pG + proj(pX, vGF)
-        PH = pA + pG + pF - 2 * PG
-        
-        
+        vGA = pA - pG
+        v = a * uvec(np.cross(vGA, vGF))
         k = uvec(vGF)
-        v = a * uvec(np.cross(pG, pF))
+        p = pG + pF - (pG + proj(vGA, vGF))
+        q = p + v
+        print("p", p)
+        print("v", v)
+        print("k", k)
+        print("q", q)
         
         def obj(t):
-            p = pG + roro(v, k, t)
-            return np.linalg.norm(p - np.array([0, 0, p[2]])) - pA[0]
-            
-        t = bisection(obj, 0, 2 * np.pi, tol=tol, iter=iter)[2]
-        pK = pG + roro(v, k, t)
+            q = p + roro(v, k, t)
+            return np.linalg.norm(q - np.array([0, 0, q[2]])) - pA[0]
         
-        # J=Point({0,0,0})+Rotate(y(p_{D}) UnitVector(p_{K}-(0,0,z(p_{K}))),((π)/(2)),zAxis)+(0,0,z(p_{K})-z(p_{C}))
+        t = bisection(obj, 0, 2 * np.pi, tol=tol, iter=iter)[2]
+        print("t2>", t)
+        pK = p + roro(v, k, t)
+        
         pI = roro(pD[1] * uvec(pK - np.array([0, 0, pK[2]])), np.array([0, 0, 1]), np.pi / 2) + np.array([0, 0, pK[2] - pC[2]])
 
         coor = np.vstack(
@@ -553,6 +554,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "1", "1", "1", "2", "-s", "2"])
+        main(["capsid", "3", "1", "4", "2", "-s", "2"])
     else:
         sys.exit(main(sys.argv))
