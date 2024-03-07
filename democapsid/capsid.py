@@ -208,7 +208,7 @@ class Capsid(object):
         
         return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
 
-    def verts2(self, iter=100, tol=1E-15):
+    def verts2(self, iter=1000, tol=1E-15):
         a = np.linalg.norm(self.C1)
         b = np.linalg.norm(self.C2)
         c = np.linalg.norm(self.C3 - self.C2)
@@ -256,7 +256,7 @@ class Capsid(object):
 
         vGF = pF - pG
         vGA = pA - pG
-        v = a * uvec(np.cross(vGA, vGF))
+        v = a * uvec(np.cross(vGF, vGA))
         k = uvec(vGF)
         p = pG + pF - (pG + proj(vGA, vGF))
         q = p + v
@@ -554,6 +554,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "3", "1", "4", "2", "-s", "2"])
+        main(["capsid", "3", "1", "4", "1", "-s", "2"])
     else:
         sys.exit(main(sys.argv))
