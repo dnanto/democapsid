@@ -208,7 +208,7 @@ class Capsid(object):
         
         return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
 
-    def verts2(self, iter=1000, tol=1E-15):
+    def verts2(self, iter=100, tol=1E-15):
         a = np.linalg.norm(self.C1)
         b = np.linalg.norm(self.C2)
         c = np.linalg.norm(self.C3 - self.C2)
@@ -253,27 +253,18 @@ class Capsid(object):
         print("t1>", t)
         pE, pF, pG, _ = fold(t)
 
-
-        vGF = pF - pG
-        vGA = pA - pG
-        v = a * uvec(np.cross(vGF, vGA))
-        k = uvec(vGF)
-        p = pG + pF - (pG + proj(vGA, vGF))
-        q = p + v
-        print("p", p)
-        print("v", v)
-        print("k", k)
-        print("q", q)
-        
         def obj(t):
-            q = p + roro(v, k, t)
-            return np.linalg.norm(q - np.array([0, 0, q[2]])) - pA[0]
+            pK = roro(pA, np.array([0, 0, 1]), t) + np.array([0, 0, pG[2] + pE[2]])
+            print("pK>", pK, "|pK - pF|", np.linalg.norm(pK - pF), b)
+            return np.linalg.norm(pK - pF) - b
+
+        t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, 0, 2 * np.pi, iter))
+        print("t>", t)
+        pK = roro(pA, np.array([0, 0, 1]), t) + np.array([0, 0, pG[2] + pE[2]])
+        print("pK>",pK)
         
-        t = bisection(obj, 0, 2 * np.pi, tol=tol, iter=iter)[2]
-        print("t2>", t)
-        pK = p + roro(v, k, t)
-        
-        pI = roro(pD[1] * uvec(pK - np.array([0, 0, pK[2]])), np.array([0, 0, 1]), np.pi / 2) + np.array([0, 0, pK[2] - pC[2]])
+        # y(p_{D}) Rotate(UnitVector(p_{K}-(0,0,z(p_{K}))),((π)/(2)),zAxis)+(0,0,z(p_{G})+z(p_{E})-z(p_{D}))
+        pI = pD[1] * roro(uvec(pK - np.array([0, 0, pK[2]])), np.array([0, 0, 1]), np.pi / 2) + np.array([0, 0, pG[2] + pE[2] - pD[2]])
 
         coor = np.vstack(
             (
@@ -283,7 +274,7 @@ class Capsid(object):
                 roro(pI, np.array([0, 0, 1]), np.pi), pK, roro(pK, np.array([0, 0, 1]), np.pi)
             )
         )
-        
+
         return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
 
     def lattice(self, points):
@@ -430,13 +421,13 @@ class Capsid(object):
         points, lattice = self.t1()
         verts, edges = lattice
         
-        idx = (0, 1, 2)
+        idx = (0, 2, 1)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T1-▔"
         
-        idx = (1, 2, 4)
+        idx = (2, 4, 1)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
@@ -469,7 +460,7 @@ class Capsid(object):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
             yield facet, edges, "T2-▲"
         
-        idx = (4, 9, 2)
+        idx = (2, 9, 4)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
         for i in range(2):
             facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
@@ -542,6 +533,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "3", "1", "4", "1", "-s", "2"])
+        main(["capsid", "1", "1", "1", "2", "-s", "2"])
     else:
         sys.exit(main(sys.argv))
