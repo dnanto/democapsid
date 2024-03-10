@@ -152,158 +152,6 @@ class Capsid(object):
     def __str__(self):
         return f"Capsid({h}, {k}, {H}, {K})"
 
-
-    def verts5(self):
-        a = np.linalg.norm(self.C1)
-        b = np.linalg.norm(self.C2)
-        
-        R5 = a * np.sqrt(((5 + SQRT5) / 10))
-        h5 = ((1 + SQRT5) * a) / (2 * np.sqrt(5 + 2 * SQRT5))
-        pA = np.array([0, 0, h5])
-        pB = roro(np.array([-R5, 0, 0]), np.array([0, 0, 1]), np.deg2rad(54))
-        pC = pB + np.array([a, 0, 0])
-
-        t = angle(self.C1, self.C2)
-        q = pC + roro(np.array([b, 0, 0]), np.array([0, 1, 0]), -np.pi - t)
-        p = pB + proj(q - pB, pC - pB)
-        d = np.array([p[0], (p[1] * np.sqrt(R5 * R5 * p[1] * p[1] - p[0] * p[0])) / (p[1] * p[1]), 0])
-        pG = d + np.array([0, 0, -np.sqrt(q[2] * q[2] - np.linalg.norm(p - d) ** 2)])
-
-        coor = np.vstack(
-            (
-                pA, 
-                pB, pC, 
-                *(roro(pC, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 4)), # D, E, F
-                pG, 
-                *(roro(pG, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 5)), # H, I, J, K
-                np.array([0, 0, pG[2] - pA[2]]) # pL
-            )
-        )
-
-        return coor + np.array([0, 0, -pG[2] / 2])
-
-
-    def verts3(self, iter=100, tol=1E-15):
-        a = np.linalg.norm(self.C1)
-        b = np.linalg.norm(self.C2)
-        c = np.linalg.norm(self.C3 - self.C2)
-        pA = np.array([0, a * (1 / SQRT3), 0])
-        pB = np.array([a / 2, -(a * (SQRT3 / 6)), 0])
-        pC = np.array([-(a / 2), -(a * (SQRT3 / 6)), 0])
-        qD = np.array([0, -(a * ((2 * SQRT3) / 3)), 0])
-        qF = np.array([a, a / SQRT3, 0])
-
-        def fold(t):
-            v = (a * (SQRT3 / 2)) * uvec(qD)
-            k = uvec(pB - pC)
-            pD = np.array([0, -(a * (SQRT3 / 6)), 0]) + roro(v, k, t)
-            pF = roro(pD, np.array([0, 0, 1]), (2 / 3) * np.pi)
-
-            t = angle(self.C1, self.C2)
-            v, k = b * uvec(pD - pB), uvec(np.cross(pD, pB))
-            o = roro(v, k, t)
-            p, q = pB + proj(o, v), pB + o
-            v, k = q - p, uvec(pB - pD)
-            f = lambda t: c - np.linalg.norm((p + roro(v, k, t)) - pF)
-            t = next(bisection(f, a, b, tol=tol, iter=iter)[2] for a, b in brackets(f, 0, 2 * np.pi, iter))
-            pG = p + roro(v, k, t)
-            return pD, pF, pG, np.abs(pD[1]) - np.linalg.norm(pG - np.array([0, 0, pG[2]]))
-
-        def obj(t):
-            # objective: |y(p_{D})| == |p_{G} - (0, 0, z(p_{G}))| @ t = ?
-            return fold(t)[-1]
-
-        ## find a good starting point
-        
-        for t in np.arange(0, np.pi / 2, np.pi / 180 / 10):
-            try:
-                fold(t)
-                break
-            except StopIteration:
-                pass
-        t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
-        pD, pF, pG, _ = fold(t)
-
-        t = (2 / 3) * np.pi
-        k = np.array([0, 0, 1])
-        pH = roro(pG, k, -t)
-        pJ = pA[1] * uvec(roro(pH - np.array([0, 0, pH[2]]), k, np.pi / 3)) + np.array([0, 0, pH[2] + pD[2] - pA[2]])
-        coor = np.vstack(
-            (
-                pA, pB, pC, 
-                pD, roro(pF, k, t), pF,
-                pG, pH, roro(pH, k, -t),
-                pJ, roro(pJ, k, -t), roro(pJ, k, -2 * t),
-            )
-        )
-        
-        return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
-
-    def verts2(self, iter=100, tol=1E-15):
-        a = np.linalg.norm(self.C1)
-        b = np.linalg.norm(self.C2)
-        c = np.linalg.norm(self.C3 - self.C2)
-        pA = np.array([a / 2, 0, 0])
-        pB = np.array([-(a / 2), 0, 0])
-        pC = np.array([0, -((a * PHI) / 2), -(((a * PHI) - a) / 2)])
-        pD = np.array([0, ((a * PHI) / 2), -(((a * PHI) - a) / 2)])
-
-        def fold(t):
-            p = (pB + pC) / 2
-            v, k = p - pA, uvec(pC - pB)
-            pE = p + roro(v, k, t)
-            pF = roro(pE, np.array([0, 0, 1]), np.pi)
-
-            t = angle(self.C1, self.C2)
-            v, k = b * uvec(pC - pA), uvec(np.cross(pC, pA))
-            o = roro(v, k, t)
-            p, q = pA + proj(o, v), pA + o
-            v, k = q - p, uvec(pA - pC)
-            f = lambda t: c - np.linalg.norm((p + roro(v, k, t)) - pF)
-            t = next(bisection(f, a, b, tol=tol, iter=iter)[2] for a, b in brackets(f, 0, 2 * np.pi, iter))
-            pG = p + roro(v, k, t)
-            return pE, pF, pG, np.linalg.norm(pE - np.array([0, 0, pE[2]])) - np.linalg.norm(pG - np.array([0, 0, pG[2]]))
-
-        def obj(t):
-            # objective: |y(p_{D})| == |p_{G} - (0, 0, z(p_{G}))| @ t = ?
-            return fold(t)[-1]
-
-        ## find a good starting point
-        
-        for t in np.arange(0, np.pi / 2, np.pi / 180 / 10):
-            try:
-                fold(t)
-                break
-            except StopIteration:
-                pass
-        t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
-        print("t1>", t)
-        pE, pF, pG, _ = fold(t)
-
-        def obj(t):
-            pK = roro(pA, np.array([0, 0, 1]), t) + np.array([0, 0, pG[2] + pE[2]])
-            print("pK>", pK, "|pK - pF|", np.linalg.norm(pK - pF), b)
-            return np.linalg.norm(pK - pF) - b
-
-        t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, 0, 2 * np.pi, iter))
-        print("t>", t)
-        pK = roro(pA, np.array([0, 0, 1]), t) + np.array([0, 0, pG[2] + pE[2]])
-        print("pK>",pK)
-        
-        # y(p_{D}) Rotate(UnitVector(p_{K}-(0,0,z(p_{K}))),((π)/(2)),zAxis)+(0,0,z(p_{G})+z(p_{E})-z(p_{D}))
-        pI = pD[1] * roro(uvec(pK - np.array([0, 0, pK[2]])), np.array([0, 0, 1]), np.pi / 2) + np.array([0, 0, pG[2] + pE[2] - pD[2]])
-
-        coor = np.vstack(
-            (
-                pA, pB, pC, 
-                pD, pE, pF,
-                pG, roro(pG, np.array([0, 0, 1]), np.pi), pI,
-                roro(pI, np.array([0, 0, 1]), np.pi), pK, roro(pK, np.array([0, 0, 1]), np.pi)
-            )
-        )
-
-        return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
-
     def lattice(self, points):
         # change of basis to lattice coordinates
         a1, a2 = self.a1, self.a2
@@ -364,194 +212,209 @@ class Capsid(object):
         points = (np.array([0, 0]), self.C3, self.C2, self.C2 + self.C3)
         return points, self.lattice(points)
 
+    def verts5(self):
+        a = np.linalg.norm(self.C1)
+        b = np.linalg.norm(self.C2)
+        
+        # regular pentagon circumradius
+        R5 = a * np.sqrt(((5 + SQRT5) / 10))
+        # regular pentagonal pyramid height
+        h5 = ((1 + SQRT5) * a) / (2 * np.sqrt(5 + 2 * SQRT5))
+
+        pA = np.array([0, 0, h5])
+        pB = roro(np.array([-R5, 0, 0]), np.array([0, 0, 1]), np.deg2rad(54))
+        pC = pB + np.array([a, 0, 0])
+
+        t = angle(self.C1, self.C2)
+        q = pC + roro(np.array([b, 0, 0]), np.array([0, 1, 0]), -np.pi - t)
+        p = pB + proj(q - pB, pC - pB)
+        d = np.array([p[0], (p[1] * np.sqrt(R5 * R5 * p[1] * p[1] - p[0] * p[0])) / (p[1] * p[1]), 0])
+        pG = d + np.array([0, 0, -np.sqrt(q[2] * q[2] - np.linalg.norm(p - d) ** 2)])
+
+        coor = np.vstack(
+            (
+                pA, 
+                pB, pC, 
+                *(roro(pC, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 4)), # D, E, F
+                pG, 
+                *(roro(pG, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 5)), # H, I, J, K
+                np.array([0, 0, pG[2] - pA[2]]) # pL
+            )
+        )
+
+        return coor + np.array([0, 0, -pG[2] / 2])
+
+    def verts3(self, iter=100, tol=1E-15):
+        a = np.linalg.norm(self.C1)
+        b = np.linalg.norm(self.C2)
+        c = np.linalg.norm(self.C3 - self.C2)
+
+        pA = np.array([0, a * (1 / SQRT3), 0])
+        pB = np.array([a / 2, -(a * (SQRT3 / 6)), 0])
+        pC = np.array([-(a / 2), -(a * (SQRT3 / 6)), 0])
+        qD = np.array([0, -(a * ((2 * SQRT3) / 3)), 0])
+        qF = np.array([a, a / SQRT3, 0])
+
+        def fold(t):
+            v = (a * (SQRT3 / 2)) * uvec(qD)
+            k = uvec(pB - pC)
+            pD = np.array([0, -(a * (SQRT3 / 6)), 0]) + roro(v, k, t)
+            pF = roro(pD, np.array([0, 0, 1]), (2 / 3) * np.pi)
+
+            t = angle(self.C1, self.C2)
+            v, k = b * uvec(pD - pB), uvec(np.cross(pD, pB))
+            o = roro(v, k, t)
+            p, q = pB + proj(o, v), pB + o
+            v, k = q - p, uvec(pB - pD)
+            f = lambda t: c - np.linalg.norm((p + roro(v, k, t)) - pF)
+            t = next(bisection(f, a, b, tol=tol, iter=iter)[2] for a, b in brackets(f, 0, 2 * np.pi, iter))
+            pG = p + roro(v, k, t)
+
+            return pD, pF, pG, np.abs(pD[1]) - np.linalg.norm(pG - np.array([0, 0, pG[2]]))
+
+        ## find a good starting point
+        for t in np.arange(0, np.pi / 2, np.pi / 180 / 10):
+            try:
+                fold(t)
+                break
+            except StopIteration:
+                pass
+        obj = lambda t: fold(t)[-1]
+        t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
+        pD, pF, pG, _ = fold(t)
+
+        t = (2 * np.pi) / 3
+        k = np.array([0, 0, 1])
+        pH = roro(pG, k, -t)
+        pJ = pA[1] * uvec(roro(pH - np.array([0, 0, pH[2]]), k, np.pi / 3)) + np.array([0, 0, pH[2] + pD[2] - pA[2]])
+
+        coor = np.vstack(
+            (
+                pA, pB, pC, 
+                pD, roro(pF, k, t), pF,
+                pG, pH, roro(pH, k, -t),
+                pJ, roro(pJ, k, -t), roro(pJ, k, -2 * t),
+            )
+        )
+        
+        return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
+
+    def verts2(self, iter=100, tol=1E-15):
+        a = np.linalg.norm(self.C1)
+        b = np.linalg.norm(self.C2)
+        c = np.linalg.norm(self.C3 - self.C2)
+
+        pA = np.array([a / 2, 0, 0])
+        pB = np.array([-(a / 2), 0, 0])
+        pC = np.array([0, -((a * PHI) / 2), -(((a * PHI) - a) / 2)])
+        pD = np.array([0, ((a * PHI) / 2), -(((a * PHI) - a) / 2)])
+
+        def fold(t):
+            p = (pB + pC) / 2
+            v, k = p - pA, uvec(pC - pB)
+            pE = p + roro(v, k, t)
+            pF = roro(pE, np.array([0, 0, 1]), np.pi)
+
+            t = angle(self.C1, self.C2)
+            v, k = b * uvec(pC - pA), uvec(np.cross(pC, pA))
+            o = roro(v, k, t)
+            p, q = pA + proj(o, v), pA + o
+            v, k = q - p, uvec(pA - pC)
+            f = lambda t: c - np.linalg.norm((p + roro(v, k, t)) - pF)
+            t = next(bisection(f, a, b, tol=tol, iter=iter)[2] for a, b in brackets(f, 0, 2 * np.pi, iter))
+            pG = p + roro(v, k, t)
+            
+            return pE, pF, pG, np.linalg.norm(pE - np.array([0, 0, pE[2]])) - np.linalg.norm(pG - np.array([0, 0, pG[2]]))
+
+        ## find a good starting point
+        for t in np.arange(0, np.pi / 2, np.pi / 180 / 10):
+            try:
+                fold(t)
+                break
+            except StopIteration:
+                pass
+        obj = lambda t: fold(t)[-1]
+        t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
+        pE, pF, pG, _ = fold(t)
+
+        def obj(t):
+            pK = roro(pA, np.array([0, 0, 1]), t) + np.array([0, 0, pG[2] + pE[2]])
+            return np.linalg.norm(pK - pF) - b
+        t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, 0, 2 * np.pi, iter))
+        pK = roro(pA, np.array([0, 0, 1]), t) + np.array([0, 0, pG[2] + pE[2]])
+        pI = pD[1] * roro(uvec(pK - np.array([0, 0, pK[2]])), np.array([0, 0, 1]), np.pi / 2) + np.array([0, 0, pG[2] + pE[2] - pD[2]])
+
+        coor = np.vstack(
+            (
+                pA, pB, pC, 
+                pD, pE, pF,
+                pG, roro(pG, np.array([0, 0, 1]), np.pi), pI,
+                roro(pI, np.array([0, 0, 1]), np.pi), pK, roro(pK, np.array([0, 0, 1]), np.pi)
+            )
+        )
+
+        return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
+
     def f5(self):
         th = (2 * np.pi) / 5
         z = np.array([0, 0, 1])
-        coor = self.verts5()
-        
-        from string import ascii_uppercase
-        for item in zip(ascii_uppercase, coor):
-            print(*item)
 
-        points, lattice = self.t1()
+        coor = self.verts5()
+        t1, t2 = self.t1(), self.t2()
         
-        idx = (0, 2, 1)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(5):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T1-▲"
-        
-        idx = (6, 7, 11)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(5):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T1-▼"
-        
-        points, lattice = self.t2()
-        
-        idx = (2, 6, 1)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(5):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T2-▲"
-        
-        idx = (6, 2, 7)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(5):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T2-▼"
+        combos = zip(
+            ((0, 2, 1), (6, 7, 11), (2, 6, 1), (6, 2, 7)),
+            (t1, t1, t2, t2),
+            ("T1-▲", "T1-▼", "T2-▲", "T2-▼")
+        )
+        for idx, plat, T in combos:
+            points, lattice = plat
+            R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+            verts, edges = lattice
+            for i in range(5):
+                facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+                yield facet, edges, T
         
     def f3(self):
         th = (2 * np.pi) / 3
         z = np.array([0, 0, 1])
+
         coor = self.verts3()
+        t1, t2, t3 = self.t1(), self.t2(), self.t3()
         
-        from string import ascii_uppercase
-        for item in zip(ascii_uppercase, coor):
-            print(*item)
-
-        points, lattice = self.t1()
-        
-        idx = (0, 1, 2)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        facet = [t + c * R @ ele for ele in verts]
-        yield facet, edges, "T1-▔"
-
-        idx = (1, 3, 2)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(3):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T1-▲"
-
-        idx = (6, 9, 11)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(3):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T1-▼"
-
-        idx = (9, 10, 11)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        facet = [t + c * R @ ele for ele in verts]
-        yield facet, edges, "T1-▁"
-    
-        points, lattice = self.t2()
-    
-        idx = (1, 6, 3)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(3):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T2-▼"
-    
-        idx = (9, 3, 6)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(3):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T2-▲"
-    
-        points, lattice = self.t3()
-    
-        idx = (1, 5, 6)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(3):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T3-▼"
- 
-        idx = (11, 6, 5)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        verts, edges = lattice
-        for i in range(3):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T3-▲"
+        combos = zip(
+            ((0, 1, 2), (1, 3, 2), (6, 9, 11), (9, 10, 11), (1, 6, 3), (9, 3, 6), (1, 5, 6), (11, 6, 5)),
+            (t1, t1, t1, t1, t2, t2, t3, t3),
+            ("T1-▔", "T1-▲", "T1-▼", "T1-▁", "T2-▼", "T2-▲", "T3-▼", "T3-▲")
+        )
+        for idx, plat, T in combos:
+            points, lattice = plat
+            R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+            verts, edges = lattice
+            for i in range(3):
+                facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+                yield facet, edges, T
          
     def f2(self):
-        th = np.pi
+        th = (2 * np.pi) / 2
         z = np.array([0, 0, 1])
-        coor = self.verts2()
-        
-        from string import ascii_uppercase
-        for item in zip(ascii_uppercase, coor):
-            print(*item)
 
-        points, lattice = self.t1()
-        verts, edges = lattice
+        coor = self.verts2()
+        t1, t2, t3 = self.t1(), self.t2(), self.t3()
         
-        idx = (0, 2, 1)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T1-▔"
-        
-        idx = (2, 4, 1)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T1-▔"
-        
-        idx = (9, 6, 10)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T1▁"
-        
-        idx = (9, 10, 11)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T1▁"
-        
-        points, lattice = self.t2()
-        verts, edges = lattice
-        
-        idx = (0, 6, 2)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T2-▼"
-        
-        idx = (9, 2, 6)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T2-▲"
-        
-        idx = (2, 9, 4)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T2-▼"
-        
-        idx = (9, 4, 11)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T2-▲"
-        
-        points, lattice = self.t3()
-        verts, edges = lattice
-        
-        idx = (0, 5, 6)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T3-▼"
-        
-        idx = (10, 6, 5)
-        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-        for i in range(2):
-            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-            yield facet, edges, "T3-▲"
-        
+        combos = zip(
+            ((0, 2, 1), (2, 4, 1), (9, 6, 10), (9, 10, 11), (0, 6, 2), (9, 2, 6), (2, 9, 4), (9, 4, 11), (0, 5, 6), (10, 6, 5)),
+            (t1, t1, t1, t1, t2, t2, t2, t2, t3, t3),
+            ("T1-▔", "T1-▔", "T1▁", "T1▁", "T2-▼", "T2-▲", "T2-▼", "T2-▲", "T3-▼", "T3-▲")
+        )
+        for idx, plat, T in combos:
+            points, lattice = plat
+            R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+            verts, edges = lattice
+            for i in range(2):
+                facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+                yield facet, edges, T
+
     def facets(self, s=2):
         if s == 5:
             yield from self.f5()
@@ -598,6 +461,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "3", "1", "4", "2", "-s", "5"])
+        main(["capsid", "1", "1", "1", "2", "-s", "5"])
     else:
         sys.exit(main(sys.argv))
