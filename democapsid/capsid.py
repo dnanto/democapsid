@@ -152,6 +152,37 @@ class Capsid(object):
     def __str__(self):
         return f"Capsid({h}, {k}, {H}, {K})"
 
+
+    def verts5(self):
+        a = np.linalg.norm(self.C1)
+        b = np.linalg.norm(self.C2)
+        
+        R5 = a * np.sqrt(((5 + SQRT5) / 10))
+        h5 = ((1 + SQRT5) * a) / (2 * np.sqrt(5 + 2 * SQRT5))
+        pA = np.array([0, 0, h5])
+        pB = roro(np.array([-R5, 0, 0]), np.array([0, 0, 1]), np.deg2rad(54))
+        pC = pB + np.array([a, 0, 0])
+
+        t = angle(self.C1, self.C2)
+        q = pC + roro(np.array([b, 0, 0]), np.array([0, 1, 0]), -np.pi - t)
+        p = pB + proj(q - pB, pC - pB)
+        d = np.array([p[0], (p[1] * np.sqrt(R5 * R5 * p[1] * p[1] - p[0] * p[0])) / (p[1] * p[1]), 0])
+        pG = d + np.array([0, 0, -np.sqrt(q[2] * q[2] - np.linalg.norm(p - d) ** 2)])
+
+        coor = np.vstack(
+            (
+                pA, 
+                pB, pC, 
+                *(roro(pC, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 4)), # D, E, F
+                pG, 
+                *(roro(pG, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 5)), # H, I, J, K
+                np.array([0, 0, pG[2] - pA[2]]) # pL
+            )
+        )
+
+        return coor + np.array([0, 0, -pG[2] / 2])
+
+
     def verts3(self, iter=100, tol=1E-15):
         a = np.linalg.norm(self.C1)
         b = np.linalg.norm(self.C2)
@@ -216,10 +247,6 @@ class Capsid(object):
         pB = np.array([-(a / 2), 0, 0])
         pC = np.array([0, -((a * PHI) / 2), -(((a * PHI) - a) / 2)])
         pD = np.array([0, ((a * PHI) / 2), -(((a * PHI) - a) / 2)])
-        print("pA>", pA)
-        print("pB>", pB)
-        print("pC>", pC)
-        print("pD>", pD)
 
         def fold(t):
             p = (pB + pC) / 2
@@ -338,7 +365,45 @@ class Capsid(object):
         return points, self.lattice(points)
 
     def f5(self):
-        pass
+        th = (2 * np.pi) / 5
+        z = np.array([0, 0, 1])
+        coor = self.verts5()
+        
+        from string import ascii_uppercase
+        for item in zip(ascii_uppercase, coor):
+            print(*item)
+
+        points, lattice = self.t1()
+        
+        idx = (0, 1, 2)
+        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+        verts, edges = lattice
+        for i in range(5):
+            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+            yield facet, edges, "T1-▲"
+        
+        idx = (6, 7, 11)
+        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+        verts, edges = lattice
+        for i in range(5):
+            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+            yield facet, edges, "T1-▼"
+        
+        points, lattice = self.t2()
+        
+        idx = (1, 6, 2)
+        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+        verts, edges = lattice
+        for i in range(5):
+            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+            yield facet, edges, "T2-▲"
+        
+        idx = (6, 2, 7)
+        R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+        verts, edges = lattice
+        for i in range(5):
+            facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
+            yield facet, edges, "T2-▼"
         
     def f3(self):
         th = (2 * np.pi) / 3
@@ -533,6 +598,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "1", "1", "1", "2", "-s", "2"])
+        main(["capsid", "1", "1", "1", "2", "-s", "5"])
     else:
         sys.exit(main(sys.argv))
