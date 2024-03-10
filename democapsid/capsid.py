@@ -356,74 +356,42 @@ class Capsid(object):
         return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
 
     def f5(self):
-        th = (2 * np.pi) / 5
-        z = np.array([0, 0, 1])
-
-        coor = self.verts5()
         t1, t2 = self.t1(), self.t2()
-        
-        combos = zip(
+        yield from zip(
             ((0, 2, 1), (6, 7, 11), (2, 6, 1), (6, 2, 7)),
             (t1, t1, t2, t2),
             ("T1-▲", "T1-▼", "T2-▲", "T2-▼")
         )
-        for idx, plat, T in combos:
-            points, lattice = plat
-            R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-            verts, edges = lattice
-            for i in range(5):
-                facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-                yield facet, edges, T
         
     def f3(self):
-        th = (2 * np.pi) / 3
-        z = np.array([0, 0, 1])
-
-        coor = self.verts3()
         t1, t2, t3 = self.t1(), self.t2(), self.t3()
-        
-        combos = zip(
+        yield from zip(
             ((0, 1, 2), (1, 3, 2), (6, 9, 11), (9, 10, 11), (1, 6, 3), (9, 3, 6), (1, 5, 6), (11, 6, 5)),
             (t1, t1, t1, t1, t2, t2, t3, t3),
             ("T1-▔", "T1-▲", "T1-▼", "T1-▁", "T2-▼", "T2-▲", "T3-▼", "T3-▲")
         )
-        for idx, plat, T in combos:
-            points, lattice = plat
-            R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-            verts, edges = lattice
-            for i in range(3):
-                facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-                yield facet, edges, T
          
     def f2(self):
-        th = (2 * np.pi) / 2
-        z = np.array([0, 0, 1])
-
-        coor = self.verts2()
         t1, t2, t3 = self.t1(), self.t2(), self.t3()
-        
-        combos = zip(
+        yield from zip(
             ((0, 2, 1), (2, 4, 1), (9, 6, 10), (9, 10, 11), (0, 6, 2), (9, 2, 6), (2, 9, 4), (9, 4, 11), (0, 5, 6), (10, 6, 5)),
             (t1, t1, t1, t1, t2, t2, t2, t2, t3, t3),
             ("T1-▔", "T1-▔", "T1▁", "T1▁", "T2-▼", "T2-▲", "T2-▼", "T2-▲", "T3-▼", "T3-▲")
         )
-        for idx, plat, T in combos:
-            points, lattice = plat
-            R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
-            verts, edges = lattice
-            for i in range(2):
-                facet = [roro(t + c * R @ ele, z, i * th) for ele in verts]
-                yield facet, edges, T
 
     def facets(self, s=2):
-        if s == 5:
-            yield from self.f5()
-        elif s == 3:
-            yield from self.f3()
-        elif s == 2:
-            yield from self.f2()
-        else:
+        if s not in (2, 3, 5):
             raise ValueError(f"the axial symmetry should be 2, 3, or 5, and not {s}...")
+        th = (2 * np.pi) / s
+        coors = [None, None, self.verts2, self.verts3, None, self.verts5][s]()
+        combos = [None, None, self.f2, self.f3, None, self.f5]
+        for idx, plat, T in combos[s]():
+            points, lattice = plat
+            R, c, t = kabsch_umeyama(coors[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+            verts, edges = lattice
+            for i in range(s):
+                facet = [roro(t + c * R @ ele, np.array([0, 0, 1]), i * th) for ele in verts]
+                yield facet, edges, T
             
         
 def parse_args(argv):
