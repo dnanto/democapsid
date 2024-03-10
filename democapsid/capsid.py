@@ -375,7 +375,7 @@ class Capsid(object):
 
         points, lattice = self.t1()
         
-        idx = (0, 1, 2)
+        idx = (0, 2, 1)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
         verts, edges = lattice
         for i in range(5):
@@ -391,7 +391,7 @@ class Capsid(object):
         
         points, lattice = self.t2()
         
-        idx = (1, 6, 2)
+        idx = (2, 6, 1)
         R, c, t = kabsch_umeyama(coor[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
         verts, edges = lattice
         for i in range(5):
@@ -598,6 +598,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "1", "1", "1", "2", "-s", "5"])
+        main(["capsid", "3", "1", "4", "2", "-s", "5"])
     else:
         sys.exit(main(sys.argv))
