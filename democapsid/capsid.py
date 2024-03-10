@@ -212,7 +212,7 @@ class Capsid(object):
         points = (np.array([0, 0]), self.C3, self.C2, self.C2 + self.C3)
         return points, self.lattice(points)
 
-    def verts5(self):
+    def v5(self):
         a = np.linalg.norm(self.C1)
         b = np.linalg.norm(self.C2)
         
@@ -244,7 +244,7 @@ class Capsid(object):
 
         return coor + np.array([0, 0, -pG[2] / 2])
 
-    def verts3(self, iter=100, tol=1E-15):
+    def v3(self, iter=100, tol=1E-15):
         a = np.linalg.norm(self.C1)
         b = np.linalg.norm(self.C2)
         c = np.linalg.norm(self.C3 - self.C2)
@@ -299,7 +299,7 @@ class Capsid(object):
         
         return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
 
-    def verts2(self, iter=100, tol=1E-15):
+    def v2(self, iter=100, tol=1E-15):
         a = np.linalg.norm(self.C1)
         b = np.linalg.norm(self.C2)
         c = np.linalg.norm(self.C3 - self.C2)
@@ -383,7 +383,7 @@ class Capsid(object):
         if s not in (2, 3, 5):
             raise ValueError(f"the axial symmetry should be 2, 3, or 5, and not {s}...")
         th = (2 * np.pi) / s
-        coors = [None, None, self.verts2, self.verts3, None, self.verts5][s]()
+        coors = [None, None, self.v2, self.v3, None, self.v5][s]()
         combos = [None, None, self.f2, self.f3, None, self.f5]
         for idx, plat, T in combos[s]():
             points, lattice = plat
