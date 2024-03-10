@@ -10,9 +10,6 @@ import numpy as np
 
 try:
     import bpy
-    from bpy.props import FloatVectorProperty
-    from bpy.types import Operator
-    from bpy_extras.object_utils import AddObjectHelper, object_data_add
 except ImportError:
     pass
 
@@ -22,14 +19,14 @@ SQRT5 = np.sqrt(5)
 PHI = (1 + SQRT5) / 2
 
 
-def proj(p, q):
-    return (np.dot(p, q) / np.dot(q, q)) * q
-
-
 def iter_ring(elements):
     """() -> (); A -> (); AB -> ((B, A), (A, B)); ABC -> ((C, A), (A, B), (B, C)); ...
     """
     yield from ((elements[i-1], elements[i]) for i in range(len(elements))) if len(elements) > 1 else ()
+
+
+def proj(p, q):
+    return (np.dot(p, q) / np.dot(q, q)) * q
 
 
 def angle(p, q):
@@ -163,8 +160,7 @@ class Capsid(object):
         # print(bounds[:, 1].min(), bounds[:, 1].max() + 1)
 
         # ⬢ lattice unit
-        HEX_CORNERS = np.array(
-            [
+        HEX_CORNERS = np.array([
                 [0, 1], 
                 [SQRT3 / 2, 0.5], 
                 [SQRT3 / 2, -0.5], 
@@ -228,8 +224,9 @@ class Capsid(object):
         t = angle(self.C1, self.C2)
         q = pC + roro(np.array([b, 0, 0]), np.array([0, 1, 0]), -np.pi - t)
         p = pB + proj(q - pB, pC - pB)
-        d = np.array([p[0], (p[1] * np.sqrt(R5 * R5 * p[1] * p[1] - p[0] * p[0])) / (p[1] * p[1]), 0])
-        pG = d + np.array([0, 0, -np.sqrt(q[2] * q[2] - np.linalg.norm(p - d) ** 2)])
+        d = np.array([p[0], (-np.abs(p[1]) * np.sqrt(R5 * R5 * p[1] * p[1] - (p[0] * p[1]) ** 2)) / (p[1]* p[1]), 0])
+
+        pG = d + np.array([0, 0, -np.sqrt(q[2] * q[2] - (p[1] - d[1]) ** 2)])
 
         coor = np.vstack(
             (
