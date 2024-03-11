@@ -2,9 +2,6 @@
 
 import sys
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-from functools import partial
-from itertools import chain
-from functools import namedtuple
 
 import numpy as np
 
@@ -355,7 +352,7 @@ class Capsid(object):
     def f5(self):
         t1, t2 = self.t1(), self.t2()
         yield from zip(
-            ((0, 2, 1), (6, 7, 11), (2, 6, 1), (6, 2, 7)),
+            self.v5()[[(0, 2, 1), (6, 7, 11), (2, 6, 1), (6, 2, 7)], :],
             (t1, t1, t2, t2),
             ("T1-▲", "T1-▼", "T2-▲", "T2-▼")
         )
@@ -363,7 +360,7 @@ class Capsid(object):
     def f3(self):
         t1, t2, t3 = self.t1(), self.t2(), self.t3()
         yield from zip(
-            ((0, 1, 2), (1, 3, 2), (6, 9, 11), (9, 10, 11), (1, 6, 3), (9, 3, 6), (1, 5, 6), (11, 6, 5)),
+            self.v3()[[(0, 1, 2), (1, 3, 2), (6, 9, 11), (9, 10, 11), (1, 6, 3), (9, 3, 6), (1, 5, 6), (11, 6, 5)], :],
             (t1, t1, t1, t1, t2, t2, t3, t3),
             ("T1-▔", "T1-▲", "T1-▼", "T1-▁", "T2-▼", "T2-▲", "T3-▼", "T3-▲")
         )
@@ -371,7 +368,7 @@ class Capsid(object):
     def f2(self):
         t1, t2, t3 = self.t1(), self.t2(), self.t3()
         yield from zip(
-            ((0, 2, 1), (2, 4, 1), (9, 6, 10), (9, 10, 11), (0, 6, 2), (9, 2, 6), (2, 9, 4), (9, 4, 11), (0, 5, 6), (10, 6, 5)),
+            self.v2()[[(0, 2, 1), (2, 4, 1), (9, 6, 10), (9, 10, 11), (0, 6, 2), (9, 2, 6), (2, 9, 4), (9, 4, 11), (0, 5, 6), (10, 6, 5)], :],
             (t1, t1, t1, t1, t2, t2, t2, t2, t3, t3),
             ("T1-▔", "T1-▔", "T1▁", "T1▁", "T2-▼", "T2-▲", "T2-▼", "T2-▲", "T3-▼", "T3-▲")
         )
@@ -380,11 +377,10 @@ class Capsid(object):
         if s not in (2, 3, 5):
             raise ValueError(f"the axial symmetry should be 2, 3, or 5, and not {s}...")
         th = (2 * np.pi) / s
-        coors = [None, None, self.v2, self.v3, None, self.v5][s]()
         combos = [None, None, self.f2, self.f3, None, self.f5]
         for idx, plat, T in combos[s]():
             points, lattice = plat
-            R, c, t = kabsch_umeyama(coors[idx, :], np.vstack([(*ele, 0) for ele in points[:-1]]))
+            R, c, t = kabsch_umeyama(idx, np.vstack([(*ele, 0) for ele in points[:-1]]))
             verts, edges = lattice
             for i in range(s):
                 facet = [roro(t + c * R @ ele, np.array([0, 0, 1]), i * th) for ele in verts]
