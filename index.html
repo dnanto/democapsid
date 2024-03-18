@@ -28,6 +28,10 @@
                 return this.map((e, i) => e * a[i]).reduce((e, f) => e + f);
             };
 
+            Array.prototype.sum = function (initial_value = 0) {
+                return this.reduce((a, b) => a + b, initial_value);
+            };
+
             Array.prototype.cross = function (v) {
                 // https://en.wikipedia.org/wiki/Cross_product
                 return [this[1] * v[2] - this[2] * v[1], this[2] * v[0] - this[0] * v[2], this[0] * v[1] - this[1] * v[0]];
@@ -66,11 +70,11 @@
                 return z * stdev + mean;
             }
 
-            function randomUnitVector(n) {
+            function random_uvec(n) {
                 // https://www.jeremykun.com/2016/05/16/singular-value-decomposition-part-2-theorem-proof-algorithm/
-                let unnormalized = Array.from({ length: n }, (_) => gaussian_random(0, 1));
-                let theNorm = unnormalized.norm();
-                return unnormalized.map((e) => e / theNorm);
+                let v = Array.from({ length: n }, (_) => gaussian_random(0, 1));
+                let norm = v.norm();
+                return v.map((e) => e / norm);
             }
 
             /**
@@ -98,6 +102,19 @@
                  */
                 static det2(A) {
                     return A[0][0] * A[1][1] - A[0][1] * A[1][0];
+                }
+
+                /**
+                 * Calculate the 3x3 determinant.
+                 * @param {Array} A The 3x3 matrix.
+                 * @return {Number} The determinant;
+                 */
+                static det3(A) {
+                    return (
+                        A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - //
+                        A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + //
+                        A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0])
+                    );
                 }
 
                 /**
@@ -143,20 +160,31 @@
                     ];
                 }
 
+                static I(n) {
+                    return Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => 1 * (i == j)));
+                }
+
+                static diag(A) {
+                    const n = A.length;
+                    return Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => A[i] * (i == j)));
+                }
+
+                static trace(A) {
+                    return Array.from({ length: A.length }, (_, i) => A[i][i]).sum();
+                }
+
                 static svd_1d(A, epsilon = 1e-10) {
                     // https://www.jeremykun.com/2016/05/16/singular-value-decomposition-part-2-theorem-proof-algorithm/
                     const [n, m] = [A.length, A[0].length];
-                    // let x = randomUnitVector(m);
-                    let x = [-0.21604265540980233, -0.11095894763721358, 0.9700585977056868];
-                    let lastV = x;
-                    let currentV = x;
+                    let prev_v = random_uvec(m);
+                    let curr_v = prev_v;
                     let B = Matrix.mul(Matrix.T(A), A);
                     while (true) {
-                        lastV = currentV;
-                        currentV = Matrix.mul(B, lastV.T()).flat();
-                        currentV = currentV.map((e) => e / currentV.norm());
-                        if (Math.abs(currentV.dot(lastV)) > 1 - epsilon) {
-                            return currentV;
+                        prev_v = curr_v;
+                        curr_v = Matrix.mul(B, prev_v.T()).flat();
+                        curr_v = curr_v.map((e) => e / curr_v.norm());
+                        if (Math.abs(curr_v.dot(prev_v)) > 1 - epsilon) {
+                            return curr_v;
                         }
                     }
                 }
@@ -167,22 +195,58 @@
                     let svdSoFar = [];
 
                     for (var i = 0; i < m; i++) {
-                        let matrixFor1D = A.map((e) => e.slice());
+                        let matrix_for_1D = A.map((e) => e.slice());
                         svdSoFar.slice(0, i).forEach((e) => {
-                            const [singularValue, u, v] = e;
+                            const [singular_value, u, v] = e;
                             Matrix.mul(u.T(), [v]).forEach((e, i) => {
-                                matrixFor1D[i] = matrixFor1D[i].sub(e.mul(singularValue));
+                                matrix_for_1D[i] = matrix_for_1D[i].sub(e.mul(singular_value));
                             });
                         });
-                        let v = Matrix.svd_1d(matrixFor1D, epsilon); // next singular vector
+                        let v = Matrix.svd_1d(matrix_for_1D, epsilon); // next singular vector
                         const u_unnormalized = Matrix.mul(A, v.T()).flat();
                         const sigma = u_unnormalized.norm(); // next singular value
                         let u = u_unnormalized.mul(1 / sigma);
                         svdSoFar.push([sigma, u, v]);
                     }
                     // transform it into matrices of the right shape
-                    let [singularValues, us, vs] = svdSoFar.reduce((a, b) => [a[0].concat(b[0]), a[1].concat([b[1]]), a[2].concat([b[2]])], [[], [], []]);
-                    return [singularValues, Matrix.T(us), vs];
+                    let [singular_values, us, vs] = svdSoFar.reduce(
+                        (a, b) => [
+                            //
+                            a[0].concat(b[0]),
+                            a[1].concat([b[1]]),
+                            a[2].concat([b[2]]),
+                        ],
+                        [[], [], []]
+                    );
+                    return [singular_values, Matrix.T(us), vs];
+                }
+
+                static kabsch_umeyama(A, B) {
+                    const [n, m] = [A.length, A[0].length];
+
+                    const EA = A.reduce((a, b) => a.add(b)).map((e) => e / n);
+                    const EB = B.reduce((a, b) => a.add(b)).map((e) => e / n);
+                    const VarA = A.map((e) => e.sub(EA).norm() ** 2).sum() / n;
+
+                    const H = Matrix.mul(
+                        Matrix.T(A.map((e) => e.sub(EA))),
+                        B.map((e) => e.sub(EB))
+                    ).map((e) => e.mul(1 / n));
+                    const [D, U, VT] = Matrix.svd(H);
+                    const d = Math.sign(Matrix.det2(U) * Matrix.det2(VT));
+                    const S = Matrix.I(m);
+                    S[m - 1][m - 1] = d;
+
+                    let R = Matrix.mul(Matrix.mul(U, S), VT);
+                    let c = VarA / Matrix.mul(D.T(), S).flat().sum();
+                    let t = EA.sub(
+                        Matrix.mul(
+                            R.map((e) => e.mul(c)),
+                            EB.T()
+                        ).flat()
+                    );
+
+                    return [R, c, t];
                 }
 
                 static camera(θ, ψ, φ) {
@@ -297,20 +361,17 @@
                         })
                 );
 
-                let T1 = new Path({ segments: [[0, 0], ck[3], ck[0], [0, 0]], fillColor: "#FF000000" });
-                let T2 = new Path({ segments: [[0, 0], ck[0], ck[1], [0, 0]], fillColor: "#FF000000" });
-                let T3 = new Path({ segments: [[0, 0], ck[1], ck[2], [0, 0]], fillColor: "#FF000000" });
+                let triangles = [
+                    [ck[3], ck[0]],
+                    [ck[0], ck[1]],
+                    [ck[1], ck[2]],
+                ].map((e) => new Path([[0, 0], ...e, [0, 0]]));
                 new Group({
-                    children: [
-                        new Group({ children: lattice.map((e) => intersect(e, T1)) }),
-                        new Group({ children: lattice.map((e) => intersect(e, T2)) }),
-                        new Group({ children: lattice.map((e) => intersect(e, T3)) }),
-                    ],
+                    children: triangles.map((e) => new Group(lattice.map((f) => intersect(f, e)))),
                     position: view.center,
                 });
-                T1.remove();
-                T2.remove();
-                T3.remove();
+                triangles.forEach((e) => e.remove());
+                lattice.forEach((e) => e.remove());
             }
 
             function draw2() {
