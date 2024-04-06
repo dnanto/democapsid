@@ -380,16 +380,16 @@ class Capsid(object):
     def facets(self, sphericity=0, lattice=HEXAGONAL):
         th = (2 * np.pi) / self.s
         combos = [None, None, self.f2, self.f3, None, self.f5][self.s]()
-        points = [self.q1, self.q2, self.q3]
-        meshes = [None, *(self.mesh(points[i], lattice) for i in range(3 - self.s == 5))]
+        points = [None, self.q1, self.q2, self.q3]
+        meshes = [None, *(self.mesh(points[i], lattice) for i in range(1, 3 + 1 - int(self.s == 5)))]
         for t_idx, t_id, v_idx in combos:
-            idx = t_idx - 1
-            triangle = points[idx][:-1]
+            triangle = points[t_idx][:-1]
             R, c, t = kabsch_umeyama(self.verts[v_idx, :], np.vstack([(*ele, 0) for ele in triangle]))
-            verts, edges = meshes[idx]
+            print(t_idx)
+            verts, edges = meshes[t_idx]
             for i in range(self.s):
                 facet = [spherize(roro(t + c * R @ ele, np.array([0, 0, 1]), i * th), self, sphericity) for ele in verts]
-                yield facet, edges, T
+                yield facet, edges, t_id
 
 
 def sd_sphere(p, s):
@@ -455,6 +455,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "3", "1", "4", "2", "-symmetry", "5", "-sphericity", "1"])
+        main(["capsid", "3", "1", "4", "2", "-symmetry", "3", "-sphericity", "1"])
     else:
         sys.exit(main(sys.argv))
