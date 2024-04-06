@@ -15,6 +15,16 @@ SQRT3 = np.sqrt(3)
 SQRT5 = np.sqrt(5)
 PHI = (1 + SQRT5) / 2
 
+# ⬢ lattice unit
+HEXAGONAL = np.array([
+        [0, 1], 
+        [SQRT3 / 2, 0.5], 
+        [SQRT3 / 2, -0.5], 
+        [0, -1], 
+        [-(SQRT3 / 2), -0.5], 
+        [-(SQRT3 / 2), 0.5]
+    ]
+)
 
 def iter_ring(elements):
     """() -> (); A -> (); AB -> ((B, A), (A, B)); ABC -> ((C, A), (A, B), (B, C)); ...
@@ -130,8 +140,8 @@ class Capsid(object):
         if s not in (2, 3, 5):
             raise ValueError(f"the axial symmetry should be 2, 3, or 5, and not {s}...")
 
-        
         self.h, self.k, self.H, self.K, self.s = h, k, H, K, s
+
         r = SQRT3 / 2   # hexagon inradius
         d = 2 * r       # hexagon-hexagon center distance
         # h/k-basis
@@ -147,38 +157,29 @@ class Capsid(object):
         tht = -(np.pi / 3)
         self.C4 = np.array([[np.cos(tht), -np.sin(tht)], [np.sin(tht), np.cos(tht)]]) @ self.C1
 
+        # Caspar-Klug ([0:3] triangle, [0:4] parallelogram)
+        self.q1 = np.array([0, 0]), self.C1, self.C4, self.C1 + self.C4
+        self.q2 = np.array([0, 0]), self.C2, self.C1, self.C2 + self.C1
+        self.q3 = np.array([0, 0]), self.C3, self.C2, self.C3 + self.C2
+
         self.verts = (None, None, self.v2, self.v3, None, self.v5)[self.s]()
     
     def __str__(self):
         return f"Capsid({h}, {k}, {H}, {K}, {s})"
 
-    def lattice(self, points):
+    def mesh(self, points, lattice=HEXAGONAL):
         # change of basis to lattice coordinates
         a1, a2 = self.a1, self.a2
         
         M = np.linalg.inv(np.array([a1, a2])).T
         bounds = np.rint(np.array(list(map(M.dot, points)))).astype(int)
-        # print(bounds)
-        # print(bounds[:, 0].min(), bounds[:, 0].max() + 1)
-        # print(bounds[:, 1].min(), bounds[:, 1].max() + 1)
-
-        # ⬢ lattice unit
-        HEX_CORNERS = np.array([
-                [0, 1], 
-                [SQRT3 / 2, 0.5], 
-                [SQRT3 / 2, -0.5], 
-                [0, -1], 
-                [-(SQRT3 / 2), -0.5], 
-                [-(SQRT3 / 2), 0.5]
-            ]
-        )
 
         coor_to_id = {}
         edges = []
         for i in range(bounds[:, 0].min(), bounds[:, 0].max() + 1):
             for j in range(bounds[:, 1].min(), bounds[:, 1].max() + 1):
                 coors = []
-                corners = [(i * a1 + j * a2) + ele for ele in HEX_CORNERS]
+                corners = [(i * a1 + j * a2) + ele for ele in lattice]
                 insiders = [in_triangle(ele, *points[:-1]) for ele in corners]
                 for pair, flag in zip(iter_ring(corners), iter_ring(insiders)):
                     p, q = pair
@@ -198,19 +199,7 @@ class Capsid(object):
         verts = [np.array([*ele, 0]) for ele in coor_to_id]
 
         return verts, edges
-    
-    def t1(self):
-        points = (np.array([0, 0]), self.C1, self.C4, self.C1 + self.C4)
-        return points, self.lattice(points)
-
-    def t2(self):
-        points = (np.array([0, 0]), self.C2, self.C1, self.C1 + self.C2)
-        return points, self.lattice(points)
-    
-    def t3(self):
-        points = (np.array([0, 0]), self.C3, self.C2, self.C2 + self.C3)
-        return points, self.lattice(points)
-
+   
     def v5(self):
         a = np.linalg.norm(self.C1)
         b = np.linalg.norm(self.C2)
@@ -356,47 +345,50 @@ class Capsid(object):
         return coor + np.array([0, 0, (coor[0, 2] - coor[-1, 2]) / 2])
 
     def f5(self):
-        t1, t2 = self.t1(), self.t2()
         yield from zip(
-            self.verts[[(0, 2, 1), (6, 7, 11), (2, 6, 1), (6, 2, 7)], :],
-            (t1, t1, t2, t2),
-            ("T1-▲", "T1-▼", "T2-▲", "T2-▼")
+            (1, 1, 2, 2),
+            ("T1-▲", "T1-▼", "T2-▲", "T2-▼"),
+            [(0, 2, 1), (6, 7, 11), (2, 6, 1), (6, 2, 7)]
         )
         
     def f3(self):
-        t1, t2, t3 = self.t1(), self.t2(), self.t3()
         yield from zip(
-            self.verts[[(0, 1, 2), (1, 3, 2), (6, 9, 11), (9, 10, 11), (1, 6, 3), (9, 3, 6), (1, 5, 6), (11, 6, 5)], :],
-            (t1, t1, t1, t1, t2, t2, t3, t3),
-            ("T1-▔", "T1-▲", "T1-▼", "T1-▁", "T2-▼", "T2-▲", "T3-▼", "T3-▲")
+            (1, 1, 1, 1, 2, 2, 3, 3),
+            ("T1-▔", "T1-▲", "T1-▼", "T1-▁", "T2-▼", "T2-▲", "T3-▼", "T3-▲"),
+            [(0, 1, 2), (1, 3, 2), (6, 9, 11), (9, 10, 11), (1, 6, 3), (9, 3, 6), (1, 5, 6), (11, 6, 5)]
         )
          
     def f2(self):
-        t1, t2, t3 = self.t1(), self.t2(), self.t3()
         yield from zip(
-            self.verts[[(0, 2, 1), (2, 4, 1), (9, 6, 10), (9, 10, 11), (0, 6, 2), (9, 2, 6), (2, 9, 4), (9, 4, 11), (0, 5, 6), (10, 6, 5)], :],
-            (t1, t1, t1, t1, t2, t2, t2, t2, t3, t3),
-            ("T1-▔", "T1-▔", "T1▁", "T1▁", "T2-▼", "T2-▲", "T2-▼", "T2-▲", "T3-▼", "T3-▲")
+            (1, 1, 1, 1, 2, 2, 2, 2, 3, 3),
+            ("T1-▔", "T1-▔", "T1▁", "T1▁", "T2-▼", "T2-▲", "T2-▼", "T2-▲", "T3-▼", "T3-▲"),
+            [(0, 2, 1), (2, 4, 1), (9, 6, 10), (9, 10, 11), (0, 6, 2), (9, 2, 6), (2, 9, 4), (9, 4, 11), (0, 5, 6), (10, 6, 5)]
         )
 
     def body_radius(self):
-        return np.linalg.norm(self.verts[6] - np.array([0, 0, self.verts[6][2]]))
+        # |G - (0, 0, z(G))|
+        return np.linalg.norm(self.verts[6] - zproj(self.verts[6]))
 
     def height(self):
+        # |z(A) - z(F)|
         return self.verts[0][2] - self.verts[-1][2]
 
     def body_height(self):
+        # |z(E) - z(G)|
         return self.verts[4][2] - self.verts[6][2]
 
-    def facets(self):
+    def facets(self, sphericity=0, lattice=HEXAGONAL):
         th = (2 * np.pi) / self.s
         combos = [None, None, self.f2, self.f3, None, self.f5][self.s]()
-        for idx, plat, T in combos:
-            points, lattice = plat
-            R, c, t = kabsch_umeyama(idx, np.vstack([(*ele, 0) for ele in points[:-1]]))
-            verts, edges = lattice
+        points = [self.q1, self.q2, self.q3]
+        meshes = [None, *(self.mesh(points[i], lattice) for i in range(3 - self.s == 5))]
+        for t_idx, t_id, v_idx in combos:
+            idx = t_idx - 1
+            triangle = points[idx][:-1]
+            R, c, t = kabsch_umeyama(self.verts[v_idx, :], np.vstack([(*ele, 0) for ele in triangle]))
+            verts, edges = meshes[idx]
             for i in range(self.s):
-                facet = [roro(t + c * R @ ele, np.array([0, 0, 1]), i * th) for ele in verts]
+                facet = [spherize(roro(t + c * R @ ele, np.array([0, 0, 1]), i * th), self, sphericity) for ele in verts]
                 yield facet, edges, T
 
 
@@ -408,20 +400,23 @@ def zproj(coor):
     return np.array([0, 0, coor[2]])
 
 
-def capsulize(coor, capsid, c):
+def spherize(coor, capsid, s):
     r = capsid.body_radius() 
+    h2 = capsid.body_height() / 2
+    rad = capsid.verts[0][2] + (r / 2) - h2
     
-    h2 = capsid.height() / 2 - r
-    if -h2 <= coor[2] <= h2:
-        return ((r - np.linalg.norm(coor[:2])) * c * uvec(coor - zproj(coor))) + coor
+    if h2 < coor[2]:    # top cap
+        pos = np.array([0, 0, h2 - (r / 2)])
+        d = np.abs(sd_sphere(coor - pos, rad))
+        return (d * s * uvec(coor - np.array([0, 0, h2 ]))) + coor
+    elif coor[2] < -h2: # bottom cap
+        pos = -np.array([0, 0, h2 - (r / 2)])
+        d = np.abs(sd_sphere(coor - pos, rad))
+        return (d * s * uvec(coor - np.array([0, 0, h2 ]))) + coor
+    
+    # body cylinder
+    return ((r - np.linalg.norm(coor[:2])) * s * uvec(coor - zproj(coor))) + coor
 
-    z = capsid.height() / 2 - r
-    for i in (-1, 1):
-        loc = np.array([0, 0, i * z])
-        if (d := sd_sphere(coor - loc, r)) < 0:
-            return (np.abs(d) * c * uvec(coor - loc)) + coor
-
-    return coor
 
 def parse_args(argv):
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
@@ -429,24 +424,20 @@ def parse_args(argv):
         parser.add_argument(ele, default=1, type=int, help=f"the {ele} lattice parameter")
     choices = (5, 3, 2)
     parser.add_argument("-symmetry", default=choices[0], type=int, help=f"the axial symmetry: {choices}")
-    parser.add_argument("-capsulicity", default=0, type=float, help="the capsulicity value")
+    parser.add_argument("-sphericity", default=0, type=float, help="the sphericity value")
     return parser.parse_args(argv)
 
 
 def main(argv):
     args = parse_args(argv[1:])
-    h, k, H, K, s, c = args.h, args.k, args.H, args.K, args.symmetry, args.capsulicity
+    h, k, H, K, s, c = args.h, args.k, args.H, args.K, args.symmetry, args.sphericity
 
     capsid = Capsid(h, k, H, K, s)
-    facets = list(capsid.facets())
-    print(capsid.body_height(), capsid.body_radius())
 
     if "bpy" in sys.modules:
         # facets    
-        for idx, ele in enumerate(facets, start=1):
+        for idx, ele in enumerate(capsid.facets(c), start=1):
             verts, edges, T = ele
-            for j in range(len(verts)):
-                verts[j] = capsulize(verts[j], capsid, c)
             mesh = bpy.data.meshes.new(name=f"Facet[{h}, {k}, {H}, {K}, T={T}, i={idx}]")
             mesh.from_pydata(verts, edges, [])
             mesh.validate(verbose=True)
@@ -455,6 +446,8 @@ def main(argv):
             # add the object to the scene
             scene = bpy.context.scene
             scene.collection.objects.link(obj)
+    else:
+        print(capsid.verts)
 
     return 0
 
@@ -462,6 +455,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "3", "1", "4", "2", "-s", "5", "-c", "1"])
+        main(["capsid", "3", "1", "4", "2", "-symmetry", "5", "-sphericity", "1"])
     else:
         sys.exit(main(sys.argv))
