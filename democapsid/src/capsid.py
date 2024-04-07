@@ -423,13 +423,9 @@ class Capsid(object):
 
 
 def triangle_circumcircle_center(p, q, r):
-    v1, v2 = q - p, r - p
-    m1, m2 = p + (v1 / 2), p + (v2 / 2)
-    u1 = m1 + roro(v1, np.array([1, 0, 0]), np.pi / 2)
-    u2 = m2 + roro(v2, np.array([1, 0, 0]), np.pi / 2)
-    a, b, c = u1 - m1, u2 - m2, m2 - m1
-    cross_ab = np.cross(a, b)
-    return m1 + a * (np.dot(np.cross(c, b), cross_ab) / np.linalg.norm(cross_ab) ** 2)
+    # https://en.wikipedia.org/wiki/Circumcircle#Higher_dimensions
+    a, b = p - r, q - r
+    return np.cross(np.dot(np.linalg.norm(a) ** 2, b) - np.dot(np.linalg.norm(b) ** 2, a), np.cross(a, b)) / (2 * np.linalg.norm(np.cross(a, b)) ** 2) + r
 
 
 def tetrahedron_circumsphere_center(v0, v1, v2, v3):
