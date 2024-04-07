@@ -389,7 +389,7 @@ class Capsid(object):
             rad = np.linalg.norm(p1 - pos)
         elif self.s == 2:
             p1 = self.verts[0]
-            pos = tetrahedron_circumsphere_center(p1, *self.verts[(1, 4, 5)])
+            pos = tetrahedron_circumsphere_center(p1, *self.verts[(1, 4, 5), :])
             rad = np.linalg.norm(p1 - pos)
 
         pos1 = np.array([0, 0, pos[2]])
@@ -483,6 +483,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "2", "2", "2", "4", "-symmetry", "2", "-sphericity", "1"])
+        main(["capsid", "1", "1", "1", "2", "-symmetry", "2", "-sphericity", "1"])
     else:
         sys.exit(main(sys.argv))
