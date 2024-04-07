@@ -154,8 +154,7 @@ class Capsid(object):
         self.C1 = h * self.a1 + k * self.a2         # \vec{C}_{T}
         self.C2 = H * self.A1 + K * self.A2         # \vec{C}_{Q}
         self.C3 = (-h - k) * self.a1 + h * self.a2  # \vec{C}^{120^{\circ}}_{T}
-        tht = -(np.pi / 3)
-        self.C4 = np.array([[np.cos(tht), -np.sin(tht)], [np.sin(tht), np.cos(tht)]]) @ self.C1
+        self.C4 = k * self.a1 + -h * self.A2
 
         # Caspar-Klug ([0:3] triangle, [0:4] parallelogram)
         self.q1 = np.array([0, 0]), self.C1, self.C4, self.C1 + self.C4
@@ -377,6 +376,40 @@ class Capsid(object):
         # |z(E) - z(G)|
         return self.verts[4][2] - self.verts[6][2]
 
+    def spherize(self, coor, sphericity):
+        r = self.body_radius() 
+        h2 = self.body_height() / 2
+
+        if self.s == 5:
+            pos = np.array([0, 0, h2 - (r / 2)])
+            rad = self.verts[0][2] + (r / 2) - h2
+        elif self.s == 3:
+            p1, p2 = self.verts[0], self.verts[3]
+            pos = triangle_circumcircle_center(p1, p2, np.array([p2[0], -p2[1], p2[2]]))
+            rad = np.linalg.norm(p1 - pos)
+        elif self.s == 2:
+            p1 = self.verts[2]
+            p2 = self.verts[3]
+            p3 = np.array([0, r, h2])
+            pos = triangle_circumcircle_center(p1, p2, p3)
+            rad = np.linalg.norm(p1 - pos)
+
+        pos1 = np.array([0, 0, pos[2]])
+        pos2 = np.array([0, 0, -pos[2]])
+        tmid = np.array([0, 0, h2])
+        bmid = np.array([0, 0, -h2])
+        if h2 < coor[2]:    # top cap
+            d = sd_sphere(coor - pos1, rad)
+            d = np.abs(d)
+            return (d * sphericity * uvec(coor - tmid)) + coor
+        elif coor[2] < -h2: # bottom cap
+            d = sd_sphere(coor - pos2, rad)
+            d = np.abs(d)
+            return (d * sphericity * uvec(coor - bmid)) + coor
+        
+        # body cylinder
+        return ((r - np.linalg.norm(coor[:2])) * sphericity * uvec(coor - zproj(coor))) + coor
+
     def facets(self, sphericity=0, lattice=HEXAGONAL):
         th = (2 * np.pi) / self.s
         combos = [None, None, self.f2, self.f3, None, self.f5][self.s]()
@@ -385,11 +418,20 @@ class Capsid(object):
         for t_idx, t_id, v_idx in combos:
             triangle = points[t_idx][:-1]
             R, c, t = kabsch_umeyama(self.verts[v_idx, :], np.vstack([(*ele, 0) for ele in triangle]))
-            print(t_idx)
             verts, edges = meshes[t_idx]
             for i in range(self.s):
-                facet = [spherize(roro(t + c * R @ ele, np.array([0, 0, 1]), i * th), self, sphericity) for ele in verts]
+                facet = [self.spherize(roro(t + c * R @ ele, np.array([0, 0, 1]), i * th), sphericity) for ele in verts]
                 yield facet, edges, t_id
+
+
+def triangle_circumcircle_center(p, q, r):
+    v1, v2 = q - p, r - p
+    m1, m2 = p + (v1 / 2), p + (v2 / 2)
+    u1 = m1 + roro(v1, np.array([1, 0, 0]), np.pi / 2)
+    u2 = m2 + roro(v2, np.array([1, 0, 0]), np.pi / 2)
+    a, b, c = u1 - m1, u2 - m2, m2 - m1
+    cross_ab = np.cross(a, b)
+    return m1 + a * (np.dot(np.cross(c, b), cross_ab) / np.linalg.norm(cross_ab) ** 2)
 
 
 def sd_sphere(p, s):
@@ -398,24 +440,6 @@ def sd_sphere(p, s):
 
 def zproj(coor):
     return np.array([0, 0, coor[2]])
-
-
-def spherize(coor, capsid, s):
-    r = capsid.body_radius() 
-    h2 = capsid.body_height() / 2
-    rad = capsid.verts[0][2] + (r / 2) - h2
-    
-    if h2 < coor[2]:    # top cap
-        pos = np.array([0, 0, h2 - (r / 2)])
-        d = np.abs(sd_sphere(coor - pos, rad))
-        return (d * s * uvec(coor - np.array([0, 0, h2 ]))) + coor
-    elif coor[2] < -h2: # bottom cap
-        pos = -np.array([0, 0, h2 - (r / 2)])
-        d = np.abs(sd_sphere(coor - pos, rad))
-        return (d * s * uvec(coor - np.array([0, 0, h2 ]))) + coor
-    
-    # body cylinder
-    return ((r - np.linalg.norm(coor[:2])) * s * uvec(coor - zproj(coor))) + coor
 
 
 def parse_args(argv):
@@ -455,6 +479,6 @@ def main(argv):
 if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        main(["capsid", "3", "1", "4", "2", "-symmetry", "3", "-sphericity", "1"])
+        main(["capsid", "2", "2", "2", "4", "-symmetry", "2", "-sphericity", "1"])
     else:
         sys.exit(main(sys.argv))
