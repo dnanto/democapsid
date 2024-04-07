@@ -388,10 +388,8 @@ class Capsid(object):
             pos = triangle_circumcircle_center(p1, p2, np.array([p2[0], -p2[1], p2[2]]))
             rad = np.linalg.norm(p1 - pos)
         elif self.s == 2:
-            p1 = self.verts[2]
-            p2 = self.verts[3]
-            p3 = np.array([0, r, h2])
-            pos = triangle_circumcircle_center(p1, p2, p3)
+            p1 = self.verts[0]
+            pos = tetrahedron_circumsphere_center(p1, *self.verts[(1, 4, 5)])
             rad = np.linalg.norm(p1 - pos)
 
         pos1 = np.array([0, 0, pos[2]])
@@ -432,6 +430,12 @@ def triangle_circumcircle_center(p, q, r):
     a, b, c = u1 - m1, u2 - m2, m2 - m1
     cross_ab = np.cross(a, b)
     return m1 + a * (np.dot(np.cross(c, b), cross_ab) / np.linalg.norm(cross_ab) ** 2)
+
+
+def tetrahedron_circumsphere_center(v0, v1, v2, v3):
+    # https://rodolphe-vaillant.fr/entry/127/find-a-tetrahedron-circumcenter 
+    e1, e2, e3 = v1 - v0, v2 - v0, v3 - v0
+    return v0 + (1 / (2 * np.linalg.det(np.stack((e1, e2, e3))))) * (np.linalg.norm(e3) ** 2 * np.cross(e1, e2) + np.linalg.norm(e2) ** 2 * np.cross(e3, e1) + np.linalg.norm(e1) ** 2 * np.cross(e2, e3))
 
 
 def sd_sphere(p, s):
