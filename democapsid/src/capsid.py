@@ -135,6 +135,26 @@ def bisection(f, a, b, tol, iter):
     return i, f_of_c, c
 
 
+def triangle_circumcircle_center(p, q, r):
+    # https://en.wikipedia.org/wiki/Circumcircle#Higher_dimensions
+    a, b = p - r, q - r
+    return np.cross(np.dot(np.linalg.norm(a) ** 2, b) - np.dot(np.linalg.norm(b) ** 2, a), np.cross(a, b)) / (2 * np.linalg.norm(np.cross(a, b)) ** 2) + r
+
+
+def tetrahedron_circumsphere_center(v0, v1, v2, v3):
+    # https://rodolphe-vaillant.fr/entry/127/find-a-tetrahedron-circumcenter 
+    e1, e2, e3 = v1 - v0, v2 - v0, v3 - v0
+    return v0 + (1 / (2 * np.linalg.det(np.stack((e1, e2, e3))))) * (np.linalg.norm(e3) ** 2 * np.cross(e1, e2) + np.linalg.norm(e2) ** 2 * np.cross(e3, e1) + np.linalg.norm(e1) ** 2 * np.cross(e2, e3))
+
+
+def sd_sphere(p, s):
+    return np.linalg.norm(p) - s
+
+
+def zproj(coor):
+    return np.array([0, 0, coor[2]])
+
+
 class Capsid(object):
     def __init__(self, h=1, k=1, H=1, K=1, s=5):
         if s not in (2, 3, 5):
@@ -420,26 +440,6 @@ class Capsid(object):
             for i in range(self.s):
                 facet = [self.spherize(roro(t + c * R @ ele, np.array([0, 0, 1]), i * th), sphericity) for ele in verts]
                 yield facet, edges, t_id
-
-
-def triangle_circumcircle_center(p, q, r):
-    # https://en.wikipedia.org/wiki/Circumcircle#Higher_dimensions
-    a, b = p - r, q - r
-    return np.cross(np.dot(np.linalg.norm(a) ** 2, b) - np.dot(np.linalg.norm(b) ** 2, a), np.cross(a, b)) / (2 * np.linalg.norm(np.cross(a, b)) ** 2) + r
-
-
-def tetrahedron_circumsphere_center(v0, v1, v2, v3):
-    # https://rodolphe-vaillant.fr/entry/127/find-a-tetrahedron-circumcenter 
-    e1, e2, e3 = v1 - v0, v2 - v0, v3 - v0
-    return v0 + (1 / (2 * np.linalg.det(np.stack((e1, e2, e3))))) * (np.linalg.norm(e3) ** 2 * np.cross(e1, e2) + np.linalg.norm(e2) ** 2 * np.cross(e3, e1) + np.linalg.norm(e1) ** 2 * np.cross(e2, e3))
-
-
-def sd_sphere(p, s):
-    return np.linalg.norm(p) - s
-
-
-def zproj(coor):
-    return np.array([0, 0, coor[2]])
 
 
 def parse_args(argv):
