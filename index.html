@@ -10,271 +10,14 @@
                 border: 1px solid blue;
             }
         </style>
-        <script type="text/javascript" src="js/lib/paper-core.min.js"></script>
+        <script type="text/javascript" src="js/lib/paper-js/paper-core.min.js"></script>
+        <script type="text/javascript" src="js/linalg.js"></script>
         <script type="text/javascript">
-            Array.prototype.mul = function (a) {
-                return this.map((e) => e * a);
-            };
-
-            Array.prototype.add = function (a) {
-                return this.map((e, i) => e + a[i]);
-            };
-
-            Array.prototype.sub = function (a) {
-                return this.map((e, i) => e - a[i]);
-            };
-
-            Array.prototype.dot = function (a) {
-                return this.map((e, i) => e * a[i]).reduce((e, f) => e + f);
-            };
-
-            Array.prototype.sum = function (initial_value = 0) {
-                return this.reduce((a, b) => a + b, initial_value);
-            };
-
-            Array.prototype.cross = function (v) {
-                // https://en.wikipedia.org/wiki/Cross_product
-                return [this[1] * v[2] - this[2] * v[1], this[2] * v[0] - this[0] * v[2], this[0] * v[1] - this[1] * v[0]];
-            };
-
-            Array.prototype.rot = function (k, t) {
-                // https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
-                return this.mul(Math.cos(t))
-                    .add(k.cross(this).mul(Math.sin(t)))
-                    .add(k.mul(k.dot(this)).mul(1 - Math.cos(t)));
-            };
-
-            Array.prototype.norm = function () {
-                return Math.sqrt(this.map((e) => e * e).reduce((e, f) => e + f));
-            };
-
-            Array.prototype.angle = function (v) {
-                return Math.acos(this.dot(v) / (this.norm() * v.norm()));
-            };
-
-            Array.prototype.proj = function (v) {
-                return v.mul(this.dot(v) / v.dot(v));
-            };
-
-            Array.prototype.T = function () {
-                return this.map((e) => [e]);
-            };
-
-            // Standard Normal variate using Box-Muller transform.
-            function gaussian_random(mean = 0, stdev = 1) {
-                // https://stackoverflow.com/a/36481059
-                const u = 1 - Math.random(); // Converting [0,1) to (0,1]
-                const v = Math.random();
-                const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-                // Transform to the desired mean and standard deviation:
-                return z * stdev + mean;
-            }
-
-            function random_uvec(n) {
-                // https://www.jeremykun.com/2016/05/16/singular-value-decomposition-part-2-theorem-proof-algorithm/
-                let v = Array.from({ length: n }, (_) => gaussian_random(0, 1));
-                let norm = v.norm();
-                return v.map((e) => e / norm);
-            }
-
-            /**
-             * @class Matrix math.
-             */
-            class Matrix {
-                /**
-                 * Matrix multiplication.
-                 * @param {Array} A The m x n matrix.
-                 * @param {Array} B The n x p matrix.
-                 * @return {Array} The m x p matrix.
-                 */
-                static mul(A, B) {
-                    const [m, n, p] = [A.length, A[0].length, B[0].length];
-                    var C = new Array(m);
-                    for (var i = 0; i < m; i++) C[i] = new Array(p).fill(0);
-                    for (var i = 0; i < m; i++) for (var j = 0; j < p; j++) for (var k = 0; k < n; k++) C[i][j] += A[i][k] * B[k][j];
-                    return C;
-                }
-
-                /**
-                 * Calculate the 2x2 determinant.
-                 * @param {Array} A The 2x2 matrix.
-                 * @return {Number} The determinant;
-                 */
-                static det2(A) {
-                    return A[0][0] * A[1][1] - A[0][1] * A[1][0];
-                }
-
-                /**
-                 * Calculate the 3x3 determinant.
-                 * @param {Array} A The 3x3 matrix.
-                 * @return {Number} The determinant;
-                 */
-                static det3(A) {
-                    return (
-                        A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - //
-                        A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + //
-                        A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0])
-                    );
-                }
-
-                /**
-                 * Calculate the 2x2 inverse.
-                 * @param {Array} A The 3x3 matrix.
-                 * @return {Number} The inverse;
-                 */
-                static inv2(A) {
-                    const d = 1 / Matrix.det2(A);
-                    return [[A[1][1], -A[0][1]].mul(d), [-A[1][0], A[0][0]].mul(d)];
-                }
-
-                static T(A) {
-                    var B = Array.from({ length: A[0].length }, () => Array.from({ length: A.length }, () => []));
-                    for (var i = 0; i < B.length; i++) B[i] = new Array(A.length);
-                    for (var i = 0; i < A.length; i++) for (var j = 0; j < A[0].length; j++) B[j][i] = A[i][j];
-                    return B;
-                }
-
-                static rotmat2(θ) {
-                    return [
-                        [Math.cos(θ), -Math.sin(θ)],
-                        [Math.sin(θ), Math.cos(θ)],
-                    ];
-                }
-
-                static rotmat3(θ, ψ, φ) {
-                    // trigonometry
-                    const [sinθ, sinψ, sinφ, cosθ, cosψ, cosφ] = [
-                        //
-                        Math.sin(θ),
-                        Math.sin(ψ),
-                        Math.sin(φ),
-                        Math.cos(θ),
-                        Math.cos(ψ),
-                        Math.cos(φ),
-                    ];
-                    // rotation matrix
-                    return [
-                        [cosθ * cosψ, cosθ * sinψ * sinφ - sinθ * cosφ, cosθ * sinψ * cosφ + sinθ * sinφ],
-                        [sinθ * cosψ, sinθ * sinψ * sinφ + cosθ * cosφ, sinθ * sinψ * cosφ - cosθ * sinφ],
-                        [-sinψ, cosψ * sinφ, cosψ * cosφ],
-                    ];
-                }
-
-                static I(n) {
-                    return Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => 1 * (i == j)));
-                }
-
-                static diag(A) {
-                    const n = A.length;
-                    return Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => A[i] * (i == j)));
-                }
-
-                static trace(A) {
-                    return Array.from({ length: A.length }, (_, i) => A[i][i]).sum();
-                }
-
-                static svd_1d(A, epsilon = 1e-10) {
-                    // https://www.jeremykun.com/2016/05/16/singular-value-decomposition-part-2-theorem-proof-algorithm/
-                    const [n, m] = [A.length, A[0].length];
-                    let prev_v = random_uvec(m);
-                    let curr_v = prev_v;
-                    let B = Matrix.mul(Matrix.T(A), A);
-                    while (true) {
-                        prev_v = curr_v;
-                        curr_v = Matrix.mul(B, prev_v.T()).flat();
-                        curr_v = curr_v.map((e) => e / curr_v.norm());
-                        if (Math.abs(curr_v.dot(prev_v)) > 1 - epsilon) {
-                            return curr_v;
-                        }
-                    }
-                }
-
-                static svd(A, B, epsilon = 1e-10) {
-                    // https://www.jeremykun.com/2016/05/16/singular-value-decomposition-part-2-theorem-proof-algorithm/
-                    const [n, m] = [A.length, A[0].length];
-                    let svdSoFar = [];
-
-                    for (var i = 0; i < m; i++) {
-                        let matrix_for_1D = A.map((e) => e.slice());
-                        svdSoFar.slice(0, i).forEach((e) => {
-                            const [singular_value, u, v] = e;
-                            Matrix.mul(u.T(), [v]).forEach((e, i) => {
-                                matrix_for_1D[i] = matrix_for_1D[i].sub(e.mul(singular_value));
-                            });
-                        });
-                        let v = Matrix.svd_1d(matrix_for_1D, epsilon); // next singular vector
-                        const u_unnormalized = Matrix.mul(A, v.T()).flat();
-                        const sigma = u_unnormalized.norm(); // next singular value
-                        let u = u_unnormalized.mul(1 / sigma);
-                        svdSoFar.push([sigma, u, v]);
-                    }
-                    // transform it into matrices of the right shape
-                    let [singular_values, us, vs] = svdSoFar.reduce(
-                        (a, b) => [
-                            //
-                            a[0].concat(b[0]),
-                            a[1].concat([b[1]]),
-                            a[2].concat([b[2]]),
-                        ],
-                        [[], [], []]
-                    );
-                    return [singular_values, Matrix.T(us), vs];
-                }
-
-                static kabsch_umeyama(A, B) {
-                    const [n, m] = [A.length, A[0].length];
-
-                    const EA = A.reduce((a, b) => a.add(b)).map((e) => e / n);
-                    const EB = B.reduce((a, b) => a.add(b)).map((e) => e / n);
-                    const VarA = A.map((e) => e.sub(EA).norm() ** 2).sum() / n;
-
-                    const H = Matrix.mul(
-                        Matrix.T(A.map((e) => e.sub(EA))),
-                        B.map((e) => e.sub(EB))
-                    ).map((e) => e.mul(1 / n));
-                    const [D, U, VT] = Matrix.svd(H);
-                    const d = Math.sign(Matrix.det2(U) * Matrix.det2(VT));
-                    const S = Matrix.I(m);
-                    S[m - 1][m - 1] = d;
-
-                    let R = Matrix.mul(Matrix.mul(U, S), VT);
-                    let c = VarA / Matrix.mul(D.T(), S).flat().sum();
-                    let t = EA.sub(
-                        Matrix.mul(
-                            R.map((e) => e.mul(c)),
-                            EB.T()
-                        ).flat()
-                    );
-
-                    return [R, c, t];
-                }
-
-                static camera(θ, ψ, φ) {
-                    // calibration
-                    const K = [
-                        [1, 0, 0],
-                        [0, 1, 0],
-                        [0, 0, 1],
-                    ];
-                    // translation
-                    const C = [0, 0, 0];
-                    // rotation matrix
-                    const R = Matrix.rotmat3(θ, ψ, φ);
-                    // translation matrix
-                    const IC = [
-                        [1, 0, 0, -C[0]],
-                        [0, 1, 0, -C[1]],
-                        [0, 0, 1, -C[2]],
-                    ];
-                    // camera matrix
-                    return Matrix.mul(Matrix.mul(K, R), IC);
-                }
-            }
-
             const SQRT3 = Math.sqrt(3);
             const SQRT5 = Math.sqrt(5);
 
-            function calc_basis(R = 1) {
+            function hex_basis(R = 1) {
+                // ⬡
                 const r = R * (SQRT3 / 2); // hexagon inradius
                 return [
                     [1, 0].mul(2 * r), // →
@@ -283,7 +26,7 @@
             }
 
             function ck_vectors(h, k, H, K, R = 1) {
-                const [v1, v2, v3] = calc_basis(R).concat([[-0.5, SQRT3 / 2].mul(2 * (R * (SQRT3 / 2)))]);
+                const [v1, v2, v3] = hex_basis(R).concat([[-0.5, SQRT3 / 2].mul(2 * (R * (SQRT3 / 2)))]);
                 return [
                     //
                     v1.mul(h).add(v2.mul(k)),
@@ -303,20 +46,26 @@
                 let h5 = ((1 + SQRT5) * a) / (2 * Math.sqrt(5 + 2 * SQRT5));
 
                 let pA = [0, 0, h5];
-                let pB = [-R5, 0, 0].rot([0, 0, 1], (3 / 10) * Math.PI); // 54°
+                let pB = [-R5, 0, 0].roro([0, 0, 1], (3 / 10) * Math.PI); // 54°
                 let pC = pB.add([a, 0, 0]);
 
                 let t = C1.angle(C2);
-                let q = pC.add([b, 0, 0].rot([0, 1, 0], -Math.PI - t));
+                let q = pC.add([b, 0, 0].roro([0, 1, 0], -Math.PI - t));
                 let p = pB.add(q.sub(pB).proj(pC.sub(pB)));
                 let d = [p[0], (-Math.abs(p[1]) * Math.sqrt(R5 * R5 * p[1] * p[1] - (p[0] * p[1]) ** 2)) / (p[1] * p[1]), 0];
 
                 let pG = d.add([0, 0, -Math.sqrt(q[2] * q[2] - (p[1] - d[1]) ** 2)]);
-
-                coor = [pA, pB, pC]
-                    .concat([1, 2, 3].map((e) => pC.rot([0, 0, 1], ((e * 2) / 5) * Math.PI)))
+                //     (
+                //     pA, pB, pC,
+                //     *(roro(pC, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 4)), # D, E, F
+                //     pG,
+                //     *(roro(pG, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 5)), # H, I, J, K
+                //     np.array([0, 0, pG[2] - pA[2]]) # pL
+                // )
+                let coor = [pA, pB, pC]
+                    .concat([1, 2, 3].map((e) => pC.roro([0, 0, 1], ((e * 2) / 5) * Math.PI)))
                     .concat([pG])
-                    .concat([1, 2, 3, 4].map((e) => pG.rot([0, 0, 1], ((e * 2) / 5) * Math.PI)))
+                    .concat([1, 2, 3, 4].map((e) => pG.roro([0, 0, 1], ((e * 2) / 5) * Math.PI)))
                     .concat([[0, 0, pG[2] - pA[2]]]);
 
                 return coor.map((e) => e.add([0, 0, -pG[2] / 2]));
@@ -333,22 +82,27 @@
             }
 
             function* grid(ck, basis) {
-                const bounds = ck.map((e) => Matrix.mul(Matrix.T(Matrix.inv2(basis)), [e, 1].flat().T()).flat());
+                const bounds = ck.map((e) => mmul(T(inv2(basis)), [e, 1].flat().T()).flat()).map((e) => e.map(Math.round));
                 const [min_i, min_j, max_i, max_j] = [
                     //
                     ...[0, 1].map((_, i) => Math.min(...bounds.map((e) => e[i]))),
                     ...[0, 1].map((_, i) => Math.max(...bounds.map((e) => e[i]))),
                 ];
-                for (var i = min_i; i < max_i + 1; i++) {
-                    for (var j = min_j; j < max_j + 1; j++) {
+                for (let i = min_i; i < max_i + 1; i++) {
+                    for (let j = min_j; j < max_j + 1; j++) {
                         yield basis[0].mul(i).add(basis[1].mul(j));
                     }
                 }
             }
+
+            function radians(x) {
+                return (x * Math.PI) / 180;
+            }
+
             function draw1() {
                 const PARAMS = params();
-                let ck = ck_vectors(PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K, PARAMS.R);
-                const basis = calc_basis(PARAMS.R);
+                const ck = ck_vectors(PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K, PARAMS.R);
+                const basis = hex_basis(PARAMS.R);
                 let lattice = Array.from(grid(ck, basis)).map(
                     (e) =>
                         new Path.RegularPolygon({
@@ -358,6 +112,8 @@
                             radius: PARAMS.R,
                             strokeColor: "black",
                             strokeWidth: 2,
+                            strokeCap: "round",
+                            strokeJoin: "round",
                         })
                 );
 
@@ -376,18 +132,70 @@
 
             function draw2() {
                 const PARAMS = params();
-                const CAMERA = Matrix.camera(PARAMS.θ, PARAMS.ψ, PARAMS.φ);
                 const ck = ck_vectors(PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K, PARAMS.R);
-                let coors = ico_axis_5(ck[0], ck[1]).map((e) => Matrix.mul(CAMERA, [e, 1].flat().T()).flat());
-                new Group({
-                    children: coors.map((e) => {
-                        return new Path.Circle({
+                const basis = hex_basis(PARAMS.R);
+                let lattice = Array.from(grid(ck, basis)).map(
+                    (e) =>
+                        new Path.RegularPolygon({
+                            //
                             center: e,
-                            radius: 4,
-                            fillColor: "orange",
-                        });
-                    }),
+                            sides: 6,
+                            radius: PARAMS.R,
+                            strokeColor: "black",
+                            strokeWidth: 2,
+                            strokeCap: "round",
+                            strokeJoin: "round",
+                        })
+                );
+                let triangles = [
+                    [ck[0], ck[3]],
+                    [ck[1], ck[0]],
+                    [ck[2], ck[1]],
+                ]
+                    .map((e) => new Path({ segments: [[0, 0], ...e, [0, 0]], data: { vectors: [[0, 0], ...e] } }))
+                    .map((e) => new Group({ children: lattice.map((f) => intersect(f, e)), data: e.data }));
+                const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
+                let coors = ico_axis_5(ck[0], ck[1]);
+
+                const th = (2 * Math.PI) / 5;
+                let [t_idx, t_id, v_idx] = [
+                    [1, 1, 2, 2],
+                    ["T1-▲", "T1-▼", "T2-▲", "T2-▼"],
+                    [
+                        [0, 2, 1],
+                        [6, 7, 11],
+                        [2, 6, 1],
+                        [6, 2, 7],
+                    ],
+                ];
+
+                let results = [];
+                for (let idx = 0; idx < t_idx.length; idx++) {
+                    let triangle = triangles[t_idx[idx] - 1];
+                    let A = T(triangle.data.vectors.map((e) => e.concat(1)));
+                    let V = [0, 1, 2].map((e) => coors[v_idx[idx][e]]);
+
+                    for (let i = 0; i < 5; i++) {
+                        let X = T(
+                            V.map((e) =>
+                                mmul(
+                                    CAMERA,
+                                    e
+                                        .roro([0, 0, 1], i * th)
+                                        .concat(1)
+                                        .T()
+                                )
+                            )
+                        );
+                        X[2] = [1, 1, 1];
+                        let M = mmul(X, inv3(A));
+                        results.push(triangle.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2])));
+                    }
+                }
+                new Group({
+                    children: results,
                     position: view.center,
+                    style: { strokeCap: "round", strokeJoin: "round" },
                 });
             }
 
@@ -418,15 +226,15 @@
             <label for="K">K&nbsp;=&nbsp;</label>
             <input type="number" id="K" step="1" value="2" min="0" />
             <label for="R">R&nbsp;=&nbsp;</label>
-            <input type="number" id="R" step="1" value="10" min="0" />
+            <input type="number" id="R" step="1" value="10" min="1" />
         </div>
         <div>
             <label for="θ">θ&nbsp;=&nbsp;</label>
-            <input type="number" id="θ" step="0.05" value="0" min="0" />
+            <input type="number" id="θ" step="10" value="0" min="0" />
             <label for="ψ">ψ&nbsp;=&nbsp;</label>
-            <input type="number" id="ψ" step="0.05" value="0" min="0" />
+            <input type="number" id="ψ" step="10" value="0" min="0" />
             <label for="φ">φ&nbsp;=&nbsp;</label>
-            <input type="number" id="φ" step="0.05" value="0" min="0" />
+            <input type="number" id="φ" step="10" value="0" min="0" />
         </div>
         <div>
             <canvas id="canvas1" resize> Your browser does not support the HTML canvas tag. </canvas>
