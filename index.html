@@ -4,6 +4,12 @@
     <head>
         <title>capsid</title>
         <style>
+            html {
+                background-color: #fdfdfd;
+            }
+            body {
+                font-family: "Lucida Console", "Courier New", monospace;
+            }
             canvas {
                 height: 250px;
                 width: 575px;
@@ -55,13 +61,6 @@
                 let d = [p[0], (-Math.abs(p[1]) * Math.sqrt(R5 * R5 * p[1] * p[1] - (p[0] * p[1]) ** 2)) / (p[1] * p[1]), 0];
 
                 let pG = d.add([0, 0, -Math.sqrt(q[2] * q[2] - (p[1] - d[1]) ** 2)]);
-                //     (
-                //     pA, pB, pC,
-                //     *(roro(pC, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 4)), # D, E, F
-                //     pG,
-                //     *(roro(pG, np.array([0, 0, 1]), i * 2 / 5 * np.pi) for i in range(1, 5)), # H, I, J, K
-                //     np.array([0, 0, pG[2] - pA[2]]) # pL
-                // )
                 let coor = [pA, pB, pC]
                     .concat([1, 2, 3].map((e) => pC.roro([0, 0, 1], ((e * 2) / 5) * Math.PI)))
                     .concat([pG])
@@ -90,7 +89,7 @@
                 ];
                 for (let i = min_i; i < max_i + 1; i++) {
                     for (let j = min_j; j < max_j + 1; j++) {
-                        yield basis[0].mul(i).add(basis[1].mul(j));
+                        yield { index: [i, j], coor: basis[0].mul(i).add(basis[1].mul(j)) };
                     }
                 }
             }
@@ -103,30 +102,38 @@
                 const PARAMS = params();
                 const ck = ck_vectors(PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K, PARAMS.R);
                 const basis = hex_basis(PARAMS.R);
-                let lattice = Array.from(grid(ck, basis)).map(
-                    (e) =>
-                        new Path.RegularPolygon({
-                            //
-                            center: e,
-                            sides: 6,
-                            radius: PARAMS.R,
-                            strokeColor: "black",
-                            strokeWidth: 2,
-                            strokeCap: "round",
-                            strokeJoin: "round",
-                        })
-                );
+
+                const bounds = [[0, 0]].concat(ck.map((e) => mmul(T(inv2(basis)), [e, 1].flat().T()).flat()).map((e) => e.map(Math.round)));
+
+                let lattice = Array.from(grid(ck, basis)).map((e) => {
+                    return new Path.RegularPolygon({
+                        center: e.coor,
+                        fillColor: bounds.some((v) => v.every((u, i) => u == e.index[i])) ? "black" : "white",
+                        sides: 6,
+                        radius: PARAMS.R,
+                        strokeColor: "black",
+                        strokeWidth: 2,
+                        strokeCap: "round",
+                        strokeJoin: "round",
+                    });
+                });
 
                 let triangles = [
                     [ck[3], ck[0]],
                     [ck[0], ck[1]],
                     [ck[1], ck[2]],
-                ].map((e) => new Path([[0, 0], ...e, [0, 0]]));
-                new Group({
-                    children: triangles.map((e) => new Group(lattice.map((f) => intersect(f, e)))),
-                    position: view.center,
-                });
-                triangles.forEach((e) => e.remove());
+                ]
+                    .map((e) => new Path({ segments: [[0, 0], ...e, [0, 0]], data: { vectors: [[0, 0], ...e] } }))
+                    .map(
+                        (e) =>
+                            new Group({
+                                children: lattice.map((f) => intersect(f, e)),
+                                data: e.data,
+                            })
+                    );
+
+                new Group({ children: triangles, position: view.center });
+
                 lattice.forEach((e) => e.remove());
             }
 
@@ -137,8 +144,7 @@
                 let lattice = Array.from(grid(ck, basis)).map(
                     (e) =>
                         new Path.RegularPolygon({
-                            //
-                            center: e,
+                            center: e.coor,
                             sides: 6,
                             radius: PARAMS.R,
                             strokeColor: "black",
@@ -197,6 +203,9 @@
                     position: view.center,
                     style: { strokeCap: "round", strokeJoin: "round" },
                 });
+
+                triangles.forEach((e) => e.remove());
+                lattice.forEach((e) => e.remove());
             }
 
             function update(e) {
@@ -225,8 +234,16 @@
             <input type="number" id="H" step="1" value="1" min="0" />
             <label for="K">K&nbsp;=&nbsp;</label>
             <input type="number" id="K" step="1" value="2" min="0" />
-            <label for="R">R&nbsp;=&nbsp;</label>
-            <input type="number" id="R" step="1" value="10" min="1" />
+            <label for="s">S&nbsp;=&nbsp;</label>
+            <select id="s">
+                <option value="5">5</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
+            </select>
+            <div>
+                <label for="R">R&nbsp;=&nbsp;</label>
+                <input type="number" id="R" step="1" value="10" min="1" />
+            </div>
         </div>
         <div>
             <label for="θ">θ&nbsp;=&nbsp;</label>
@@ -236,6 +253,7 @@
             <label for="φ">φ&nbsp;=&nbsp;</label>
             <input type="number" id="φ" step="10" value="0" min="0" />
         </div>
+        <br />
         <div>
             <canvas id="canvas1" resize> Your browser does not support the HTML canvas tag. </canvas>
             <canvas id="canvas2" resize> Your browser does not support the HTML canvas tag. </canvas>
