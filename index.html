@@ -141,37 +141,48 @@
                 const PARAMS = params();
                 const ck = ck_vectors(PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K, PARAMS.R);
                 const basis = hex_basis(PARAMS.R);
-                let lattice = Array.from(grid(ck, basis)).map(
-                    (e) =>
-                        new Path.RegularPolygon({
-                            center: e.coor,
-                            sides: 6,
-                            radius: PARAMS.R,
-                            strokeColor: "black",
-                            strokeWidth: 2,
-                            strokeCap: "round",
-                            strokeJoin: "round",
-                        })
-                );
+                const bounds = [[0, 0]].concat(ck.map((e) => mmul(T(inv2(basis)), [e, 1].flat().T()).flat()).map((e) => e.map(Math.round)));
+
+                let lattice = Array.from(grid(ck, basis)).map((e) => {
+                    return new Path.RegularPolygon({
+                        center: e.coor,
+                        fillColor: bounds.some((v) => v.every((u, i) => u == e.index[i])) ? "black" : "white",
+                        sides: 6,
+                        radius: PARAMS.R,
+                        strokeColor: "black",
+                        strokeWidth: 2,
+                        strokeCap: "round",
+                        strokeJoin: "round",
+                    });
+                });
+
                 let triangles = [
-                    [ck[0], ck[3]],
-                    [ck[1], ck[0]],
-                    [ck[2], ck[1]],
+                    [ck[3], ck[0]],
+                    [ck[0], ck[1]],
+                    [ck[1], ck[2]],
                 ]
                     .map((e) => new Path({ segments: [[0, 0], ...e, [0, 0]], data: { vectors: [[0, 0], ...e] } }))
-                    .map((e) => new Group({ children: lattice.map((f) => intersect(f, e)), data: e.data }));
+                    .map(
+                        (e) =>
+                            new Group({
+                                children: lattice.map((f) => intersect(f, e)),
+                                data: e.data,
+                            })
+                    );
+
                 const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
-                let coors = ico_axis_5(ck[0], ck[1]);
+                const AXIS = mmul(CAMERA, [0, 0, 1, 1].T());
+                let coors = ico_axis_5(ck[0], ck[1]).map((e) => mmul(CAMERA, e.concat(1).T()).flat());
 
                 const th = (2 * Math.PI) / 5;
                 let [t_idx, t_id, v_idx] = [
                     [1, 1, 2, 2],
                     ["T1-▲", "T1-▼", "T2-▲", "T2-▼"],
                     [
-                        [0, 2, 1],
-                        [6, 7, 11],
-                        [2, 6, 1],
-                        [6, 2, 7],
+                        [0, 1, 2],
+                        [6, 11, 7],
+                        [2, 1, 6],
+                        [6, 7, 2],
                     ],
                 ];
 
@@ -180,24 +191,16 @@
                     let triangle = triangles[t_idx[idx] - 1];
                     let A = T(triangle.data.vectors.map((e) => e.concat(1)));
                     let V = [0, 1, 2].map((e) => coors[v_idx[idx][e]]);
-
                     for (let i = 0; i < 5; i++) {
-                        let X = T(
-                            V.map((e) =>
-                                mmul(
-                                    CAMERA,
-                                    e
-                                        .roro([0, 0, 1], i * th)
-                                        .concat(1)
-                                        .T()
-                                )
-                            )
-                        );
-                        X[2] = [1, 1, 1];
-                        let M = mmul(X, inv3(A));
-                        results.push(triangle.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2])));
+                        let X = V.map((e) => e.roro(AXIS, i * th));
+                        let centroid = X.reduce((a, b) => a.add(b)).div(X.length);
+                        let M = mmul([...T(X).slice(0, 2), [1, 1, 1]], inv3(A));
+                        let face = triangle.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
+                        face.data.centroid = centroid;
+                        results.push(face);
                     }
                 }
+                results.sort((a, b) => a.data.centroid[2] < b.data.centroid[2]);
                 new Group({
                     children: results,
                     position: view.center,
