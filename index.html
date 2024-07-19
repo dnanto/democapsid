@@ -42,32 +42,95 @@
                 ];
             }
 
-            function ico_axis_5(C1, C2) {
-                let a = C1.norm();
-                let b = C2.norm();
+            function ico_axis_5(ck) {
+                const a = ck[0].norm();
+                const b = ck[1].norm();
 
                 // regular pentagon circumradius
-                let R5 = a * Math.sqrt((5 + SQRT5) / 10);
+                const R5 = a * Math.sqrt((5 + SQRT5) / 10);
                 // regular pentagonal pyramid height
-                let h5 = ((1 + SQRT5) * a) / (2 * Math.sqrt(5 + 2 * SQRT5));
+                const h5 = ((1 + SQRT5) * a) / (2 * Math.sqrt(5 + 2 * SQRT5));
 
-                let pA = [0, 0, h5];
-                let pB = [-R5, 0, 0].roro([0, 0, 1], (3 / 10) * Math.PI); // 54°
-                let pC = pB.add([a, 0, 0]);
+                const pA = [0, 0, h5];
+                const pB = [-R5, 0, 0].roro([0, 0, 1], (3 / 10) * Math.PI); // 54°
+                const pC = pB.add([a, 0, 0]);
 
-                let t = C1.angle(C2);
-                let q = pC.add([b, 0, 0].roro([0, 1, 0], -Math.PI - t));
-                let p = pB.add(q.sub(pB).proj(pC.sub(pB)));
-                let d = [p[0], (-Math.abs(p[1]) * Math.sqrt(R5 * R5 * p[1] * p[1] - (p[0] * p[1]) ** 2)) / (p[1] * p[1]), 0];
+                const t = ck[0].angle(ck[1]);
+                const q = pC.add([b, 0, 0].roro([0, 1, 0], -Math.PI - t));
+                const p = pB.add(q.sub(pB).proj(pC.sub(pB)));
+                const d = [p[0], (-Math.abs(p[1]) * Math.sqrt(R5 * R5 * p[1] * p[1] - (p[0] * p[1]) ** 2)) / (p[1] * p[1]), 0];
 
-                let pG = d.add([0, 0, -Math.sqrt(q[2] * q[2] - (p[1] - d[1]) ** 2)]);
-                let coor = [pA, pB, pC]
+                const pG = d.add([0, 0, -Math.sqrt(q[2] * q[2] - (p[1] - d[1]) ** 2)]);
+                const coor = [pA, pB, pC]
                     .concat([1, 2, 3].map((e) => pC.roro([0, 0, 1], ((e * 2) / 5) * Math.PI)))
                     .concat([pG])
                     .concat([1, 2, 3, 4].map((e) => pG.roro([0, 0, 1], ((e * 2) / 5) * Math.PI)))
                     .concat([[0, 0, pG[2] - pA[2]]]);
 
                 return coor.map((e) => e.add([0, 0, -pG[2] / 2]));
+            }
+
+            function ico_axis_3(ck, iter = 100, tol = 1e-15) {
+                const a = ck[0].norm();
+                const b = ck[1].norm();
+                const c = ck[2].sub(ck[1]).norm();
+
+                const pA = [0, a * (1 / SQRT3), 0];
+                const pB = [a / 2, -(a * (SQRT3 / 6)), 0];
+                const pC = [-(a / 2), -(a * (SQRT3 / 6)), 0];
+                const qD = [0, -(a * ((2 * SQRT3) / 3)), 0];
+                const qF = [a, a / SQRT3, 0];
+
+                function fold(t) {
+                    let [v, k] = [qD.uvec().mul(a * (SQRT3 / 2)), pB.sub(pC).uvec()];
+                    const pD = [0, -(a * (SQRT3 / 6)), 0].add(v.roro(k, t));
+                    const pF = pD.roro([0, 0, 1], (2 / 3) * Math.PI);
+                    t = ck[0].angle(ck[1]);
+                    [v, k] = [pD.sub(pB).uvec().mul(b), pD.cross(pB).uvec()];
+                    const o = v.roro(k, t);
+                    const [p, q] = [pB.add(o.proj(v)), pB.add(o)];
+                    [v, k] = [q.sub(p), pB.sub(pD).uvec()];
+                    // f = lambda t: c - np.linalg.norm((p + roro(v, k, t)) - pF)
+                    let f = (t) => c - p.add(v.roro(k, t)).sub(pF).norm();
+                    let br = brackets(f, 0, 2 * Math.PI, iter).next().value;
+                    // t = bisect_brackets(f, 0, 2 * Math.PI, tol, iter).next().value[2];
+                    t = bisection(f, ...brackets(f, 0, 2 * Math.PI, iter).next().value, tol, iter).slice(-1);
+                    // for (let [a, b] of brackets(f, 0, 2 * Math.PI, iter)) {
+                    //     t = bisection(f, a, b, tol, iter);
+                    //     break;
+                    // }
+                    const pG = p.add(v.roro(k, t));
+                    return [pD, pF, pG, Math.abs(pD[1]) - pG.sub([0, 0, pG[2]]).norm()];
+                }
+
+                const delta = Math.PI / 180 / 10;
+                t = 0;
+                for (let i = 0; i * delta < Math.PI / 2; i++) {
+                    t = i * delta;
+                    try {
+                        fold(t);
+                        break;
+                    } catch (e) {}
+                }
+                // bisection(f, ...brackets(f, 0, 2 * Math.PI, iter).next().value, tol, iter).slice(-1)
+                // obj = lambda t: fold(t)[-1]
+                // t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
+                let obj = (t) => fold(t).slice(-1)[0];
+                t = bisection(obj, ...brackets(obj, t, Math.PI / 4, iter).next().value, tol, iter).slice(-1);
+
+                const [pD, pF, pG] = fold(t).slice(0, -1);
+                const k = [0, 0, 1];
+                t = (2 * Math.PI) / 3;
+                const pH = pG.roro(k, -t);
+                const pJ = pH
+                    .sub([0, 0, pH[2]])
+                    .roro(k, Math.PI / 3)
+                    .uvec()
+                    .mul(pA[1])
+                    .add([0, 0, pH[2] + pD[2] - pA[2]]);
+
+                let coor = [pA, pB, pC, pD, pF.roro(k, t), pF, pG, pH, pH.roro(k, -t), pJ, pJ.roro(k, -t), pJ.roro(k, -2 * t)];
+                return coor.map((e) => e.add([0, 0, (coor[0][2] - coor.slice(-1)[0][2]) / 2]));
             }
 
             function params() {
@@ -172,17 +235,31 @@
 
                 const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
                 const AXIS = mmul(CAMERA, [0, 0, 1, 1].T());
-                let coors = ico_axis_5(ck[0], ck[1]).map((e) => mmul(CAMERA, e.concat(1).T()).flat());
-
-                const th = (2 * Math.PI) / 5;
+                let coors = ico_axis_3(ck).map((e) => mmul(CAMERA, e.concat(1).T()).flat());
+                console.log(coors);
+                const th = (2 * Math.PI) / 3;
+                // let [t_idx, t_id, v_idx] = [
+                //     [1, 1, 2, 2],
+                //     ["T1-▲", "T1-▼", "T2-▲", "T2-▼"],
+                //     [
+                //         [0, 1, 2],
+                //         [6, 11, 7],
+                //         [2, 1, 6],
+                //         [6, 7, 2],
+                //     ],
+                // ];
                 let [t_idx, t_id, v_idx] = [
-                    [1, 1, 2, 2],
-                    ["T1-▲", "T1-▼", "T2-▲", "T2-▼"],
+                    [1, 1, 1, 1, 2, 2, 3, 3],
+                    ["T1-▔", "T1-▲", "T1-▼", "T1-▁", "T2-▼", "T2-▲", "T3-▼", "T3-▲"],
                     [
-                        [0, 1, 2],
-                        [6, 11, 7],
-                        [2, 1, 6],
-                        [6, 7, 2],
+                        [0, 2, 1],
+                        [1, 2, 3],
+                        [6, 11, 9],
+                        [9, 11, 10],
+                        [1, 3, 6],
+                        [9, 6, 3],
+                        [1, 6, 5],
+                        [11, 5, 6],
                     ],
                 ];
 

@@ -38,6 +38,10 @@ Array.prototype.norm = function () {
     return Math.sqrt(this.map((e) => e * e).sum());
 };
 
+Array.prototype.uvec = function () {
+    return this.div(this.norm());
+};
+
 Array.prototype.angle = function (v) {
     return Math.acos(this.dot(v) / (this.norm() * v.norm()));
 };
@@ -168,4 +172,31 @@ function camera(θ, ψ, φ, C = [0, 0, 0]) {
     ];
     // camera matrix
     return mmul(mmul(K, R), IC);
+}
+
+function* brackets(f, a, b, iter) {
+    const frac = b / iter;
+    let prev = Math.sign(f(a));
+    for (let i = 0; i < iter; i++) {
+        let x = a + i * frac;
+        let curr = Math.sign(f(x));
+        if (prev != curr) {
+            yield [a + (i - 1) * frac, x];
+            prev = curr;
+        }
+    }
+}
+
+function bisection(f, a, b, tol, iter) {
+    let i = 1;
+    let c = (a + b) / 2;
+    let f_of_c = f(c);
+    for (; i <= iter; i++) {
+        c = (a + b) / 2;
+        f_of_c = f(c);
+        if (f_of_c == 0 || (b - a) / 2 < tol) break;
+        if (Math.sign(f_of_c) == Math.sign(f(a))) a = c;
+        else b = c;
+    }
+    return [i, f_of_c, c];
 }
