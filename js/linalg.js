@@ -27,6 +27,17 @@ Array.prototype.cross = function (v) {
     return [this[1] * v[2] - this[2] * v[1], this[2] * v[0] - this[0] * v[2], this[0] * v[1] - this[1] * v[0]];
 };
 
+Array.prototype.rot = function (t) {
+    const [cos, sin] = [Math.cos(t), Math.sin(t)];
+    return mmul(
+        [
+            [cos, -sin],
+            [sin, cos],
+        ],
+        this.T()
+    ).flat();
+};
+
 Array.prototype.roro = function (k, t) {
     // https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
     return this.mul(Math.cos(t))
