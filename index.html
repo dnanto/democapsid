@@ -309,8 +309,8 @@
                     ];
                 else if (t == "dualtrihex") {
                     basis = [
-                        [2 * R + r / 2, R / 2 + r],
-                        [0, R + 2 * r],
+                        [(3 / 2) * R, r],
+                        [0, 2 * r],
                     ];
                 } else throw new Error("incorrect tile mode");
                 return basis;
@@ -415,16 +415,29 @@
                         ),
                     ];
                 else if (t == "dualhex") {
-                    tile = (e) => [
-                        ...Array.from({ length: 6 }, (_, i) =>
+                    tile = (e) =>
+                        Array.from({ length: 6 }, (_, i) =>
                             new Path.RegularPolygon({
                                 center: e.coor.add([0, r - (R * SQRT3) / 6]),
                                 fillColor: "white",
                                 sides: 3,
                                 radius: R / SQRT3,
                             }).rotate(i * 60, e.coor)
-                        ),
-                    ];
+                        );
+                } else if (t == "dualtrihex") {
+                    tile = (e) =>
+                        Array.from({ length: 6 }, (_, i) =>
+                            new Path({
+                                segments: [
+                                    [0, 0],
+                                    [0, r],
+                                    [0.5 * R, r],
+                                    [(SQRT3 / 2) * r, 0.5 * r],
+                                ].map((f) => e.coor.add(f)),
+                                closed: true,
+                                fillColor: fillColor(e),
+                            }).rotate(i * 60, e.coor)
+                        );
                 } else throw new Error("incorrect tile mode");
                 return tile;
             }
@@ -543,6 +556,7 @@
                     <option value="snubhex">snubhex</option>
                     <option value="rhombitrihex">rhombitrihex</option>
                     <option value="dualhex">dualhex</option>
+                    <option value="dualtrihex">dualtrihex</option>
                 </select>
             </div>
             <div>
