@@ -338,9 +338,6 @@
                             sides: 6,
                             radius: R,
                             strokeColor: "black",
-                            strokeWidth: 2,
-                            strokeCap: "round",
-                            strokeJoin: "round",
                             data: { type: "hex-1" },
                         }),
                     ];
@@ -451,10 +448,10 @@
                         ...Array.from({ length: 6 }, (_, i) =>
                             new Path({
                                 segments: [
-                                    [-0.5 * r, R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
-                                    [0, R],
-                                    [r - 0.5 * r, R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
-                                    [0, R + (2 * (0.25 * R * Math.sin(Math.PI / 6))) / Math.cos(Math.PI / 3)],
+                                    [-0.5 * r, 0.5 * R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                                    [0, 0.5 * R],
+                                    [r - 0.5 * r, 0.5 * R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                                    [0, 0.5 * R + (2 * (0.25 * R * Math.sin(Math.PI / 6))) / Math.cos(Math.PI / 3)],
                                 ].map((f) => e.coor.add(f)),
                                 closed: true,
                                 fillColor: "white",
@@ -506,18 +503,16 @@
                     [ck[3], ck[0]],
                     [ck[0], ck[1]],
                     [ck[1], ck[2]],
-                ].map((e) => new Path({ segments: [[0, 0], ...e], strokeWidth: 4, strokeColor: "black", closed: true, data: { vectors: [[0, 0], ...e] } }));
+                ].map((e) => new Path({ segments: [[0, 0], ...e], strokeWidth: 2, strokeColor: "black", closed: true, data: { vectors: [[0, 0], ...e] } }));
 
                 new Group({
-                    children: triangles.map((e) => new Group(lattice.flatMap((f) => f.map((g) => g.intersect(e))).filter((e) => e.segments.length > 0))).concat(triangles),
+                    children: lattice.flat().concat(triangles),
                     position: view.center,
                     strokeColor: "black",
                     strokeWidth: 2,
                     strokeCap: "round",
                     strokeJoin: "round",
-                });
-                triangles.forEach((e) => e.remove());
-                lattice.forEach((e) => e.forEach((f) => f.remove()));
+                }).scale(-1, 1);
             }
 
             function draw2() {
