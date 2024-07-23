@@ -40,12 +40,6 @@
                 return (x * Math.PI) / 180;
             }
 
-            function intersect(p, q) {
-                let x = p.intersect(q);
-                p.remove();
-                return x;
-            }
-
             function* grid(ck, basis) {
                 const bounds = ck.map((e) => mmul(T(inv2(basis)), [e, 1].flat().T()).flat()).map((e) => e.map(Math.round));
                 const [min_i, min_j, max_i, max_j] = [
@@ -55,7 +49,7 @@
                 ];
                 for (let i = min_i; i < max_i + 1; i++) {
                     for (let j = min_j; j < max_j + 1; j++) {
-                        yield { index: [i, j], coor: basis[0].mul(i).add(basis[1].mul(j)) };
+                        yield { index: [i, j], coor: basis[0].mul(i).add(basis[1].mul(j)), is_vertex: bounds.has([i, j]) };
                     }
                 }
             }
@@ -280,236 +274,245 @@
                 return Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k).value)]));
             }
 
-            function calc_tile_basis(t, R) {
+            function calc_tile(t, R) {
                 const r = R * (SQRT3 / 2);
-                if (t === "hex")
-                    basis = [
-                        [2 * r, 0],
-                        [r, SQRT3 * r],
-                    ];
-                else if (t === "trihex")
-                    basis = [
-                        [2 * R, 0],
-                        [R, R * SQRT3],
-                    ];
-                else if (t === "snubhex")
-                    basis = [
-                        [2.5 * R, r],
-                        [0.5 * R, 3 * r],
-                    ];
-                else if (t === "rhombitrihex")
-                    basis = [
-                        [R + r + 0.5 * R, 0.5 * R + r],
-                        [0, 2 * r + R],
-                    ];
-                else if (t === "dualhex")
-                    basis = [
-                        [(3 / 2) * R, r],
-                        [0, 2 * r],
-                    ];
-                else if (t === "dualtrihex")
-                    basis = [
-                        [2 * r, 0],
-                        [r, SQRT3 * r],
-                    ];
-                else if (t === "dualsnubhex")
-                    basis = [
-                        [2.5 * R, r],
-                        [0.5 * R, 2 * r + 2 * ((R * SQRT3) / 3) - (R * SQRT3) / 6],
-                    ];
-                else if (t === "dualrhombitrihex") {
-                    basis = [
-                        [(3 / 2) * R, r],
-                        [0, 2 * r],
-                    ];
-                } else throw new Error("incorrect tile mode");
-                return basis;
-            }
-
-            function calc_tile_func(t, R, bounds) {
                 let tile;
-                const r = R * (SQRT3 / 2);
-                const fillColor = (e) => (bounds.some((v) => v.every((u, i) => u == e.index[i])) ? "black" : "white");
-                if (t === "hex")
-                    tile = (e) => [
-                        new Path.RegularPolygon({
-                            center: e.coor,
-                            fillColor: fillColor(e),
-                            sides: 6,
-                            radius: R,
-                            strokeColor: "black",
-                            data: { type: "hex-1" },
-                        }),
-                    ];
-                else if (t === "trihex")
-                    tile = (e) => [
-                        new Path.RegularPolygon({
-                            center: e.coor,
-                            fillColor: fillColor(e),
-                            sides: 6,
-                            radius: R,
-                            data: { type: "hex-1" },
-                        }).rotate(30),
-                        ...Array.from({ length: 2 }, (_, i) =>
+                if (t === "hex") {
+                    tile = {
+                        basis: [
+                            [2 * r, 0],
+                            [r, SQRT3 * r],
+                        ],
+                        tile: (e) => [
                             new Path.RegularPolygon({
-                                center: e.coor.add([R, -(1 / 3) * r]),
+                                center: e.coor,
+                                fillColor: "white",
+                                sides: 6,
+                                radius: R,
+                                strokeColor: "black",
+                            }),
+                        ],
+                        radius: R,
+                    };
+                } else if (t === "trihex") {
+                    tile = {
+                        basis: [
+                            [2 * R, 0],
+                            [R, R * SQRT3],
+                        ],
+                        tile: (e) => [
+                            new Path.RegularPolygon({
+                                center: e.coor,
+                                fillColor: "white",
+                                sides: 6,
+                                radius: R,
+                            }).rotate(30),
+                            ...Array.from({ length: 2 }, (_, i) =>
+                                new Path.RegularPolygon({
+                                    center: e.coor.add([R, -(1 / 3) * r]),
+                                    fillColor: "white",
+                                    sides: 3,
+                                    radius: (2 / 3) * r,
+                                })
+                                    .rotate(180)
+                                    .rotate(i * 60, e.coor)
+                            ),
+                        ],
+                        radius: 2 * r,
+                    };
+                } else if (t === "snubhex") {
+                    tile = {
+                        basis: [
+                            [2.5 * R, r],
+                            [0.5 * R, 3 * r],
+                        ],
+                        tile: (e) => [
+                            new Path.RegularPolygon({
+                                center: e.coor,
+                                fillColor: "white",
+                                sides: 6,
+                                radius: R,
+                            }).rotate(30),
+                            ...Array.from({ length: 6 }, (_, i) =>
+                                new Path.RegularPolygon({
+                                    center: e.coor.add([0, -r - (1 / 3) * r]),
+                                    fillColor: "white",
+                                    sides: 3,
+                                    radius: (2 / 3) * r,
+                                }).rotate(i * 60, e.coor)
+                            ),
+                            new Path.RegularPolygon({
+                                center: e.coor.add([1.5 * R, -(1 / 3) * r]),
                                 fillColor: "white",
                                 sides: 3,
                                 radius: (2 / 3) * r,
-                                data: { type: "hex-2" },
-                            })
-                                .rotate(180)
-                                .rotate(i * 60, e.coor)
-                        ),
-                    ];
-                else if (t === "snubhex")
-                    tile = (e) => [
-                        new Path.RegularPolygon({
-                            center: e.coor,
-                            fillColor: fillColor(e),
-                            sides: 6,
-                            radius: R,
-                            data: { type: "hex-1" },
-                        }).rotate(30),
-                        ...Array.from({ length: 6 }, (_, i) =>
+                            }),
                             new Path.RegularPolygon({
-                                center: e.coor.add([0, -r - (1 / 3) * r]),
-                                fillColor: fillColor(e),
+                                center: e.coor.add([-1.5 * R, (2 / 3) * r]),
+                                fillColor: "white",
                                 sides: 3,
                                 radius: (2 / 3) * r,
-                                data: { type: "hex-2" },
-                            }).rotate(i * 60, e.coor)
-                        ),
-                        new Path.RegularPolygon({
-                            center: e.coor.add([1.5 * R, -(1 / 3) * r]),
-                            fillColor: "white",
-                            sides: 3,
-                            radius: (2 / 3) * r,
-                            data: { type: "hex-2" },
-                        }),
-                        new Path.RegularPolygon({
-                            center: e.coor.add([-1.5 * R, (2 / 3) * r]),
-                            fillColor: "white",
-                            sides: 3,
-                            radius: (2 / 3) * r,
-                            data: { type: "hex-2" },
-                        }).rotate(180),
-                    ];
-                else if (t === "rhombitrihex")
-                    tile = (e) => [
-                        new Path.RegularPolygon({
-                            center: e.coor,
-                            fillColor: fillColor(e),
-                            sides: 6,
-                            radius: R,
-                            data: { type: "hex-1" },
-                        }).rotate(30),
-                        ...Array.from({ length: 3 }, (_, i) =>
+                            }).rotate(180),
+                        ],
+                        radius: 2 * r,
+                    };
+                } else if (t === "rhombitrihex") {
+                    tile = {
+                        basis: [
+                            [R + r + 0.5 * R, 0.5 * R + r],
+                            [0, 2 * r + R],
+                        ],
+                        tile: (e) => [
                             new Path.RegularPolygon({
-                                center: e.coor.add([0, -r - 0.5 * R]),
+                                center: e.coor,
                                 fillColor: "white",
-                                sides: 4,
-                                radius: Math.sqrt(2 * R * R) / 2,
-                            }).rotate(i * 60, e.coor)
-                        ),
-                        ...Array.from({ length: 3 }, (_, i) =>
-                            new Path.RegularPolygon({
-                                center: e.coor.add([0, R + R * (SQRT3 / 3)]),
-                                fillColor: "white",
-                                sides: 3,
-                                radius: R / SQRT3,
-                            }).rotate(-30 + i * -60, e.coor)
-                        ),
-                    ];
-                else if (t === "dualhex")
-                    tile = (e) =>
-                        Array.from({ length: 6 }, (_, i) =>
-                            new Path.RegularPolygon({
-                                center: e.coor.add([0, r - (R * SQRT3) / 6]),
-                                fillColor: "white",
-                                sides: 3,
-                                radius: R / SQRT3,
-                            }).rotate(i * 60, e.coor)
-                        );
-                else if (t === "dualtrihex")
-                    tile = (e) => [
-                        ...Array.from({ length: 6 }, (_, i) =>
-                            new Path({
-                                segments: [
-                                    [0, 0],
-                                    [0.5 * r, -(0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
-                                    [r, 0],
-                                    [0.5 * r, (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
-                                ].map((f) => e.coor.add(f)),
-                                closed: true,
-                                fillColor: fillColor(e),
-                            }).rotate(i * 60, e.coor)
-                        ),
-                        ...Array.from({ length: 6 }, (_, i) =>
-                            new Path({
-                                segments: [
-                                    [-0.5 * r, 0.5 * R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
-                                    [0, 0.5 * R],
-                                    [r - 0.5 * r, 0.5 * R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
-                                    [0, 0.5 * R + (2 * (0.25 * R * Math.sin(Math.PI / 6))) / Math.cos(Math.PI / 3)],
-                                ].map((f) => e.coor.add(f)),
-                                closed: true,
-                                fillColor: "white",
-                            }).rotate(i * 60, e.coor)
-                        ),
-                    ];
-                else if (t === "dualsnubhex")
-                    tile = (e) =>
-                        Array.from({ length: 6 }, (_, i) =>
-                            new Path({
-                                segments: [
-                                    [0, 0],
-                                    [0, r + (R * SQRT3) / 6],
-                                    [0.5 * R, r + (R * SQRT3) / 3],
-                                    [R, r + (R * SQRT3) / 6],
-                                    [R, (R * SQRT3) / 3],
-                                ].map((f) => e.coor.add(f)),
-                                closed: true,
-                                fillColor: fillColor(e),
-                            }).rotate(i * 60, e.coor)
-                        );
-                else if (t === "dualrhombitrihex")
-                    tile = (e) =>
-                        Array.from({ length: 6 }, (_, i) =>
-                            new Path({
-                                segments: [
-                                    [0, 0],
-                                    [0, r],
-                                    [0.5 * R, r],
-                                    [(SQRT3 / 2) * r, 0.5 * r],
-                                ].map((f) => e.coor.add(f)),
-                                closed: true,
-                                fillColor: fillColor(e),
-                            }).rotate(i * 60, e.coor)
-                        );
-                else throw new Error("incorrect tile mode");
+                                sides: 6,
+                                radius: R,
+                            }).rotate(30),
+                            ...Array.from({ length: 3 }, (_, i) =>
+                                new Path.RegularPolygon({
+                                    center: e.coor.add([0, -r - 0.5 * R]),
+                                    fillColor: "white",
+                                    sides: 4,
+                                    radius: Math.sqrt(2 * R * R) / 2,
+                                }).rotate(i * 60, e.coor)
+                            ),
+                            ...Array.from({ length: 3 }, (_, i) =>
+                                new Path.RegularPolygon({
+                                    center: e.coor.add([0, R + R * (SQRT3 / 3)]),
+                                    fillColor: "white",
+                                    sides: 3,
+                                    radius: R / SQRT3,
+                                }).rotate(-30 + i * -60, e.coor)
+                            ),
+                        ],
+                        radius: Math.sqrt(Math.pow(r + R, 2) + Math.pow(R / 2, 2)),
+                    };
+                } else if (t === "dualhex") {
+                    tile = {
+                        basis: [
+                            [(3 / 2) * R, r],
+                            [0, 2 * r],
+                        ],
+                        tile: (e) =>
+                            Array.from({ length: 6 }, (_, i) =>
+                                new Path.RegularPolygon({
+                                    center: e.coor.add([0, r - (R * SQRT3) / 6]),
+                                    fillColor: "white",
+                                    sides: 3,
+                                    radius: R / SQRT3,
+                                }).rotate(i * 60, e.coor)
+                            ),
+                        radius: R,
+                    };
+                } else if (t === "dualtrihex") {
+                    tile = {
+                        basis: [
+                            [2 * r, 0],
+                            [r, SQRT3 * r],
+                        ],
+                        tile: (e) => [
+                            ...Array.from({ length: 6 }, (_, i) =>
+                                new Path({
+                                    segments: [
+                                        [0, 0],
+                                        [0.5 * r, -(0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                                        [r, 0],
+                                        [0.5 * r, (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                                    ].map((f) => e.coor.add(f)),
+                                    closed: true,
+                                    fillColor: "white",
+                                }).rotate(i * 60, e.coor)
+                            ),
+                            ...Array.from({ length: 6 }, (_, i) =>
+                                new Path({
+                                    segments: [
+                                        [-0.5 * r, 0.5 * R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                                        [0, 0.5 * R],
+                                        [r - 0.5 * r, 0.5 * R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                                        [0, 0.5 * R + (2 * (0.25 * R * Math.sin(Math.PI / 6))) / Math.cos(Math.PI / 3)],
+                                    ].map((f) => e.coor.add(f)),
+                                    closed: true,
+                                    fillColor: "white",
+                                }).rotate(i * 60, e.coor)
+                            ),
+                        ],
+                        radius: R,
+                    };
+                } else if (t === "dualsnubhex") {
+                    tile = {
+                        basis: [
+                            [2.5 * R, r],
+                            [0.5 * R, 2 * r + 2 * ((R * SQRT3) / 3) - (R * SQRT3) / 6],
+                        ],
+                        tile: (e) =>
+                            Array.from({ length: 6 }, (_, i) =>
+                                new Path({
+                                    segments: [
+                                        [0, 0],
+                                        [0, r + (R * SQRT3) / 6],
+                                        [0.5 * R, r + (R * SQRT3) / 3],
+                                        [R, r + (R * SQRT3) / 6],
+                                        [R, (R * SQRT3) / 3],
+                                    ].map((f) => e.coor.add(f)),
+                                    closed: true,
+                                    fillColor: "white",
+                                }).rotate(i * 60, e.coor)
+                            ),
+                        radius: r + (R * SQRT3) / 3,
+                    };
+                } else if (t === "dualrhombitrihex") {
+                    tile = {
+                        basis: [
+                            [(3 / 2) * R, r],
+                            [0, 2 * r],
+                        ],
+                        tile: (e) =>
+                            Array.from({ length: 6 }, (_, i) =>
+                                new Path({
+                                    segments: [
+                                        [0, 0],
+                                        [0, r],
+                                        [0.5 * R, r],
+                                        [(SQRT3 / 2) * r, 0.5 * r],
+                                    ].map((f) => e.coor.add(f)),
+                                    closed: true,
+                                    fillColor: "white",
+                                }).rotate(i * 60, e.coor)
+                            ),
+                        radius: R,
+                    };
+                } else {
+                    throw new Error("incorrect tile mode");
+                }
                 return tile;
             }
 
             function draw1() {
                 const PARAMS = params();
-                const r = PARAMS.R * (SQRT3 / 2);
-                const basis = calc_tile_basis(PARAMS.t, PARAMS.R);
-                const ck = ck_vectors(basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
-                const bounds = [[0, 0]].concat(ck.map((e) => mmul(T(inv2(basis)), [e, 1].flat().T()).flat()).map((e) => e.map(Math.round)));
+                const tile = calc_tile(PARAMS.t, PARAMS.R);
+                const ck = ck_vectors(tile.basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
+                const bounds = [[0, 0]].concat(ck.map((e) => mmul(T(inv2(tile.basis)), [e, 1].flat().T()).flat()).map((e) => e.map(Math.round)));
 
-                let lattice = Array.from(grid(ck, basis)).map(calc_tile_func(PARAMS.t, PARAMS.R, bounds));
+                const g = Array.from(grid(ck, tile.basis));
+                let lattice = g.map(tile.tile);
+                let points = g
+                    .filter((e) => e.is_vertex)
+                    .map((e) => e.coor)
+                    .concat([[0, 0]]);
+
+                lattice.flat().forEach((e) => (e.style.fillColor = points.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? "black" : "white"));
+
                 let triangles = [
                     [ck[3], ck[0]],
                     [ck[0], ck[1]],
                     [ck[1], ck[2]],
-                ].map((e) => new Path({ segments: [[0, 0], ...e], strokeWidth: 2, strokeColor: "black", closed: true, data: { vectors: [[0, 0], ...e] } }));
+                ].map((e) => new Path({ segments: [[0, 0], ...e], strokeWidth: 4, closed: true, data: { vectors: [[0, 0], ...e] } }));
 
                 new Group({
                     children: lattice.flat().concat(triangles),
                     position: view.center,
                     strokeColor: "black",
-                    strokeWidth: 2,
                     strokeCap: "round",
                     strokeJoin: "round",
                 }).scale(-1, 1);
@@ -517,12 +520,19 @@
 
             function draw2() {
                 const PARAMS = params();
-                const r = PARAMS.R * (SQRT3 / 2);
-                const basis = calc_tile_basis(PARAMS.t, PARAMS.R);
-                const ck = ck_vectors(basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
-                const bounds = [[0, 0]].concat(ck.map((e) => mmul(T(inv2(basis)), [e, 1].flat().T()).flat()).map((e) => e.map(Math.round)));
+                const tile = calc_tile(PARAMS.t, PARAMS.R);
+                const ck = ck_vectors(tile.basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
+                const bounds = [[0, 0]].concat(ck.map((e) => mmul(T(inv2(tile.basis)), [e, 1].flat().T()).flat()).map((e) => e.map(Math.round)));
 
-                let lattice = Array.from(grid(ck, basis)).map(calc_tile_func(PARAMS.t, PARAMS.R, bounds));
+                const g = Array.from(grid(ck, tile.basis));
+                let lattice = g.map(tile.tile);
+                let points = g
+                    .filter((e) => e.is_vertex)
+                    .map((e) => e.coor)
+                    .concat([[0, 0]]);
+
+                lattice.flat().forEach((e) => (e.style.fillColor = points.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? "black" : "white"));
+
                 let triangles = [
                     [ck[3], ck[0]],
                     [ck[0], ck[1]],

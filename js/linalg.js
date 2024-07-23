@@ -65,6 +65,10 @@ Array.prototype.T = function () {
     return this.map((e) => [e]);
 };
 
+Array.prototype.has = function (q) {
+    return this.some((p) => p.length === q.length && p.every((v, i) => v === q[i]));
+};
+
 function mmul(A, B) {
     const [m, n, p] = [A.length, A[0].length, B[0].length];
     var C = new Array(m);
