@@ -11,9 +11,17 @@
                 font-family: "Lucida Console", "Courier New", monospace;
             }
             canvas {
-                height: 250px;
-                width: 575px;
-                border: 1px solid blue;
+                height: 300px;
+                width: 600px;
+                border: 4px solid blue;
+            }
+            input,
+            select {
+                box-sizing: border-box;
+                vertical-align: middle;
+
+                height: 30px;
+                width: 150px;
             }
         </style>
         <script type="text/javascript" src="js/lib/paper-js/paper-core.min.js"></script>
@@ -34,6 +42,18 @@
                 θ: parseFloat,
                 ψ: parseFloat,
                 φ: parseFloat,
+                color1: (v) => v,
+                color2: (v) => v,
+                color3: (v) => v,
+                color4: (v) => v,
+                color5: (v) => v,
+                color6: (v) => v,
+                alpha1: parseInt,
+                alpha2: parseInt,
+                alpha3: parseInt,
+                alpha4: parseInt,
+                alpha5: parseInt,
+                alpha6: parseInt,
             };
 
             function radians(x) {
@@ -290,6 +310,7 @@
                                 sides: 6,
                                 radius: R,
                                 strokeColor: "black",
+                                data: { mer: 1 },
                             }),
                         ],
                         radius: R,
@@ -306,6 +327,7 @@
                                 fillColor: "white",
                                 sides: 6,
                                 radius: R,
+                                data: { mer: 1 },
                             }).rotate(30),
                             ...Array.from({ length: 2 }, (_, i) =>
                                 new Path.RegularPolygon({
@@ -313,6 +335,7 @@
                                     fillColor: "white",
                                     sides: 3,
                                     radius: (2 / 3) * r,
+                                    data: { mer: 2 },
                                 })
                                     .rotate(180)
                                     .rotate(i * 60, e.coor)
@@ -332,6 +355,7 @@
                                 fillColor: "white",
                                 sides: 6,
                                 radius: R,
+                                data: { mer: 1 },
                             }).rotate(30),
                             ...Array.from({ length: 6 }, (_, i) =>
                                 new Path.RegularPolygon({
@@ -339,6 +363,7 @@
                                     fillColor: "white",
                                     sides: 3,
                                     radius: (2 / 3) * r,
+                                    data: { mer: 2 },
                                 }).rotate(i * 60, e.coor)
                             ),
                             new Path.RegularPolygon({
@@ -346,12 +371,14 @@
                                 fillColor: "white",
                                 sides: 3,
                                 radius: (2 / 3) * r,
+                                data: { mer: 2 },
                             }),
                             new Path.RegularPolygon({
                                 center: e.coor.add([-1.5 * R, (2 / 3) * r]),
                                 fillColor: "white",
                                 sides: 3,
                                 radius: (2 / 3) * r,
+                                data: { mer: 2 },
                             }).rotate(180),
                         ],
                         radius: 2 * r,
@@ -368,22 +395,25 @@
                                 fillColor: "white",
                                 sides: 6,
                                 radius: R,
+                                data: { mer: 1 },
                             }).rotate(30),
-                            ...Array.from({ length: 3 }, (_, i) =>
-                                new Path.RegularPolygon({
-                                    center: e.coor.add([0, -r - 0.5 * R]),
-                                    fillColor: "white",
-                                    sides: 4,
-                                    radius: Math.sqrt(2 * R * R) / 2,
-                                }).rotate(i * 60, e.coor)
-                            ),
                             ...Array.from({ length: 3 }, (_, i) =>
                                 new Path.RegularPolygon({
                                     center: e.coor.add([0, R + R * (SQRT3 / 3)]),
                                     fillColor: "white",
                                     sides: 3,
                                     radius: R / SQRT3,
+                                    data: { mer: 2 },
                                 }).rotate(-30 + i * -60, e.coor)
+                            ),
+                            ...Array.from({ length: 3 }, (_, i) =>
+                                new Path.RegularPolygon({
+                                    center: e.coor.add([0, -r - 0.5 * R]),
+                                    fillColor: "white",
+                                    sides: 4,
+                                    radius: Math.sqrt(2 * R * R) / 2,
+                                    data: { mer: 3 },
+                                }).rotate(i * 60, e.coor)
                             ),
                         ],
                         radius: Math.sqrt(Math.pow(r + R, 2) + Math.pow(R / 2, 2)),
@@ -401,6 +431,7 @@
                                     fillColor: "white",
                                     sides: 3,
                                     radius: R / SQRT3,
+                                    data: { mer: 1 },
                                 }).rotate(i * 60, e.coor)
                             ),
                         radius: R,
@@ -422,6 +453,7 @@
                                     ].map((f) => e.coor.add(f)),
                                     closed: true,
                                     fillColor: "white",
+                                    data: { mer: 1 },
                                 }).rotate(i * 60, e.coor)
                             ),
                             ...Array.from({ length: 6 }, (_, i) =>
@@ -434,6 +466,7 @@
                                     ].map((f) => e.coor.add(f)),
                                     closed: true,
                                     fillColor: "white",
+                                    data: { mer: 2 },
                                 }).rotate(i * 60, e.coor)
                             ),
                         ],
@@ -457,6 +490,7 @@
                                     ].map((f) => e.coor.add(f)),
                                     closed: true,
                                     fillColor: "white",
+                                    data: { mer: 1 },
                                 }).rotate(i * 60, e.coor)
                             ),
                         radius: r + (R * SQRT3) / 3,
@@ -478,6 +512,7 @@
                                     ].map((f) => e.coor.add(f)),
                                     closed: true,
                                     fillColor: "white",
+                                    data: { mer: 1 },
                                 }).rotate(i * 60, e.coor)
                             ),
                         radius: R,
@@ -501,7 +536,14 @@
                     .map((e) => e.coor)
                     .concat([[0, 0]]);
 
-                lattice.flat().forEach((e) => (e.style.fillColor = points.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? "black" : "white"));
+                lattice.flat().forEach((e) => {
+                    const offset = e.data.mer + (points.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? 3 : 0);
+                    e.style.fillColor =
+                        PARAMS["color" + offset] +
+                        Number(PARAMS["alpha" + offset])
+                            .toString(16)
+                            .padStart(2, "0");
+                });
 
                 let triangles = [
                     [ck[3], ck[0]],
@@ -531,7 +573,14 @@
                     .map((e) => e.coor)
                     .concat([[0, 0]]);
 
-                lattice.flat().forEach((e) => (e.style.fillColor = points.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? "black" : "white"));
+                lattice.flat().forEach((e) => {
+                    const offset = e.data.mer + (points.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? 3 : 0);
+                    e.style.fillColor =
+                        PARAMS["color" + offset] +
+                        Number(PARAMS["alpha" + offset])
+                            .toString(16)
+                            .padStart(2, "0");
+                });
 
                 let triangles = [
                     [ck[3], ck[0]],
@@ -591,6 +640,11 @@
     </head>
     <body>
         <div>
+            <canvas id="canvas1" resize> Your browser does not support the HTML canvas tag. </canvas>
+            <canvas id="canvas2" resize> Your browser does not support the HTML canvas tag. </canvas>
+        </div>
+        <br />
+        <div>
             <label for="h">h&nbsp;=&nbsp;</label>
             <input type="number" id="h" step="1" value="1" min="0" />
             <label for="k">k&nbsp;=&nbsp;</label>
@@ -599,29 +653,29 @@
             <input type="number" id="H" step="1" value="1" min="0" />
             <label for="K">K&nbsp;=&nbsp;</label>
             <input type="number" id="K" step="1" value="2" min="0" />
-            <div>
-                <label for="s">S&nbsp;=&nbsp;</label>
-                <select id="s">
-                    <option value="5">5</option>
-                    <option value="3">3</option>
-                    <option value="2">2</option>
-                </select>
-                <label for="t">t&nbsp;=&nbsp;</label>
-                <select id="t">
-                    <option value="hex">hex</option>
-                    <option value="trihex">trihex</option>
-                    <option value="snubhex">snubhex</option>
-                    <option value="rhombitrihex">rhombitrihex</option>
-                    <option value="dualhex">dualhex</option>
-                    <option value="dualtrihex">dualtrihex</option>
-                    <option value="dualsnubhex">dualsnubhex</option>
-                    <option value="dualrhombitrihex">dualrhombitrihex</option>
-                </select>
-            </div>
-            <div>
-                <label for="R">R&nbsp;=&nbsp;</label>
-                <input type="number" id="R" step="1" value="10" min="1" />
-            </div>
+        </div>
+        <div>
+            <label for="s">S&nbsp;=&nbsp;</label>
+            <select id="s">
+                <option value="5">5</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
+            </select>
+            <label for="t">t&nbsp;=&nbsp;</label>
+            <select id="t">
+                <option value="hex">hex</option>
+                <option value="trihex">trihex</option>
+                <option value="snubhex">snubhex</option>
+                <option value="rhombitrihex">rhombitrihex</option>
+                <option value="dualhex">dualhex</option>
+                <option value="dualtrihex">dualtrihex</option>
+                <option value="dualsnubhex">dualsnubhex</option>
+                <option value="dualrhombitrihex">dualrhombitrihex</option>
+            </select>
+        </div>
+        <div>
+            <label for="R">R&nbsp;=&nbsp;</label>
+            <input type="number" id="R" step="1" value="10" min="1" />
         </div>
         <div>
             <label for="θ">θ&nbsp;=&nbsp;</label>
@@ -633,8 +687,46 @@
         </div>
         <br />
         <div>
-            <canvas id="canvas1" resize> Your browser does not support the HTML canvas tag. </canvas>
-            <canvas id="canvas2" resize> Your browser does not support the HTML canvas tag. </canvas>
+            <table>
+                <tbody>
+                    <tr>
+                        <th>unit&nbsp;</th>
+                        <th>hexamer-1</th>
+                        <th>hexamer-2</th>
+                        <th>hexamer-3</th>
+                        <th>pentamer-1</th>
+                        <th>pentamer-2</th>
+                        <th>pentamer-3</th>
+                    </tr>
+                    <tr>
+                        <td>color&nbsp;</td>
+                        <td><input type="color" id="color1" value="#92be5f" /></td>
+                        <td><input type="color" id="color2" value="#44782c" /></td>
+                        <td><input type="color" id="color3" value="#3278ad" /></td>
+                        <td><input type="color" id="color4" value="#6da59b" /></td>
+                        <td><input type="color" id="color5" value="#aed6d4" /></td>
+                        <td><input type="color" id="color6" value="#8291c2" /></td>
+                    </tr>
+                    <tr>
+                        <td>alpha&nbsp;</td>
+                        <td><input type="number" id="alpha1" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="alpha2" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="alpha3" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="alpha4" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="alpha5" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="alpha6" step="1" value="255" min="0" max="255" /></td>
+                    </tr>
+                    <tr>
+                        <td>fiber&nbsp;</td>
+                        <td><input type="checkbox" id="fiber1" /></td>
+                        <td><input type="checkbox" id="fiber2" /></td>
+                        <td><input type="checkbox" id="fiber3" /></td>
+                        <td><input type="checkbox" id="fiber4" /></td>
+                        <td><input type="checkbox" id="fiber5" /></td>
+                        <td><input type="checkbox" id="fiber6" /></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </body>
 </html>
