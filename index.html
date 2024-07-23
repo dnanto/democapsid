@@ -23,6 +23,12 @@
                 height: 30px;
                 width: 150px;
             }
+            table,
+            th,
+            td {
+                border: 1px solid black;
+                text-align: center;
+            }
         </style>
         <script type="text/javascript" src="js/lib/paper-js/paper-core.min.js"></script>
         <script type="text/javascript" src="js/linalg.js"></script>
@@ -42,18 +48,21 @@
                 θ: parseFloat,
                 ψ: parseFloat,
                 φ: parseFloat,
-                color1: (v) => v,
-                color2: (v) => v,
-                color3: (v) => v,
-                color4: (v) => v,
-                color5: (v) => v,
-                color6: (v) => v,
-                alpha1: parseInt,
-                alpha2: parseInt,
-                alpha3: parseInt,
-                alpha4: parseInt,
-                alpha5: parseInt,
-                alpha6: parseInt,
+                mer_color_1: (v) => v,
+                mer_color_2: (v) => v,
+                mer_color_3: (v) => v,
+                mer_color_4: (v) => v,
+                mer_color_5: (v) => v,
+                mer_color_6: (v) => v,
+                mer_alpha_1: (v) => Number(v).toString(16).padStart(2, "0"),
+                mer_alpha_2: (v) => Number(v).toString(16).padStart(2, "0"),
+                mer_alpha_3: (v) => Number(v).toString(16).padStart(2, "0"),
+                mer_alpha_4: (v) => Number(v).toString(16).padStart(2, "0"),
+                mer_alpha_5: (v) => Number(v).toString(16).padStart(2, "0"),
+                mer_alpha_6: (v) => Number(v).toString(16).padStart(2, "0"),
+                line_color: (v) => v,
+                line_alpha: (v) => Number(v).toString(16).padStart(2, "0"),
+                line_width: parseFloat,
             };
 
             function radians(x) {
@@ -306,10 +315,8 @@
                         tile: (e) => [
                             new Path.RegularPolygon({
                                 center: e.coor,
-                                fillColor: "white",
                                 sides: 6,
                                 radius: R,
-                                strokeColor: "black",
                                 data: { mer: 1 },
                             }),
                         ],
@@ -324,7 +331,6 @@
                         tile: (e) => [
                             new Path.RegularPolygon({
                                 center: e.coor,
-                                fillColor: "white",
                                 sides: 6,
                                 radius: R,
                                 data: { mer: 1 },
@@ -332,7 +338,6 @@
                             ...Array.from({ length: 2 }, (_, i) =>
                                 new Path.RegularPolygon({
                                     center: e.coor.add([R, -(1 / 3) * r]),
-                                    fillColor: "white",
                                     sides: 3,
                                     radius: (2 / 3) * r,
                                     data: { mer: 2 },
@@ -352,7 +357,6 @@
                         tile: (e) => [
                             new Path.RegularPolygon({
                                 center: e.coor,
-                                fillColor: "white",
                                 sides: 6,
                                 radius: R,
                                 data: { mer: 1 },
@@ -360,7 +364,6 @@
                             ...Array.from({ length: 6 }, (_, i) =>
                                 new Path.RegularPolygon({
                                     center: e.coor.add([0, -r - (1 / 3) * r]),
-                                    fillColor: "white",
                                     sides: 3,
                                     radius: (2 / 3) * r,
                                     data: { mer: 2 },
@@ -368,14 +371,12 @@
                             ),
                             new Path.RegularPolygon({
                                 center: e.coor.add([1.5 * R, -(1 / 3) * r]),
-                                fillColor: "white",
                                 sides: 3,
                                 radius: (2 / 3) * r,
                                 data: { mer: 2 },
                             }),
                             new Path.RegularPolygon({
                                 center: e.coor.add([-1.5 * R, (2 / 3) * r]),
-                                fillColor: "white",
                                 sides: 3,
                                 radius: (2 / 3) * r,
                                 data: { mer: 2 },
@@ -392,7 +393,6 @@
                         tile: (e) => [
                             new Path.RegularPolygon({
                                 center: e.coor,
-                                fillColor: "white",
                                 sides: 6,
                                 radius: R,
                                 data: { mer: 1 },
@@ -400,7 +400,6 @@
                             ...Array.from({ length: 3 }, (_, i) =>
                                 new Path.RegularPolygon({
                                     center: e.coor.add([0, R + R * (SQRT3 / 3)]),
-                                    fillColor: "white",
                                     sides: 3,
                                     radius: R / SQRT3,
                                     data: { mer: 2 },
@@ -409,7 +408,6 @@
                             ...Array.from({ length: 3 }, (_, i) =>
                                 new Path.RegularPolygon({
                                     center: e.coor.add([0, -r - 0.5 * R]),
-                                    fillColor: "white",
                                     sides: 4,
                                     radius: Math.sqrt(2 * R * R) / 2,
                                     data: { mer: 3 },
@@ -428,7 +426,6 @@
                             Array.from({ length: 6 }, (_, i) =>
                                 new Path.RegularPolygon({
                                     center: e.coor.add([0, r - (R * SQRT3) / 6]),
-                                    fillColor: "white",
                                     sides: 3,
                                     radius: R / SQRT3,
                                     data: { mer: 1 },
@@ -452,7 +449,6 @@
                                         [0.5 * r, (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
                                     ].map((f) => e.coor.add(f)),
                                     closed: true,
-                                    fillColor: "white",
                                     data: { mer: 1 },
                                 }).rotate(i * 60, e.coor)
                             ),
@@ -465,7 +461,6 @@
                                         [0, 0.5 * R + (2 * (0.25 * R * Math.sin(Math.PI / 6))) / Math.cos(Math.PI / 3)],
                                     ].map((f) => e.coor.add(f)),
                                     closed: true,
-                                    fillColor: "white",
                                     data: { mer: 2 },
                                 }).rotate(i * 60, e.coor)
                             ),
@@ -489,7 +484,6 @@
                                         [R, (R * SQRT3) / 3],
                                     ].map((f) => e.coor.add(f)),
                                     closed: true,
-                                    fillColor: "white",
                                     data: { mer: 1 },
                                 }).rotate(i * 60, e.coor)
                             ),
@@ -511,7 +505,6 @@
                                         [(SQRT3 / 2) * r, 0.5 * r],
                                     ].map((f) => e.coor.add(f)),
                                     closed: true,
-                                    fillColor: "white",
                                     data: { mer: 1 },
                                 }).rotate(i * 60, e.coor)
                             ),
@@ -538,11 +531,7 @@
 
                 lattice.flat().forEach((e) => {
                     const offset = e.data.mer + (points.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? 3 : 0);
-                    e.style.fillColor =
-                        PARAMS["color" + offset] +
-                        Number(PARAMS["alpha" + offset])
-                            .toString(16)
-                            .padStart(2, "0");
+                    e.style.fillColor = PARAMS["mer_color_" + offset] + PARAMS["mer_alpha_" + offset];
                 });
 
                 let triangles = [
@@ -554,7 +543,8 @@
                 new Group({
                     children: lattice.flat().concat(triangles),
                     position: view.center,
-                    strokeColor: "black",
+                    strokeColor: PARAMS.line_color + PARAMS.line_alpha,
+                    strokeWidth: PARAMS.line_width,
                     strokeCap: "round",
                     strokeJoin: "round",
                 }).scale(-1, 1);
@@ -575,19 +565,20 @@
 
                 lattice.flat().forEach((e) => {
                     const offset = e.data.mer + (points.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? 3 : 0);
-                    e.style.fillColor =
-                        PARAMS["color" + offset] +
-                        Number(PARAMS["alpha" + offset])
-                            .toString(16)
-                            .padStart(2, "0");
+                    e.style.fillColor = PARAMS["mer_color_" + offset] + PARAMS["mer_alpha_" + offset];
                 });
 
                 let triangles = [
                     [ck[3], ck[0]],
                     [ck[0], ck[1]],
                     [ck[1], ck[2]],
-                ].map((e) => new Path({ segments: [[0, 0], ...e], strokeWidth: 4, strokeColor: "black", closed: true, data: { vectors: [[0, 0], ...e] } }));
+                ].map((e) => new Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
                 let faces = triangles.map((e) => new Group({ children: lattice.flatMap((f) => f.map((g) => g.intersect(e))).filter((e) => e.segments.length > 0), data: e.data }));
+                triangles.forEach((e) => {
+                    e.style.fillColor = PARAMS.line_color + PARAMS.line_alpha;
+                    e.style.strokeWidth = PARAMS.line_width;
+                    console.log(e.style);
+                });
 
                 const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
                 const AXIS = mmul(CAMERA, [0, 0, 1, 1].T());
@@ -614,7 +605,7 @@
                 new Group({
                     children: results,
                     position: view.center,
-                    style: { strokeColor: "black", strokeCap: "round", strokeJoin: "round" },
+                    style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_width, strokeCap: "round", strokeJoin: "round" },
                 });
 
                 faces.forEach((e) => e.remove());
@@ -690,7 +681,7 @@
             <table>
                 <tbody>
                     <tr>
-                        <th>unit&nbsp;</th>
+                        <th></th>
                         <th>hexamer-1</th>
                         <th>hexamer-2</th>
                         <th>hexamer-3</th>
@@ -699,31 +690,62 @@
                         <th>pentamer-3</th>
                     </tr>
                     <tr>
-                        <td>color&nbsp;</td>
-                        <td><input type="color" id="color1" value="#92be5f" /></td>
-                        <td><input type="color" id="color2" value="#44782c" /></td>
-                        <td><input type="color" id="color3" value="#3278ad" /></td>
-                        <td><input type="color" id="color4" value="#6da59b" /></td>
-                        <td><input type="color" id="color5" value="#aed6d4" /></td>
-                        <td><input type="color" id="color6" value="#8291c2" /></td>
+                        <td>&nbsp;color&nbsp;</td>
+                        <td><input type="color" id="mer_color_1" value="#92be5f" /></td>
+                        <td><input type="color" id="mer_color_2" value="#44782c" /></td>
+                        <td><input type="color" id="mer_color_3" value="#3278ad" /></td>
+                        <td><input type="color" id="mer_color_4" value="#6da59b" /></td>
+                        <td><input type="color" id="mer_color_5" value="#aed6d4" /></td>
+                        <td><input type="color" id="mer_color_6" value="#8291c2" /></td>
                     </tr>
                     <tr>
-                        <td>alpha&nbsp;</td>
-                        <td><input type="number" id="alpha1" step="1" value="255" min="0" max="255" /></td>
-                        <td><input type="number" id="alpha2" step="1" value="255" min="0" max="255" /></td>
-                        <td><input type="number" id="alpha3" step="1" value="255" min="0" max="255" /></td>
-                        <td><input type="number" id="alpha4" step="1" value="255" min="0" max="255" /></td>
-                        <td><input type="number" id="alpha5" step="1" value="255" min="0" max="255" /></td>
-                        <td><input type="number" id="alpha6" step="1" value="255" min="0" max="255" /></td>
+                        <td>&nbsp;alpha&nbsp;</td>
+                        <td><input type="number" id="mer_alpha_1" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="mer_alpha_2" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="mer_alpha_3" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="mer_alpha_4" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="mer_alpha_5" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="mer_alpha_6" step="1" value="255" min="0" max="255" /></td>
                     </tr>
                     <tr>
-                        <td>fiber&nbsp;</td>
-                        <td><input type="checkbox" id="fiber1" /></td>
-                        <td><input type="checkbox" id="fiber2" /></td>
-                        <td><input type="checkbox" id="fiber3" /></td>
-                        <td><input type="checkbox" id="fiber4" /></td>
-                        <td><input type="checkbox" id="fiber5" /></td>
-                        <td><input type="checkbox" id="fiber6" /></td>
+                        <td>&nbsp;fiber&nbsp;</td>
+                        <td><input type="checkbox" id="mer_fiber_1" /></td>
+                        <td><input type="checkbox" id="mer_fiber_2" /></td>
+                        <td><input type="checkbox" id="mer_fiber_3" /></td>
+                        <td><input type="checkbox" id="mer_fiber_4" /></td>
+                        <td><input type="checkbox" id="mer_fiber_5" /></td>
+                        <td><input type="checkbox" id="mer_fiber_6" /></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <br />
+        <div>
+            <table>
+                <tbody>
+                    <tr>
+                        <th></th>
+                        <th>line</th>
+                        <th>fiber</th>
+                        <th>knob</th>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;color&nbsp;</td>
+                        <td><input type="color" id="line_color" , value="#000000" /></td>
+                        <td><input type="color" id="fiber_color" value="#eded61" /></td>
+                        <td><input type="color" id="knob_color" value="#ffa500" /></td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;alpha&nbsp;</td>
+                        <td><input type="number" id="line_alpha" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="fiber_alpha" step="1" value="255" min="0" max="255" /></td>
+                        <td><input type="number" id="knob_alpha" step="1" value="255" min="0" max="255" /></td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;width&nbsp;</td>
+                        <td><input type="number" id="line_width" step="0.1" value="2" min="0" /></td>
+                        <td><input type="number" id="fiber_width" step="0.1" value="2" min="0" /></td>
+                        <td><input type="number" id="knob_width" step="0.1" value="2" min="0" /></td>
                     </tr>
                 </tbody>
             </table>
