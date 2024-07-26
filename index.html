@@ -51,7 +51,7 @@
                 color: (e) => e.value,
                 alpha: (e) => Number(e.value).toString(16).padStart(2, "0"),
                 toggle: (e) => e.checked,
-                width: (e) => parseFloat(e.value),
+                size: (e) => parseFloat(e.value),
                 length: (e) => parseFloat(e.value),
             };
 
@@ -68,12 +68,11 @@
                     θ: (e) => parseFloat(e.value),
                     ψ: (e) => parseFloat(e.value),
                     φ: (e) => parseFloat(e.value),
-                    penton_fiber_toggle: (e) => e.checked,
-                    hexon_fiber_toggle: (e) => e.checked,
                 },
                 Object.fromEntries([
-                    ...["color", "alpha", "width"].map((e) => ["line_" + e, PARSERS[e]]),
-                    ...["color", "alpha", "width", "length"].map((e) => ["fiber_" + e, PARSERS[e]]),
+                    ...["penton_fiber", "hexon_fiber", "knob"].map((e) => [e + "_toggle", PARSERS.toggle]),
+                    ...["line", "fiber", "knob"].flatMap((e) => ["color", "alpha", "size"].map((f) => [e + "_" + f, PARSERS[f]])),
+                    ...["color", "alpha", "size", "length"].map((e) => ["fiber_" + e, PARSERS[e]]),
                     ...["color", "alpha", "toggle"].flatMap((e) => Array.from({ length: 6 }, (_, i) => ["mer_" + e + "_" + (i + 1), PARSERS[e]])),
                 ])
             );
@@ -574,6 +573,22 @@
                 return tile;
             }
 
+            function export_svg(name, project) {
+                // https://www.mikechambers.com/blog/post/2014-07-01-saving-svg-content-from-paper.js/
+                var link = document.createElement("a");
+                link.download = name + ".svg";
+                link.href =
+                    "data:image/svg+xml;utf8," +
+                    encodeURIComponent(
+                        project.exportSVG({
+                            "options.bounds": "content",
+                            asString: true,
+                            "options.matchShapes": true,
+                        })
+                    );
+                link.click();
+            }
+
             function draw1() {
                 const PARAMS = params();
                 const tile = calc_tile(PARAMS.t, PARAMS.R);
@@ -602,7 +617,7 @@
                     children: lattice.flat().concat(triangles),
                     position: view.center,
                     strokeColor: PARAMS.line_color + PARAMS.line_alpha,
-                    strokeWidth: PARAMS.line_width,
+                    strokeWidth: PARAMS.line_size,
                     strokeCap: "round",
                     strokeJoin: "round",
                 }).scale(-1, 1);
@@ -678,6 +693,8 @@
                     }
                 }
 
+                console.log(results.flatMap((e) => e.children));
+
                 let fibers = results.flatMap((e, i) =>
                     e.children
                         .filter((f) => PARAMS["mer_toggle_" + f.data.offset] && f.data.has_centroid)
@@ -710,36 +727,40 @@
                             data: { centroid: to.mul(1000) },
                         });
                     });
-                if (PARAMS["penton_fiber_toggle"]) {
-                    fibers = fibers.concat(
-                        v_con
-                            .map((e) =>
-                                e
-                                    .map((f) => coors[f])
-                                    .reduce((a, b) => a.add(b), [0, 0, 0])
-                                    .uvec()
-                            )
-                            .map((e, i) => {
-                                const [from, to] = [coors[i], coors[i].add(e.mul(PARAMS.fiber_length))];
-                                return new Path.Line({
-                                    from: from,
-                                    to: to,
-                                    data: { centroid: to.mul(1000) },
-                                });
-                            })
-                    );
-                }
-                results = results.concat(fibers);
+
+                fibers = fibers.concat(
+                    PARAMS["penton_fiber_toggle"]
+                        ? v_con
+                              .map((e) =>
+                                  e
+                                      .map((f) => coors[f])
+                                      .reduce((a, b) => a.add(b), [0, 0, 0])
+                                      .uvec()
+                              )
+                              .map((e, i) => {
+                                  const [from, to] = [coors[i], coors[i].add(e.mul(PARAMS.fiber_length))];
+                                  return new Path.Line({
+                                      from: from,
+                                      to: to,
+                                      data: { centroid: to.mul(1000) },
+                                  });
+                              })
+                        : []
+                );
+
+                let knobs = PARAMS["knob_toggle"] ? fibers.map((e) => new Path.Circle({ center: e.segments[1].point, radius: PARAMS.knob_size, data: { centroid: e.data.centroid } })) : [];
+                results = results.concat(fibers).concat(knobs);
                 results.sort((a, b) => a.data.centroid[2] < b.data.centroid[2]);
                 new Group({
                     children: results,
                     position: view.center,
-                    style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_width, strokeCap: "round", strokeJoin: "round" },
+                    style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
                 });
 
+                knobs.forEach((e) => (e.style.fillColor = PARAMS.knob_color));
                 fibers.forEach((e) => {
                     e.style.strokeColor = PARAMS.fiber_color + PARAMS.fiber_alpha;
-                    e.style.strokeWidth = PARAMS.fiber_width;
+                    e.style.strokeWidth = PARAMS.fiber_size;
                 });
 
                 faces.forEach((e) => e.remove());
@@ -759,6 +780,14 @@
 
             window.onload = function (opt) {
                 Object.keys(DEFAULTS).forEach((e) => document.getElementById(e).addEventListener("change", update));
+                ["net", "capsid"].forEach((e, i) =>
+                    document.getElementById("export_" + e).addEventListener("click", (_) => {
+                        const PARAMS = params();
+                        const name = e + "_" + ["t", "h", "k", "H", "K", "s", "R"].map((k) => PARAMS[k]).join("_");
+                        export_svg(name, paper.paper.projects[i]);
+                    })
+                );
+                document.getElementById("export_capsid").addEventListener("click", console.log);
                 update();
             };
         </script>
@@ -769,6 +798,11 @@
             <canvas id="canvas2" resize> Your browser does not support the HTML canvas tag. </canvas>
         </div>
         <br />
+        <fieldset>
+            <legend>export</legend>
+            <button id="export_net">net</button>
+            <button id="export_capsid">capsid</button>
+        </fieldset>
         <fieldset>
             <legend>model</legend>
             <div>
@@ -789,7 +823,7 @@
                     <option value="2">2</option>
                 </select>
                 <label for="R">R&nbsp;=&nbsp;</label>
-                <input type="number" id="R" step="1" value="10" min="1" />
+                <input type="number" id="R" step="1" value="20" min="1" />
                 <label for="t">t&nbsp;=&nbsp;</label>
                 <select id="t">
                     <option value="hex">hex</option>
@@ -806,28 +840,30 @@
         <fieldset>
             <legend>rotation</legend>
             <label for="θ">θ&nbsp;=&nbsp;</label>
-            <input type="number" id="θ" step="10" value="0" min="0" />
+            <input type="number" id="θ" step="10" value="0" />
             <label for="ψ">ψ&nbsp;=&nbsp;</label>
-            <input type="number" id="ψ" step="10" value="0" min="0" />
+            <input type="number" id="ψ" step="10" value="0" />
             <label for="φ">φ&nbsp;=&nbsp;</label>
-            <input type="number" id="φ" step="10" value="0" min="0" />
+            <input type="number" id="φ" step="10" value="90" />
         </fieldset>
         <fieldset>
             <legend>perspective</legend>
         </fieldset>
         <fieldset>
             <legend>fiber</legend>
-            <label for="pen_fiber">penton</label>
+            <label for="penton_fiber_toggle">penton</label>
             <input type="checkbox" id="penton_fiber_toggle" checked />
-            <label for="hex_fiber">hexon</label>
+            <label for="hexon_fiber_toggle">hexon</label>
             <input type="checkbox" id="hexon_fiber_toggle" />
+            <label for="knob_toggle">knob</label>
+            <input type="checkbox" id="knob_toggle" checked />
         </fieldset>
         <fieldset>
             <legend>aesthetics</legend>
             <table>
                 <tbody>
                     <tr>
-                        <th></th>
+                        <th>key</th>
                         <th>line</th>
                         <th>fiber</th>
                         <th>knob</th>
@@ -845,10 +881,10 @@
                         <td><input type="number" id="knob_alpha" step="1" value="255" min="0" max="255" /></td>
                     </tr>
                     <tr>
-                        <td>width</td>
-                        <td><input type="number" id="line_width" step="0.5" value="2" min="0" /></td>
-                        <td><input type="number" id="fiber_width" step="0.5" value="4" min="0" /></td>
-                        <td><input type="number" id="knob_width" step="0.5" value="2" min="0" /></td>
+                        <td>size</td>
+                        <td><input type="number" id="line_size" step="0.5" value="2" min="0" /></td>
+                        <td><input type="number" id="fiber_size" step="0.5" value="4" min="0" /></td>
+                        <td><input type="number" id="knob_size" step="0.5" value="3" min="0" /></td>
                     </tr>
                     <tr>
                         <td>length</td>
@@ -862,7 +898,7 @@
             <table>
                 <tbody>
                     <tr>
-                        <th></th>
+                        <th>key</th>
                         <th>pentamer-1</th>
                         <th>pentamer-2</th>
                         <th>pentamer-3</th>
