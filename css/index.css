@@ -1,0 +1,45 @@
+html {
+    background-color: #fdfdfd;
+}
+body {
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+fieldset{
+    width: 1000px;
+    margin: 0 auto;
+    display: block;
+}
+canvas {
+    height: 500px;
+    width: 1000px;
+    margin: 0 auto;
+    display: block;
+    border: 4px dotted black;
+}
+input,
+select {
+    box-sizing: border-box;
+    vertical-align: middle;
+    height: 30px;
+    width: 150px;
+}
+input[type="radio"], input[type="checkbox"] {
+    width: 50px;
+}
+table,
+th,
+td {
+    border: 1px solid black;
+    text-align: center;
+}
+th:first-child,
+td:first-child {
+    width: 100px;
+}
+th:not(:first-child),
+td:not(:first-child) {
+    width: 125px;
+}
+td > input {
+    width: 100px;
+}
