@@ -5,8 +5,12 @@ const ITER = 100;
 const TOL = 1e-15;
 const TOL_COLLAPSE = 1e-5;
 
-function radians(x) {
-    return (x * Math.PI) / 180;
+function degrees(v) {
+    return (v * 180) / Math.PI;
+}
+
+function radians(v) {
+    return (v * Math.PI) / 180;
 }
 
 function calc_tile(t, R) {
@@ -488,8 +492,7 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
     return coor.map((e) => e.add([0, 0, (coor[0][2] - coor.slice(-1)[0][2]) / 2]));
 }
 
-function draw_facets() {
-    const PARAMS = params();
+function draw_capsid(PARAMS) {
     const tile = calc_tile(PARAMS.t, PARAMS.R);
     const ck = ck_vectors(tile.basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
 
@@ -520,13 +523,14 @@ function draw_facets() {
         [ck[1], ck[2]],
     ].map((e) => new Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
     //// intersect
-    let facets = triangles.map(
+    const facets = triangles.map(
         (e) =>
             new Group({
                 children: lattice
                     .flatMap((f) =>
                         f.map((g) => {
-                            let x = g.intersect(e);
+                            const options = { insert: false };
+                            const x = g.intersect(e, options);
                             x.data.has_centroid = e.contains(x.data.centroid);
                             x.data.centroid_on_vertex = e.segments.map((h) => h.point.getDistance(x.data.centroid)).some((e) => e < 1e-5);
                             return x;
@@ -537,63 +541,62 @@ function draw_facets() {
             })
     );
 
-    const style = { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" };
-    new Group({ children: facets, position: view.center, style: style }).scale(-1, 1);
+    // const unit1 = new Group({
+    //     children: facets.slice(0, 2),
+    // })
+    //     .rotate(-degrees(ck[0].angle([1, 0])))
+    //     .scale(-1, 1);
+    // const unit2 = unit1.clone().rotate(180);
+    // const top_center = unit2.children[1].children
+    //     .flatMap((e) => e.segments)
+    //     .map((e) => e.point)
+    //     .reduce((a, b) => (a.y < b.y ? a : b));
+    // unit2.position.x += unit1.children[0].bounds.right - top_center.x;
+    // unit2.position.y += unit1.children[0].bounds.height;
+    // new Group({
+    //     children: Array.from({ length: 5 })
+    //         .map((_, i) => {
+    //             const [u1, u2] = [unit1.clone(), unit2.clone()];
+    //             u1.position.x += i * unit1.children[0].bounds.width;
+    //             u2.position.x += i * unit1.children[0].bounds.width;
+    //             return [u1, u2];
+    //         })
+    //         .flat(),
+    //     position: view.center,
+    //     style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+    // });
+    // // clean-up
+    // unit1.remove();
+    // unit2.remove();
+    // facets.forEach((e) => e.remove());
+    // lattice.forEach((e) => e.forEach((f) => f.remove()));
+    // return;
+
+    const angle = ck[0].angle([1, 0]);
+    const unit1 = new Group(facets).rotate(-degrees(angle)).scale(-1, 1);
+    const unit0 = facets[0].clone().rotate(180);
+    unit0.position.x += ck[0].norm() / 2;
+    const centroid = [unit0.bounds.topLeft, unit0.bounds.topRight, unit0.bounds.bottomCenter].reduce((a, b) => a.add(b), new Point()).divide(3);
+
+    const g = new Group({
+        children: [new Group(unit0.clone(), ...[1, 2, 3].map((_, i) => unit1.clone().rotate(i * 120, centroid)))],
+        position: view.center,
+        style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+    });
+
+    // g.addChild(g.children[0].clone().rotate(180));
+    // g.addChild(new Path.Circle({ center: left, radius: 6, fillColor: "blue" }));
+    // g.addChild(new Path.Circle({ center: bottom, radius: 6, fillColor: "red" }));
 
     // clean-up
+    unit0.remove();
+    unit1.remove();
+
+    facets.forEach((e) => e.remove());
     lattice.forEach((e) => e.forEach((f) => f.remove()));
-}
+    triangles.forEach((e) => e.remove());
 
-function draw_net() {}
-
-function draw_capsid() {
-    const PARAMS = params();
-    const tile = calc_tile(PARAMS.t, PARAMS.R);
-    const ck = ck_vectors(tile.basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
-
-    // grid
-    //// calculate
-    const grid = Array.from(tile_grid(ck, tile.basis));
-    const lattice = grid.map(tile.tile);
-    const vertex_coordinates = grid
-        .filter((e) => e.is_vertex)
-        .map((e) => e.coor)
-        .concat([[0, 0]]);
-    //// metadata
-    lattice.flat().forEach((e) => {
-        const offset = e.data.mer + (vertex_coordinates.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? 0 : 3);
-        e.data.offset = offset;
-        e.data.centroid = e.segments
-            .map((e) => e.point)
-            .reduce((a, b) => a.add(b), new Point([0, 0]))
-            .divide(e.segments.length);
-        e.style.fillColor = PARAMS["mer_color_" + offset] + PARAMS["mer_alpha_" + offset];
-    });
-
-    // facets
-    //// calculate
-    const triangles = [
-        [ck[3], ck[0]],
-        [ck[0], ck[1]],
-        [ck[1], ck[2]],
-    ].map((e) => new Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
-    //// intersect
-    let facets = triangles.map(
-        (e) =>
-            new Group({
-                children: lattice
-                    .flatMap((f) =>
-                        f.map((g) => {
-                            let x = g.intersect(e);
-                            x.data.has_centroid = e.contains(x.data.centroid);
-                            x.data.centroid_on_vertex = e.segments.map((h) => h.point.getDistance(x.data.centroid)).some((e) => e < 1e-5);
-                            return x;
-                        })
-                    )
-                    .filter((e) => e.segments.length > 0),
-                data: e.data,
-            })
-    );
+    return;
 
     // coordinates
     const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));

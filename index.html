@@ -67,10 +67,10 @@
                 const PARAMS = params();
                 console.log(PARAMS);
                 /****/ if (PARAMS.mode_facet) {
-                    draw_facets();
+                    draw_facets(PARAMS);
                 } else if (PARAMS.mode_net) {
                 } else if (PARAMS.mode_capsid) {
-                    draw_capsid();
+                    draw_capsid(PARAMS);
                 } else {
                     throw new Error("invalid mode!");
                 }
