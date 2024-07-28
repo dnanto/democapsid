@@ -31,7 +31,7 @@
                     φ: (e) => parseFloat(e.value),
                 },
                 Object.fromEntries([
-                    ...["facet", "net", "capsid"].map((e) => ["mode_" + e, PARSERS.toggle]),
+                    ...["net", "capsid"].map((e) => ["mode_" + e, PARSERS.toggle]),
                     ...["penton_fiber", "knob"].map((e) => [e + "_toggle", PARSERS.toggle]),
                     ...["line", "fiber", "knob"].flatMap((e) => ["color", "alpha", "size"].map((f) => [e + "_" + f, PARSERS[f]])),
                     ...["color", "alpha", "size", "length"].map((e) => ["fiber_" + e, PARSERS[e]]),
@@ -65,15 +65,8 @@
                 paper.clear();
                 paper.setup("model");
                 const PARAMS = params();
-                console.log(PARAMS);
-                /****/ if (PARAMS.mode_facet) {
-                    draw_facets(PARAMS);
-                } else if (PARAMS.mode_net) {
-                } else if (PARAMS.mode_capsid) {
-                    draw_capsid(PARAMS);
-                } else {
-                    throw new Error("invalid mode!");
-                }
+                const draw = PARAMS.mode_capsid ? draw_capsid : draw_net;
+                draw(PARAMS);
             }
 
             paper.install(window);
@@ -132,8 +125,6 @@
         </fieldset>
         <fieldset>
             <legend>mode</legend>
-            <label for="mode_facet">facet</label>
-            <input type="radio" id="mode_facet" name="mode" value="facet" />
             <label for="mode_net">net</label>
             <input type="radio" id="mode_net" name="mode" value="net" />
             <label for="mode_capsid">capsid</label>

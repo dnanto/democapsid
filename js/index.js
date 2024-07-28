@@ -492,7 +492,7 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
     return coor.map((e) => e.add([0, 0, (coor[0][2] - coor.slice(-1)[0][2]) / 2]));
 }
 
-function draw_capsid(PARAMS) {
+function draw_net(PARAMS) {
     const tile = calc_tile(PARAMS.t, PARAMS.R);
     const ck = ck_vectors(tile.basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
 
@@ -541,62 +541,132 @@ function draw_capsid(PARAMS) {
             })
     );
 
-    // const unit1 = new Group({
-    //     children: facets.slice(0, 2),
-    // })
-    //     .rotate(-degrees(ck[0].angle([1, 0])))
-    //     .scale(-1, 1);
-    // const unit2 = unit1.clone().rotate(180);
-    // const top_center = unit2.children[1].children
-    //     .flatMap((e) => e.segments)
-    //     .map((e) => e.point)
-    //     .reduce((a, b) => (a.y < b.y ? a : b));
-    // unit2.position.x += unit1.children[0].bounds.right - top_center.x;
-    // unit2.position.y += unit1.children[0].bounds.height;
-    // new Group({
-    //     children: Array.from({ length: 5 })
-    //         .map((_, i) => {
-    //             const [u1, u2] = [unit1.clone(), unit2.clone()];
-    //             u1.position.x += i * unit1.children[0].bounds.width;
-    //             u2.position.x += i * unit1.children[0].bounds.width;
-    //             return [u1, u2];
-    //         })
-    //         .flat(),
-    //     position: view.center,
-    //     style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
-    // });
-    // // clean-up
-    // unit1.remove();
-    // unit2.remove();
-    // facets.forEach((e) => e.remove());
-    // lattice.forEach((e) => e.forEach((f) => f.remove()));
-    // return;
-
-    const angle = ck[0].angle([1, 0]);
-    const unit1 = new Group(facets).rotate(-degrees(angle)).scale(-1, 1);
-    const unit0 = facets[0].clone().rotate(180);
-    unit0.position.x += ck[0].norm() / 2;
-    const centroid = [unit0.bounds.topLeft, unit0.bounds.topRight, unit0.bounds.bottomCenter].reduce((a, b) => a.add(b), new Point()).divide(3);
-
-    const g = new Group({
-        children: [new Group(unit0.clone(), ...[1, 2, 3].map((_, i) => unit1.clone().rotate(i * 120, centroid)))],
-        position: view.center,
-        style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
-    });
-
-    // g.addChild(g.children[0].clone().rotate(180));
-    // g.addChild(new Path.Circle({ center: left, radius: 6, fillColor: "blue" }));
-    // g.addChild(new Path.Circle({ center: bottom, radius: 6, fillColor: "red" }));
-
-    // clean-up
-    unit0.remove();
-    unit1.remove();
+    /****/ if (PARAMS.s === 5) {
+        const unit1 = new Group({
+            children: facets.slice(0, 2),
+        })
+            .rotate(-degrees(ck[0].angle([1, 0])))
+            .scale(-1, 1);
+        const unit2 = unit1.clone().rotate(180);
+        const top_center = unit2.children[1].children
+            .flatMap((e) => e.segments)
+            .map((e) => e.point)
+            .reduce((a, b) => (a.y < b.y ? a : b));
+        unit2.position.x += unit1.children[0].bounds.right - top_center.x;
+        unit2.position.y += unit1.children[0].bounds.height;
+        new Group({
+            children: Array.from({ length: 5 })
+                .map((_, i) => {
+                    const [u1, u2] = [unit1.clone(), unit2.clone()];
+                    u1.position.x += i * unit1.children[0].bounds.width;
+                    u2.position.x += i * unit1.children[0].bounds.width;
+                    return [u1, u2];
+                })
+                .flat(),
+            position: view.center,
+            style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+        });
+        // clean-up
+        [unit1, unit2].forEach((e) => e.remove());
+    } else if (PARAMS.s === 3) {
+        const angle = ck[0].angle([1, 0]);
+        const unit1 = new Group(facets).rotate(-degrees(angle)).scale(-1, 1);
+        const unit0 = facets[0].clone().rotate(180);
+        unit0.position.x += ck[0].norm() / 2;
+        const centroid = [unit0.bounds.topLeft, unit0.bounds.topRight, unit0.bounds.bottomCenter].reduce((a, b) => a.add(b), new Point()).divide(3);
+        const center1 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[1].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2])))));
+        const center2 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[2].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2]) + ck[1].angle(ck[2])))));
+        const g = new Group({
+            children: [unit0.clone(), ...[1, 2, 3].map((_, i) => unit1.clone().rotate(i * 120, centroid))],
+            style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+        });
+        g.children[0].remove();
+        const unit2 = g.clone().rotate(180);
+        unit2.bounds.left = Math.min(center1.x, center2.x);
+        unit2.bounds.bottom = unit0.bounds.topRight.y;
+        console.log(unit2.children[1].children[0].bounds.bottom - center1.y);
+        unit2.position.y -= unit2.children[1].children[0].bounds.bottom - center1.y;
+        g.addChild(unit2.clone());
+        g.position = view.center;
+        [unit0, unit1, unit2].forEach((e) => e.remove());
+    } else if (PARAMS.s === 2) {
+        const angle = ck[0].angle([1, 0]);
+        const unit1 = new Group(facets).rotate(-degrees(angle)).rotate(-60).scale(-1, 1);
+        const unit2 = unit1.children[1].clone();
+        const vector = unit1.children[0].bounds.topLeft.subtract(unit1.children[0].bounds.bottomCenter);
+        unit2.position = unit2.position.add(vector);
+        const unit3 = new Group([unit1.clone(), unit1.children[0].clone().rotate(60, unit1.children[0].bounds.topRight), unit2.clone()]);
+        const unit4 = unit3.clone().rotate(180, unit3.children[0].children[0].bounds.topRight);
+        unit4.position = unit4.position.add(vector.rotate(240));
+        const unit5 = new Group([unit3.clone(), unit4.clone()]);
+        const points = unit5.children[0].children[2].children.flatMap((e) => e.segments).map((e) => e.point);
+        const point1 = points.sort((a, b) => (a.y < b.y ? b : a)).reduce((a, b) => (a.x < b.x ? a : b));
+        const unit6 = unit5.clone();
+        unit6.position = unit6.position.add(unit5.children[1].children[0].children[0].bounds.bottomRight.subtract(point1));
+        const g = new Group({
+            children: [unit5.clone(), unit6.clone()],
+            style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+        });
+        g.position = view.center;
+        // clean-up
+        [unit1, unit2, unit3, unit4, unit5, unit6].forEach((e) => e.remove());
+    } else {
+        throw new Error("invalid symmetry mode!");
+    }
 
     facets.forEach((e) => e.remove());
     lattice.forEach((e) => e.forEach((f) => f.remove()));
     triangles.forEach((e) => e.remove());
+}
 
-    return;
+function draw_capsid(PARAMS) {
+    const tile = calc_tile(PARAMS.t, PARAMS.R);
+    const ck = ck_vectors(tile.basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
+
+    // grid
+    //// calculate
+    const grid = Array.from(tile_grid(ck, tile.basis));
+    const lattice = grid.map(tile.tile);
+    const vertex_coordinates = grid
+        .filter((e) => e.is_vertex)
+        .map((e) => e.coor)
+        .concat([[0, 0]]);
+    //// metadata
+    lattice.flat().forEach((e) => {
+        const offset = e.data.mer + (vertex_coordinates.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? 0 : 3);
+        e.data.offset = offset;
+        e.data.centroid = e.segments
+            .map((e) => e.point)
+            .reduce((a, b) => a.add(b), new Point([0, 0]))
+            .divide(e.segments.length);
+        e.style.fillColor = PARAMS["mer_color_" + offset] + PARAMS["mer_alpha_" + offset];
+    });
+
+    // facets
+    //// calculate
+    const triangles = [
+        [ck[3], ck[0]],
+        [ck[0], ck[1]],
+        [ck[1], ck[2]],
+    ].map((e) => new Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
+    //// intersect
+    const facets = triangles.map(
+        (e) =>
+            new Group({
+                children: lattice
+                    .flatMap((f) =>
+                        f.map((g) => {
+                            const options = { insert: false };
+                            const x = g.intersect(e, options);
+                            x.data.has_centroid = e.contains(x.data.centroid);
+                            x.data.centroid_on_vertex = e.segments.map((h) => h.point.getDistance(x.data.centroid)).some((e) => e < 1e-5);
+                            return x;
+                        })
+                    )
+                    .filter((e) => e.segments.length > 0),
+                data: e.data,
+            })
+    );
 
     // coordinates
     const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
