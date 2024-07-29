@@ -43,7 +43,7 @@
                 return Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k))]));
             }
 
-            function export_svg() {
+            function download_svg() {
                 // https://www.mikechambers.com/blog/post/2014-07-01-saving-svg-content-from-paper.js/
                 const PARAMS = params();
                 const name = ["t", "h", "k", "H", "K", "s", "R"].map((k) => PARAMS[k]).join("_");
@@ -66,15 +66,28 @@
                 paper.setup("model");
                 const PARAMS = params();
                 const draw = PARAMS.mode_capsid ? draw_capsid : draw_net;
-                draw(PARAMS);
+                msg.style.display = "none";
+                try {
+                    draw(PARAMS);
+                } catch (e) {
+                    paper.clear();
+                    const canvas = document.getElementById("model");
+                    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+                    const msg = document.getElementById("msg");
+                    msg.style.display = "block";
+                    msg.children[1].innerText = e;
+                }
             }
 
             paper.install(window);
 
             window.onload = function (opt) {
-                document.getElementById("penton_fiber_toggle").addEventListener("change", (e) => (document.getElementById("knob_toggle").disabled = !e.target.checked));
                 Object.keys(DEFAULTS).forEach((e) => document.getElementById(e).addEventListener("change", update));
-                document.getElementById("export_svg").addEventListener("click", export_svg);
+                document.getElementById("msg").style.display = "none";
+                document.getElementById("download_svg").addEventListener("click", download_svg);
+                document.getElementById("show_citation").addEventListener("click", () => document.getElementById("citation").showModal());
+                document.getElementById("close_citation").addEventListener("click", () => document.getElementById("citation").close());
+                document.getElementById("penton_fiber_toggle").addEventListener("change", (e) => (document.getElementById("knob_toggle").disabled = !e.target.checked));
                 update();
             };
         </script>
@@ -84,10 +97,18 @@
             <legend>democapsid</legend>
             <canvas id="model" resize> Your browser does not support the HTML canvas tag. </canvas>
         </fieldset>
+        <fieldset id="msg">
+            <legend>message</legend>
+            <div></div>
+        </fieldset>
         <fieldset>
-            <legend>export</legend>
-            <button id="export_svg">SVG</button>
-            <button id="export_coordinates">coordinates</button>
+            <legend>mode</legend>
+            <label for="mode_net">net</label>
+            <input type="radio" id="mode_net" name="mode" value="net" />
+            <label for="mode_capsid">capsid</label>
+            <input type="radio" id="mode_capsid" name="mode" value="capsid" checked />
+            <button id="download_svg">Download SVG</button>
+            <button id="show_citation">Cite!</button>
         </fieldset>
         <fieldset>
             <legend>model</legend>
@@ -122,13 +143,6 @@
                     <option value="dualrhombitrihex">dualrhombitrihex</option>
                 </select>
             </div>
-        </fieldset>
-        <fieldset>
-            <legend>mode</legend>
-            <label for="mode_net">net</label>
-            <input type="radio" id="mode_net" name="mode" value="net" />
-            <label for="mode_capsid">capsid</label>
-            <input type="radio" id="mode_capsid" name="mode" value="capsid" checked />
         </fieldset>
         <fieldset>
             <legend>rotation</legend>
@@ -224,5 +238,13 @@
                 </tbody>
             </table>
         </fieldset>
+        <dialog id="citation">
+            <div>
+                Please comment on or cite the preprint at <a href="https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1">bioRxiv</a> or Chapter 2 of the
+                <a href="http://www.proquest.com/docview/2572612100/abstract/9972F7D348C34013PQ/1">dissertation</a>.
+            </div>
+            <div>This work previously went by the name "capsid.js" and is now "democapsid".</div>
+            <button id="close_citation">close</button>
+        </dialog>
     </body>
 </html>

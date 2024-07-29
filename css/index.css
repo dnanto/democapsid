@@ -9,11 +9,20 @@ fieldset{
     margin: 0 auto;
     display: block;
 }
+fieldset:first-child {
+    font-weight: bold;
+}
+fieldset:nth-child(3) {
+    text-align: center;
+}
 canvas {
     height: 500px;
     width: 1000px;
     margin: 0 auto;
     display: block;
+}
+button {
+    width: 175px;
 }
 input,
 select {

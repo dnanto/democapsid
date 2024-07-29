@@ -266,7 +266,7 @@ function ico_config(s) {
                 [0, 2, 6],
                 [9, 6, 2],
                 [2, 4, 9],
-                [9, 11, 4],
+                [11, 9, 4],
                 [0, 6, 5],
                 [10, 5, 6],
             ],
@@ -293,8 +293,8 @@ function ico_config(s) {
             [
                 [0, 2, 1],
                 [1, 2, 3],
-                [6, 11, 9],
-                [9, 11, 10],
+                [6, 9, 11],
+                [9, 10, 11],
                 [1, 3, 6],
                 [9, 6, 3],
                 [1, 6, 5],
@@ -349,8 +349,7 @@ function ico_config(s) {
 }
 
 function ico_axis_5(ck, iter = ITER, tol = TOL) {
-    const a = ck[0].norm();
-    const b = ck[1].norm();
+    const [a, b] = [ck[0].norm(), ck[1].norm()];
 
     // regular pentagon circumradius
     const R5 = a * Math.sqrt((5 + SQRT5) / 10);
@@ -366,6 +365,8 @@ function ico_axis_5(ck, iter = ITER, tol = TOL) {
     const p = pB.add(q.sub(pB).proj(pC.sub(pB)));
     const d = [p[0], (-Math.abs(p[1]) * Math.sqrt(R5 * R5 * p[1] * p[1] - (p[0] * p[1]) ** 2)) / (p[1] * p[1]), 0];
 
+    if (Number.isNaN(d[1])) throw new Error("impossible construction!");
+
     const pG = d.add([0, 0, -Math.sqrt(q[2] * q[2] - (p[1] - d[1]) ** 2)]);
     const coor = [pA, pB, pC]
         .concat([1, 2, 3].map((e) => pC.roro([0, 0, 1], ((e * 2) / 5) * Math.PI)))
@@ -377,15 +378,12 @@ function ico_axis_5(ck, iter = ITER, tol = TOL) {
 }
 
 function ico_axis_3(ck, iter = ITER, tol = TOL) {
-    const a = ck[0].norm();
-    const b = ck[1].norm();
-    const c = ck[2].sub(ck[1]).norm();
+    const [a, b, c] = [ck[0].norm(), ck[1].norm(), ck[2].sub(ck[1]).norm()];
 
     const pA = [0, a * (1 / SQRT3), 0];
     const pB = [a / 2, -(a * (SQRT3 / 6)), 0];
     const pC = [-(a / 2), -(a * (SQRT3 / 6)), 0];
     const qD = [0, -(a * ((2 * SQRT3) / 3)), 0];
-    const qF = [a, a / SQRT3, 0];
 
     function fold(t) {
         let [v, k] = [qD.uvec().mul(a * (SQRT3 / 2)), pB.sub(pC).uvec()];
@@ -412,10 +410,15 @@ function ico_axis_3(ck, iter = ITER, tol = TOL) {
             break;
         } catch (e) {}
     }
-    let obj = (t) => fold(t).slice(-1)[0];
-    t = bisection(obj, ...brackets(obj, t, Math.PI / 4, iter).next().value, tol, iter).slice(-1);
+    try {
+        let obj = (t) => fold(t).slice(-1)[0];
+        t = bisection(obj, ...brackets(obj, t, Math.PI / 4, iter).next().value, tol, iter).slice(-1);
+    } catch (e) {
+        throw new Error("impossible construction!");
+    }
 
     const [pD, pF, pG] = fold(t).slice(0, -1);
+    if (Number.isNaN(pD[0])) throw new Error("impossible construction!");
     const k = [0, 0, 1];
     t = (2 * Math.PI) / 3;
     const pH = pG.roro(k, -t);
@@ -431,9 +434,7 @@ function ico_axis_3(ck, iter = ITER, tol = TOL) {
 }
 
 function ico_axis_2(ck, iter = ITER, tol = TOL) {
-    const a = ck[0].norm();
-    const b = ck[1].norm();
-    const c = ck[2].sub(ck[1]).norm();
+    const [a, b, c] = [ck[0].norm(), ck[1].norm(), ck[2].sub(ck[1]).norm()];
 
     const pA = [a / 2, 0, 0];
     const pB = [-(a / 2), 0, 0];
@@ -468,9 +469,14 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
             break;
         } catch (e) {}
     }
-    let obj = (t) => fold(t).slice(-1)[0];
-    t = bisection(obj, ...brackets(obj, t, Math.PI / 4, iter).next().value, tol, iter).slice(-1);
+    try {
+        let obj = (t) => fold(t).slice(-1)[0];
+        t = bisection(obj, ...brackets(obj, t, Math.PI / 4, iter).next().value, tol, iter).slice(-1);
+    } catch (e) {
+        throw new Error("impossible construction!");
+    }
     const [pE, pF, pG] = fold(t).slice(0, -1);
+    if (Number.isNaN(pE[0])) throw new Error("impossible construction!");
 
     obj = (t) =>
         pA
@@ -478,7 +484,9 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
             .add([0, 0, pG[2] + pE[2]])
             .sub(pF)
             .norm() - b;
+
     t = bisection(obj, ...brackets(obj, 0, 2 * Math.PI, iter).next().value, tol, iter).slice(-1);
+
     const pK = pA.roro([0, 0, 1], t).add([0, 0, pG[2] + pE[2]]);
     const pI = pK
         .sub([0, 0, pK[2]])
