@@ -14,7 +14,6 @@ canvas {
     width: 1000px;
     margin: 0 auto;
     display: block;
-    border: 4px dotted black;
 }
 input,
 select {
@@ -31,11 +30,6 @@ th,
 td {
     border: 1px solid black;
     text-align: center;
-}
-table{
-
-    margin: 0 auto;
-    display: block;
 }
 th:first-child,
 td:first-child {
