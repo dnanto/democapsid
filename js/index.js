@@ -302,18 +302,18 @@ function ico_config(s) {
             ],
             [1, 3, 3, 1, 3, 3, 3, 3],
             [
-                [1, 2, 3, 4, 5],
-                [0, 2, 5, 6, 10],
-                [0, 1, 3, 6, 7],
-                [0, 2, 4, 7, 8],
-                [0, 3, 5, 8, 9],
-                [0, 1, 4, 9, 10],
-                [1, 2, 7, 10, 11],
-                [2, 3, 6, 8, 11],
-                [3, 4, 7, 9, 11],
-                [4, 5, 8, 10, 11],
-                [1, 5, 6, 9, 11],
-                [6, 7, 8, 9, 10],
+                [0, 1, 2, 4, 5, 8],
+                [1, 0, 2, 3, 5, 6],
+                [2, 0, 1, 3, 4, 7],
+                [3, 1, 2, 6, 7, 9],
+                [4, 0, 2, 7, 8, 10],
+                [5, 0, 1, 6, 8, 11],
+                [6, 1, 3, 5, 9, 11],
+                [7, 2, 3, 4, 9, 10],
+                [8, 0, 4, 5, 10, 11],
+                [9, 3, 6, 7, 10, 11],
+                [10, 4, 7, 8, 9, 11],
+                [11, 5, 6, 8, 9, 10],
             ],
         ];
     } else if (s == 5) {
@@ -542,11 +542,7 @@ function draw_net(PARAMS) {
     );
 
     /****/ if (PARAMS.s === 5) {
-        const unit1 = new Group({
-            children: facets.slice(0, 2),
-        })
-            .rotate(-degrees(ck[0].angle([1, 0])))
-            .scale(-1, 1);
+        const unit1 = new Group(facets.slice(0, 2)).rotate(-degrees(ck[0].angle([1, 0]))).scale(-1, 1);
         const unit2 = unit1.clone().rotate(180);
         const top_center = unit2.children[1].children
             .flatMap((e) => e.segments)
@@ -584,7 +580,6 @@ function draw_net(PARAMS) {
         const unit2 = g.clone().rotate(180);
         unit2.bounds.left = Math.min(center1.x, center2.x);
         unit2.bounds.bottom = unit0.bounds.topRight.y;
-        console.log(unit2.children[1].children[0].bounds.bottom - center1.y);
         unit2.position.y -= unit2.children[1].children[0].bounds.bottom - center1.y;
         g.addChild(unit2.clone());
         g.position = view.center;
@@ -672,7 +667,7 @@ function draw_capsid(PARAMS) {
     const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
     const AXIS = mmul(CAMERA, [0, 0, 1, 1].T());
     const ico_axis = ["", ico_axis_2, ico_axis_3, "", ico_axis_5][PARAMS.s - 1];
-    const coors = ico_axis(ck).map((e) => mmul(CAMERA, e.concat(1).T()).flat());
+    const ico_coors = ico_axis(ck).map((e) => mmul(CAMERA, e.concat(1).T()).flat());
 
     // transform
     const config = ico_config(PARAMS.s);
@@ -681,7 +676,7 @@ function draw_capsid(PARAMS) {
     for (let idx = 0; idx < config.t_idx.length; idx++) {
         const facet = facets[config.t_idx[idx] - 1];
         const A = T(facet.data.vectors.map((e) => e.concat(1)));
-        const V = [0, 1, 2].map((e) => coors[config.v_idx[idx][e]]);
+        const V = [0, 1, 2].map((e) => ico_coors[config.v_idx[idx][e]]);
         for (let i = 0; i < config.t_rep[idx]; i++) {
             const X = V.map((e) => e.roro(AXIS, i * th));
             const M = mmul([...T(X).slice(0, 2), [1, 1, 1]], inv3(A));
@@ -699,11 +694,11 @@ function draw_capsid(PARAMS) {
         ? config.v_con
               .map((e) =>
                   e
-                      .map((f) => coors[f])
+                      .map((f) => ico_coors[f])
                       .reduce((a, b) => a.add(b), [0, 0, 0])
                       .uvec()
               )
-              .map((e, i) => [coors[i], coors[i].add(e.mul(PARAMS.fiber_length))])
+              .map((e, i) => [ico_coors[i], ico_coors[i].add(e.mul(PARAMS.fiber_length))])
         : [];
     //// mer fibers
     fibers = fibers.concat(
@@ -734,13 +729,14 @@ function draw_capsid(PARAMS) {
                 .reduce((a, b) => a.add(b), [0, 0, 0])
                 .div(e.length),
         ])
-        .map((e) => {
-            return new Path.Line({
-                from: e[0],
-                to: e[1],
-                data: { centroid: e[1].mul(1000) },
-            });
-        });
+        .map(
+            (e) =>
+                new Path.Line({
+                    from: e[0],
+                    to: e[1],
+                    data: { centroid: e[1].mul(2) },
+                })
+        );
 
     // knobs
     const knobs = PARAMS["knob_toggle"] ? fibers.map((e) => new Path.Circle({ center: e.segments[1].point, radius: PARAMS.knob_size, data: { centroid: e.data.centroid } })) : [];

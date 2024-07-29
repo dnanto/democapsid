@@ -20,8 +20,8 @@ input,
 select {
     box-sizing: border-box;
     vertical-align: middle;
-    height: 30px;
-    width: 150px;
+    height: 25px;
+    width: 175px;
 }
 input[type="radio"], input[type="checkbox"] {
     width: 50px;
@@ -32,6 +32,11 @@ td {
     border: 1px solid black;
     text-align: center;
 }
+table{
+
+    margin: 0 auto;
+    display: block;
+}
 th:first-child,
 td:first-child {
     width: 100px;
@@ -41,5 +46,5 @@ td:not(:first-child) {
     width: 125px;
 }
 td > input {
-    width: 100px;
+    width: 125px;
 }
