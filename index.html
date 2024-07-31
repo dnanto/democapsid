@@ -66,15 +66,20 @@
                 paper.setup("model");
                 const PARAMS = params();
                 const draw = PARAMS.mode_capsid ? draw_capsid : draw_net;
-                msg.style.display = "none";
+                const msg = document.getElementById("msg");
+
                 try {
-                    draw(PARAMS);
+                    with (PARAMS) {
+                        draw(PARAMS);
+                        msg.children[1].innerText = [
+                            ["net", "capsid"][mode_capsid * 1] + "[" + [h, k, H, K, "s=" + s, "R=" + R, "t=" + t, "@(" + [θ, ψ, φ].map((e) => e + "°").join(",") + ")"].join(",") + "]",
+                            "model_sa_error=" + model_sa_error(PARAMS) * 100 + "%",
+                        ].join(", ");
+                    }
                 } catch (e) {
                     paper.clear();
                     const canvas = document.getElementById("model");
                     canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-                    const msg = document.getElementById("msg");
-                    msg.style.display = "block";
                     msg.children[1].innerText = e;
                 }
             }
@@ -83,7 +88,6 @@
 
             window.onload = function (opt) {
                 Object.keys(DEFAULTS).forEach((e) => document.getElementById(e).addEventListener("change", update));
-                document.getElementById("msg").style.display = "none";
                 document.getElementById("download_svg").addEventListener("click", download_svg);
                 document.getElementById("show_citation").addEventListener("click", () => document.getElementById("citation").showModal());
                 document.getElementById("close_citation").addEventListener("click", () => document.getElementById("citation").close());
@@ -99,7 +103,7 @@
         </fieldset>
         <fieldset id="msg">
             <legend>message</legend>
-            <div></div>
+            <div>ready!</div>
         </fieldset>
         <fieldset>
             <legend>mode</legend>

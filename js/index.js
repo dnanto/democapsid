@@ -240,7 +240,7 @@ function* tile_grid(ck, basis) {
     }
 }
 
-function ck_vectors(basis, h, k, H, K, R = 1) {
+function ck_vectors(basis, h, k, H, K) {
     const [v1, v2] = basis;
     const v3 = v2.rot(Math.PI / 3);
     return [
@@ -302,18 +302,18 @@ function ico_config(s) {
             ],
             [1, 3, 3, 1, 3, 3, 3, 3],
             [
-                [0, 1, 2, 4, 5, 8],
-                [1, 0, 2, 3, 5, 6],
-                [2, 0, 1, 3, 4, 7],
-                [3, 1, 2, 6, 7, 9],
-                [4, 0, 2, 7, 8, 10],
-                [5, 0, 1, 6, 8, 11],
-                [6, 1, 3, 5, 9, 11],
-                [7, 2, 3, 4, 9, 10],
-                [8, 0, 4, 5, 10, 11],
-                [9, 3, 6, 7, 10, 11],
-                [10, 4, 7, 8, 9, 11],
-                [11, 5, 6, 8, 9, 10],
+                [1, 2, 4, 5, 8],
+                [0, 2, 3, 5, 6],
+                [0, 1, 3, 4, 7],
+                [1, 2, 6, 7, 9],
+                [0, 2, 7, 8, 10],
+                [0, 1, 6, 8, 11],
+                [1, 3, 5, 9, 11],
+                [2, 3, 4, 9, 10],
+                [0, 4, 5, 10, 11],
+                [3, 6, 7, 10, 11],
+                [4, 7, 8, 9, 11],
+                [5, 6, 8, 9, 10],
             ],
         ];
     } else if (s == 5) {
@@ -410,8 +410,8 @@ function ico_axis_3(ck, iter = ITER, tol = TOL) {
             break;
         } catch (e) {}
     }
+    let obj = (t) => fold(t).slice(-1)[0];
     try {
-        let obj = (t) => fold(t).slice(-1)[0];
         t = bisection(obj, ...brackets(obj, t, Math.PI / 4, iter).next().value, tol, iter).slice(-1);
     } catch (e) {
         throw new Error("impossible construction!");
@@ -469,8 +469,8 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
             break;
         } catch (e) {}
     }
+    let obj = (t) => fold(t).slice(-1)[0];
     try {
-        let obj = (t) => fold(t).slice(-1)[0];
         t = bisection(obj, ...brackets(obj, t, Math.PI / 4, iter).next().value, tol, iter).slice(-1);
     } catch (e) {
         throw new Error("impossible construction!");
@@ -485,8 +485,11 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
             .sub(pF)
             .norm() - b;
 
-    t = bisection(obj, ...brackets(obj, 0, 2 * Math.PI, iter).next().value, tol, iter).slice(-1);
-
+    try {
+        t = bisection(obj, ...brackets(obj, 0, 2 * Math.PI, iter).next().value, tol, iter).slice(-1);
+    } catch (e) {
+        throw new Error("impossible construction!");
+    }
     const pK = pA.roro([0, 0, 1], t).add([0, 0, pG[2] + pE[2]]);
     const pI = pK
         .sub([0, 0, pK[2]])
@@ -498,6 +501,32 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
     coor = [pA, pB, pC, pD, pE, pF, pG, pG.roro([0, 0, 1], Math.PI), pI, pI.roro([0, 0, 1], Math.PI), pK, pK.roro([0, 0, 1], Math.PI)];
 
     return coor.map((e) => e.add([0, 0, (coor[0][2] - coor.slice(-1)[0][2]) / 2]));
+}
+
+function model_sa_error(PARAMS) {
+    const tile = calc_tile(PARAMS.t, PARAMS.R);
+    const ck = ck_vectors(tile.basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
+    const triangles = [
+        [ck[3], ck[0]],
+        [ck[0], ck[1]],
+        [ck[1], ck[2]],
+    ];
+    // coordinates
+    const ico_coors = ["", ico_axis_2, ico_axis_3, "", ico_axis_5][PARAMS.s - 1](ck);
+    const config = ico_config(PARAMS.s);
+
+    const n_tris = config.t_id.map((e) => parseInt(e[1])).reduce((a, b) => (a < b ? b : a));
+    const n_per_tri = Array.from({ length: n_tris }).fill(0);
+    config.t_id.forEach((e, i) => (n_per_tri[e[1] - 1] += config.t_rep[i]));
+    const sa_net = triangles
+        .slice(0, n_tris)
+        .map((e, i) => ([...e[0], 0].cross([...e[1], 0]).norm() / 2) * n_per_tri[i])
+        .reduce((a, b) => a + b);
+    const sa_capsid = config.v_idx
+        .map((e) => e.map((i) => ico_coors[i]))
+        .map((e, i) => (e[1].sub(e[0]).cross(e[2].sub(e[0])).norm() / 2) * config.t_rep[i])
+        .reduce((a, b) => a + b);
+    return (sa_net - sa_capsid) / sa_net;
 }
 
 function draw_net(PARAMS) {
@@ -518,7 +547,7 @@ function draw_net(PARAMS) {
         e.data.offset = offset;
         e.data.centroid = e.segments
             .map((e) => e.point)
-            .reduce((a, b) => a.add(b), new Point([0, 0]))
+            .reduce((a, b) => a.add(b))
             .divide(e.segments.length);
         e.style.fillColor = PARAMS["mer_color_" + offset] + PARAMS["mer_alpha_" + offset];
     });
@@ -577,7 +606,7 @@ function draw_net(PARAMS) {
         const unit1 = new Group(facets).rotate(-degrees(angle)).scale(-1, 1);
         const unit0 = facets[0].clone().rotate(180);
         unit0.position.x += ck[0].norm() / 2;
-        const centroid = [unit0.bounds.topLeft, unit0.bounds.topRight, unit0.bounds.bottomCenter].reduce((a, b) => a.add(b), new Point()).divide(3);
+        const centroid = [unit0.bounds.topLeft, unit0.bounds.topRight, unit0.bounds.bottomCenter].reduce((a, b) => a.add(b)).divide(3);
         const center1 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[1].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2])))));
         const center2 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[2].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2]) + ck[1].angle(ck[2])))));
         const g = new Group({
@@ -602,8 +631,11 @@ function draw_net(PARAMS) {
         const unit4 = unit3.clone().rotate(180, unit3.children[0].children[0].bounds.topRight);
         unit4.position = unit4.position.add(vector.rotate(240));
         const unit5 = new Group([unit3.clone(), unit4.clone()]);
-        const points = unit5.children[0].children[2].children.flatMap((e) => e.segments).map((e) => e.point);
-        const point1 = points.sort((a, b) => (a.y < b.y ? b : a)).reduce((a, b) => (a.x < b.x ? a : b));
+        const point1 = unit5.children[0].children[2].children
+            .filter((e) => e.data.offset === 1)
+            .flatMap((e) => e.segments.map((e) => e.point))
+            .filter((e) => Math.abs(e.getDistance(unit5.children[0].children[1].bounds.bottomLeft) - ck[1].norm()) < 1e-5)
+            .reduce((a, b) => (a.y < b.y ? b : a));
         const unit6 = unit5.clone();
         unit6.position = unit6.position.add(unit5.children[1].children[0].children[0].bounds.bottomRight.subtract(point1));
         const g = new Group({
@@ -640,7 +672,7 @@ function draw_capsid(PARAMS) {
         e.data.offset = offset;
         e.data.centroid = e.segments
             .map((e) => e.point)
-            .reduce((a, b) => a.add(b), new Point([0, 0]))
+            .reduce((a, b) => a.add(b))
             .divide(e.segments.length);
         e.style.fillColor = PARAMS["mer_color_" + offset] + PARAMS["mer_alpha_" + offset];
     });
