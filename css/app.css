@@ -1,35 +1,43 @@
-html {
-    background-color: #fdfdfd;
+.layout {
+    display: grid;
+    grid:
+      "sidebar body" 1fr
+      / auto 1fr 4fr;
+    gap: 8px;
+  }  
+.sidebar { 
+    grid-area: sidebar; 
 }
+.body { 
+    grid-area: body; 
+}
+  
+.grow { flex-grow: 1; }
 body {
     font-family: "Lucida Console", "Courier New", monospace;
 }
 fieldset{
-    width: 1000px;
     margin: 0 auto;
     display: block;
 }
-fieldset:first-child {
+legend{
     font-weight: bold;
 }
-fieldset:nth-child(3) {
-    text-align: center;
-}
 canvas {
-    height: 500px;
+    height: 550px;
     width: 1000px;
     margin: 0 auto;
     display: block;
 }
 button {
-    width: 175px;
+    width: 100px;
 }
 input,
 select {
     box-sizing: border-box;
     vertical-align: middle;
     height: 25px;
-    width: 175px;
+    width: 65px;
 }
 input[type="radio"], input[type="checkbox"] {
     width: 50px;
@@ -46,7 +54,7 @@ td:first-child {
 }
 th:not(:first-child),
 td:not(:first-child) {
-    width: 125px;
+    width: 100px;
 }
 td > input {
     width: 125px;
