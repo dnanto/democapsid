@@ -1,11 +1,9 @@
-~*.xlsx
 .DS_Store
-.vscode/settings.json
-node_modules
+.Rhistory
 .Rproj.user
+.vscode/settings.json
 *.Rproj
+~*.xlsx
 paper/paper.html
 paper/paper.log
 paper/paper.pdf
-.Rhistory
-

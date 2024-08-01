@@ -1,3 +1,10 @@
+# v2.0.0
+
+-   reimplement and optimize construction algorithms
+-   redesign ui
+-   add model error
+-   add beta python module for Blender and ChimeraX
+
 # v1.1.9
 
 -   implement dual hex

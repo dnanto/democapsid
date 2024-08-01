@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "democapsid"
+version = "0.0.1"
+authors = [
+  { name="Daniel Antonio Negrón", email="dnegron2@gmu.edu" },
+]
+maintainers = [
+  { name="Daniel Antonio Negrón", email="dnegron2@gmu.edu" },
+]
+description = "This package includes methods to calculate the coordinates of viral capsids."
+readme = "README.md"
+license = {text = "MIT License"}
+requires-python = ">=3.9.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Multimedia :: Graphics :: 3D Modeling",
+    "Topic :: Multimedia :: Graphics :: 3D Rendering",
+]
+dependencies = [
+  "numpy >= 1.16.5",
+]
+
+[project.optional-dependencies]
+blender = [
+  "bpy"
+]
+
+[project.urls]
+Homepage = "https://github.com/dnanto/democapsid"
+Issues = "https://github.com/dnanto/democapsid/issues"
