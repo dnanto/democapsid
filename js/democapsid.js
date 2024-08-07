@@ -804,35 +804,33 @@ function draw_capsid(PARAMS) {
     );
 
     // coordinates
-    const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
-    // const AXIS = mmul(CAMERA, [0, 0, 1, 1].T());
-    const AXIS = [0, 0, 1];
-    const ico_axis = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][PARAMS.s];
-    // const ico_coors = ico_axis(lat_cfg.ck, ITER, TOL).map((e) => mmul(CAMERA, e.concat(1).T()).flat());
-    const ico_coors = ico_axis(lat_cfg.ck, ITER, TOL);
-    console.table(ico_coors);
+    const ico_cfg = ico_config(PARAMS.s);
+    const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][PARAMS.s](lat_cfg.ck, ITER, TOL);
 
     // transform
-    const ico_cfg = ico_config(PARAMS.s);
     const th = (2 * Math.PI) / PARAMS.s;
-    let matrices = [];
+    const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
     let results = [];
     for (let idx = 0; idx < ico_cfg.t_idx.length; idx++) {
         const facet = facets[ico_cfg.t_idx[idx] - 1];
         const A = T(facet.data.vectors.map((e) => e.concat(1)));
         const V = [0, 1, 2].map((e) => ico_coors[ico_cfg.v_idx[idx][e]]);
         for (let i = 0; i < ico_cfg.t_rep[idx]; i++) {
-            const X = V.map((e) => e.roro(AXIS, i * th));
+            const X = V.map((e) => e.roro([0, 0, 1], i * th));
             const M = mmul(T(X), inv3(A));
             const temp_facet = facet.children.map((e) => {
                 const segments = e.segments
                     .map((f) => [f.point.x, f.point.y, 1])
                     .map((f) => mmul(M, f.T()).flat())
-                    .map((e) => spherize(e, ico_coors, PARAMS.s, 0.5))
+                    .map((e) => spherize(e, ico_coors, PARAMS.s, PARAMS.c))
                     .map((e) => mmul(CAMERA, e.concat(1).T()).flat());
                 return new Path({
                     segments: segments.map((f) => f.slice(0, 2)),
-                    data: Object.assign({}, e.data, { centroid: segments.centroid() }),
+                    data: Object.assign({}, e.data, {
+                        centroid: segments.centroid(),
+                        normal: segments[1].sub(segments[0]).cross(segments[2].sub(segments[0])).uvec(),
+                        M: M,
+                    }),
                     closed: true,
                     style: e.style,
                 });
@@ -849,83 +847,73 @@ function draw_capsid(PARAMS) {
         }
     }
 
-    // let coors = [];
-    // for (let idx = 0, nth = 0; idx < ico_cfg.t_idx.length; idx++) {
-    //     for (let i = 0; i < ico_cfg.t_rep[idx]; i++, nth++) {
-    //         coors.push(facets[ico_cfg.t_idx[idx] - 1].children.flatMap((e) => e.segments).map((e) => mmul(matrices[nth], [e.point.x, e.point.y, 1].T()).flat()));
-    //     }
-    // }
-    // console.table(coors.flat());
-
-    // // fibers
-    // //// penton fibers
-    // let fibers = PARAMS["penton_fiber_toggle"]
-    //     ? ico_cfg.v_con
-    //           .map((e) =>
-    //               e
-    //                   .map((f) => ico_coors[f])
-    //                   .reduce((a, b) => a.add(b), [0, 0, 0])
-    //                   .uvec()
-    //           )
-    //           .map((e, i) => [ico_coors[i], ico_coors[i].add(e.mul(PARAMS.fiber_length))])
-    //     : [];
+    // fibers
+    //// penton fibers
+    const ico_coors_rot = ico_coors.map((e) => mmul(CAMERA, e.concat(1).T()).flat());
+    let fibers = PARAMS["penton_fiber_toggle"]
+        ? ico_cfg.v_con
+              .map((e) =>
+                  e
+                      .map((f) => ico_coors_rot[f])
+                      .reduce((a, b) => a.add(b), [0, 0, 0])
+                      .uvec()
+              )
+              .map((e, i) => [ico_coors_rot[i], ico_coors_rot[i].add(e.mul(PARAMS.fiber_length))])
+        : [];
     // //// mer fibers
     // fibers = fibers.concat(
-    //     results.flatMap((e, i) =>
-    //         e.children
-    //             .filter((f) => PARAMS["mer_toggle_" + f.data.offset] && f.data.has_centroid)
-    //             .map((f, j) => {
-    //                 const from = mmul(e.data.M, [f.data.centroid.x, f.data.centroid.y, 1].T()).flat();
-    //                 const sign = from.uvec().dot(e.data.normal) < TOL ? -1 : 1;
-    //                 const to = from.add(e.data.normal.mul(sign * PARAMS.fiber_length));
-    //                 return [from, to];
-    //             })
-    //     )
+    //     results
+    //         .filter((f) => PARAMS["mer_toggle_" + f.data.offset] && f.data.has_centroid)
+    //         .map((f) => {
+    //             const from = mmul(f.data.M, [f.data.centroid[0], f.data.centroid[1], 1].T()).flat();
+    //             const sign = from.uvec().dot(f.data.normal) < TOL ? 1 : -1;
+    //             const to = from.add(f.data.normal.mul(sign * PARAMS.fiber_length));
+    //             return [from, to];
+    //         })
     // );
-    // //// group
-    // let groups = [];
-    // fibers.forEach((e) => {
-    //     let i = 0;
-    //     for (let g of groups) if (e[0].sub(g[0][0]).norm() < TOL_COLLAPSE) i = g.push(e);
-    //     if (i === 0) groups.push([e]);
-    // });
-    // //// merge
-    // fibers = groups
-    //     .map((e) => [
-    //         e[0][0],
-    //         e
-    //             .map((f) => f[1])
-    //             .reduce((a, b) => a.add(b), [0, 0, 0])
-    //             .div(e.length),
-    //     ])
-    //     .map(
-    //         (e) =>
-    //             new Path.Line({
-    //                 from: e[0],
-    //                 to: e[1],
-    //                 data: { centroid: e[1].mul(2) },
-    //             })
-    //     );
+    //// group
+    let groups = [];
+    fibers.forEach((e) => {
+        let i = 0;
+        for (let g of groups) if (e[0].sub(g[0][0]).norm() < TOL_COLLAPSE) i = g.push(e);
+        if (i === 0) groups.push([e]);
+    });
+    //// merge
+    fibers = groups
+        .map((e) => [
+            e[0][0],
+            e
+                .map((f) => f[1])
+                .reduce((a, b) => a.add(b), [0, 0, 0])
+                .div(e.length),
+        ])
+        .map(
+            (e) =>
+                new Path.Line({
+                    from: e[0],
+                    to: e[1],
+                    data: { centroid: e[1].mul(2) },
+                })
+        );
 
-    // // knobs
-    // const knobs = PARAMS["knob_toggle"] ? fibers.map((e) => new Path.Circle({ center: e.segments[1].point, radius: PARAMS.knob_size, data: { centroid: e.data.centroid } })) : [];
-    // results = results.concat(fibers).concat(knobs);
+    // knobs
+    const knobs = PARAMS["knob_toggle"] ? fibers.map((e) => new Path.Circle({ center: e.segments[1].point, radius: PARAMS.knob_size, data: { centroid: e.data.centroid } })) : [];
+    results = results.concat(fibers).concat(knobs);
 
     // painter's algorithm
     results.sort((a, b) => a.data.centroid[2] < b.data.centroid[2]);
-    console.log(results);
     new Group({
         children: results,
         position: view.center,
         style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
     });
 
-    // // styling
-    // knobs.forEach((e) => (e.style.fillColor = PARAMS.knob_color + PARAMS.knob_alpha));
-    // fibers.forEach((e) => {
-    //     e.style.strokeColor = PARAMS.fiber_color + PARAMS.fiber_alpha;
-    //     e.style.strokeWidth = PARAMS.fiber_size;
-    // });
+    // styling
+    knobs.forEach((e) => (e.style.fillColor = PARAMS.knob_color + PARAMS.knob_alpha));
+    fibers.forEach((e) => {
+        e.style.strokeColor = PARAMS.fiber_color + PARAMS.fiber_alpha;
+        e.style.strokeWidth = PARAMS.fiber_size;
+    });
 
     // clean-up
     facets.forEach((e) => e.remove());

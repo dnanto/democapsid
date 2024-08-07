@@ -40,7 +40,7 @@ select {
     width: 65px;
 }
 input[type="range"] {
-    width: 350px;
+    width: 375px;
 }
 input[type="radio"], input[type="checkbox"] {
     width: 50px;
