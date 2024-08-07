@@ -22,6 +22,10 @@ Array.prototype.sum = function (initial_value = 0) {
     return this.reduce((a, b) => a + b, initial_value);
 };
 
+Array.prototype.centroid = function () {
+    return this.reduce((a, b) => a.add(b)).div(this.length);
+};
+
 Array.prototype.cross = function (v) {
     // https://en.wikipedia.org/wiki/Cross_product
     return [this[1] * v[2] - this[2] * v[1], this[2] * v[0] - this[0] * v[2], this[0] * v[1] - this[1] * v[0]];
