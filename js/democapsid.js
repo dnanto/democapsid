@@ -836,14 +836,6 @@ function draw_capsid(PARAMS) {
                 });
             });
             results = results.concat(temp_facet);
-            // const result = temp_facet;
-            // const M = mmul([...T(X).slice(0, 2), [1, 1, 1]], inv3(A));
-            // const temp_facet = facet.clone().transform(new paper.Matrix(M[0][0], M[1][0], M[0][1], M[1][1], M[0][2], M[1][2]));
-            // result.data.M = mmul(T(X), inv3(A));
-            // matrices.push(result.data.M);
-            // result.data.centroid = X.reduce((a, b) => a.add(b)).div(X.length);
-            // result.data.normal = X[1].sub(X[0]).cross(X[2].sub(X[0])).uvec();
-            // results.push(result);
         }
     }
 
@@ -860,17 +852,15 @@ function draw_capsid(PARAMS) {
               )
               .map((e, i) => [ico_coors_rot[i], ico_coors_rot[i].add(e.mul(PARAMS.fiber_length))])
         : [];
-    // //// mer fibers
-    // fibers = fibers.concat(
-    //     results
-    //         .filter((f) => PARAMS["mer_toggle_" + f.data.offset] && f.data.has_centroid)
-    //         .map((f) => {
-    //             const from = mmul(f.data.M, [f.data.centroid[0], f.data.centroid[1], 1].T()).flat();
-    //             const sign = from.uvec().dot(f.data.normal) < TOL ? 1 : -1;
-    //             const to = from.add(f.data.normal.mul(sign * PARAMS.fiber_length));
-    //             return [from, to];
-    //         })
-    // );
+    //// mer fibers
+    fibers = fibers.concat(
+        results
+            .filter((e) => PARAMS["mer_toggle_" + e.data.offset] && e.data.has_centroid)
+            .map((e) => {
+                const centroid = e.data.centroid;
+                return [centroid, centroid.add(e.data.normal.mul(PARAMS.fiber_length))];
+            })
+    );
     //// group
     let groups = [];
     fibers.forEach((e) => {
