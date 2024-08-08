@@ -645,40 +645,28 @@ function lattice_config(h, k, H, K, R, t) {
 }
 
 function draw_net(PARAMS) {
-    const tile = calc_tile(PARAMS.t, PARAMS.R);
-    const ck = ck_vectors(tile.basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K);
+    // unpack
+    const [h, k, H, K, R, t] = ["h", "k", "H", "K", "R", "t"].map((e) => PARAMS[e]);
 
-    // grid
-    //// calculate
-    const grid = Array.from(tile_grid(ck, tile.basis));
-    const lattice = grid.map(tile.tile);
-    const vertex_coordinates = grid
-        .filter((e) => e.is_vertex)
-        .map((e) => e.coor)
-        .concat([[0, 0]]);
-    //// metadata
-    lattice.flat().forEach((e) => {
-        const offset = e.data.mer + (vertex_coordinates.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? 0 : 3);
-        e.data.offset = offset;
-        e.data.centroid = e.segments
-            .map((e) => e.point)
-            .reduce((a, b) => a.add(b))
-            .divide(e.segments.length);
-        e.style.fillColor = PARAMS["mer_color_" + offset] + PARAMS["mer_alpha_" + offset];
-    });
+    // lattice
+    const lat_cfg = lattice_config(h, k, H, K, R, t);
+    const ck = lat_cfg.ck;
+    lat_cfg.lattice.flat().forEach((e) => (e.style.fillColor = PARAMS["mer_color_" + e.data.offset] + PARAMS["mer_alpha_" + e.data.offset]));
 
     // facets
     //// calculate
     const triangles = [
-        [ck[3], ck[0]],
-        [ck[0], ck[1]],
-        [ck[1], ck[2]],
-    ].map((e) => new Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
+        [3, 0],
+        [0, 1],
+        [1, 2],
+    ]
+        .map((e) => [ck[e[0]], ck[e[1]]])
+        .map((e) => new Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
     //// intersect
     const facets = triangles.map(
         (e) =>
             new Group({
-                children: lattice
+                children: lat_cfg.lattice
                     .flatMap((f) =>
                         f.map((g) => {
                             const x = g.intersect(e, { insert: false });
@@ -764,7 +752,7 @@ function draw_net(PARAMS) {
     }
 
     facets.forEach((e) => e.remove());
-    lattice.forEach((e) => e.forEach((f) => f.remove()));
+    lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
     triangles.forEach((e) => e.remove());
 }
 
@@ -811,19 +799,19 @@ function draw_capsid(PARAMS) {
     const th = (2 * Math.PI) / PARAMS.s;
     const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
     let results = [];
-    for (let idx = 0; idx < ico_cfg.t_idx.length; idx++) {
+    for (let idx = 0, id = 0; idx < ico_cfg.t_idx.length; idx++) {
         const facet = facets[ico_cfg.t_idx[idx] - 1];
         const A = T(facet.data.vectors.map((e) => e.concat(1)));
         const V = [0, 1, 2].map((e) => ico_coors[ico_cfg.v_idx[idx][e]]);
-        for (let i = 0; i < ico_cfg.t_rep[idx]; i++) {
+        for (let i = 0; i < ico_cfg.t_rep[idx]; i++, id++) {
             const X = V.map((e) => e.roro([0, 0, 1], i * th));
             const M = mmul(T(X), inv3(A));
-            const temp_facet = facet.children.map((e) => {
+            const xfacet = facet.children.map((e) => {
                 const segments = e.segments
                     .map((f) => [f.point.x, f.point.y, 1])
-                    .map((f) => mmul(M, f.T()).flat())
-                    .map((e) => spherize(e, ico_coors, PARAMS.s, PARAMS.c))
-                    .map((e) => mmul(CAMERA, e.concat(1).T()).flat());
+                    .map((f) => mmul(M, f.T()).flat()) // map to face of icosahedron
+                    .map((e) => spherize(e, ico_coors, PARAMS.s, PARAMS.c)) // spherize
+                    .map((e) => mmul(CAMERA, e.concat(1).T()).flat()); // camera projection
                 const centroid = mmul(
                     CAMERA,
                     spherize(mmul(M, [e.data.centroid.x, e.data.centroid.y, 1].T()).flat(), ico_coors, PARAMS.s, PARAMS.c)
@@ -833,15 +821,16 @@ function draw_capsid(PARAMS) {
                 return new Path({
                     segments: segments.map((f) => f.slice(0, 2)),
                     data: Object.assign({}, e.data, {
+                        id: id,
                         centroid: centroid,
                         normal: segments[1].sub(segments[0]).cross(segments[2].sub(segments[0])).uvec(),
-                        M: M,
                     }),
                     closed: true,
                     style: e.style,
                 });
             });
-            results = results.concat(temp_facet);
+
+            results = results.concat(new Group({ children: xfacet, data: { centroid: mmul(CAMERA, spherize(X.centroid(), ico_coors, PARAMS.s, PARAMS.c).concat(1).T()).flat() } }));
         }
     }
 
@@ -861,6 +850,7 @@ function draw_capsid(PARAMS) {
     //// mer fibers
     fibers = fibers.concat(
         results
+            .flatMap((e) => e.children)
             .filter((e) => PARAMS["mer_toggle_" + e.data.offset] && e.data.has_centroid)
             .map((e) => {
                 const centroid = e.data.centroid;
@@ -868,14 +858,14 @@ function draw_capsid(PARAMS) {
             })
     );
     //// group
-    let groups = [];
+    let fiber_groups = [];
     fibers.forEach((e) => {
         let i = 0;
-        for (let g of groups) if (e[0].sub(g[0][0]).norm() < TOL_COLLAPSE) i = g.push(e);
-        if (i === 0) groups.push([e]);
+        for (let g of fiber_groups) if (e[0].sub(g[0][0]).norm() < TOL_COLLAPSE) i = g.push(e);
+        if (i === 0) fiber_groups.push([e]);
     });
     //// merge
-    fibers = groups
+    fibers = fiber_groups
         .map((e) => [
             e[0][0],
             e
