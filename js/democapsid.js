@@ -824,10 +824,16 @@ function draw_capsid(PARAMS) {
                     .map((f) => mmul(M, f.T()).flat())
                     .map((e) => spherize(e, ico_coors, PARAMS.s, PARAMS.c))
                     .map((e) => mmul(CAMERA, e.concat(1).T()).flat());
+                const centroid = mmul(
+                    CAMERA,
+                    spherize(mmul(M, [e.data.centroid.x, e.data.centroid.y, 1].T()).flat(), ico_coors, PARAMS.s, PARAMS.c)
+                        .concat(1)
+                        .T()
+                ).flat();
                 return new Path({
                     segments: segments.map((f) => f.slice(0, 2)),
                     data: Object.assign({}, e.data, {
-                        centroid: segments.centroid(),
+                        centroid: centroid,
                         normal: segments[1].sub(segments[0]).cross(segments[2].sub(segments[0])).uvec(),
                         M: M,
                     }),
