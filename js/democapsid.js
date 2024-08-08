@@ -651,25 +651,14 @@ function lattice_config(h, k, H, K, R, t) {
     return { tile: tile, ck: ck, lattice: lattice };
 }
 
-function draw_net(PARAMS) {
-    // unpack
-    const [h, k, H, K, R, t] = ["h", "k", "H", "K", "R", "t"].map((e) => PARAMS[e]);
-
-    // lattice
-    const lat_cfg = lattice_config(h, k, H, K, R, t);
-    const ck = lat_cfg.ck;
-    lat_cfg.lattice.flat().forEach((e) => (e.style.fillColor = PARAMS["mer_color_" + e.data.offset] + PARAMS["mer_alpha_" + e.data.offset]));
-
-    // facets
-    //// calculate
+function calc_facets(lat_cfg) {
     const triangles = [
         [3, 0],
         [0, 1],
         [1, 2],
     ]
-        .map((e) => [ck[e[0]], ck[e[1]]])
+        .map((e) => [lat_cfg.ck[e[0]], lat_cfg.ck[e[1]]])
         .map((e) => new Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
-    //// intersect
     const facets = triangles.map(
         (e) =>
             new Group({
@@ -686,6 +675,19 @@ function draw_net(PARAMS) {
                 data: e.data,
             })
     );
+    triangles.forEach((e) => e.remove());
+    return facets;
+}
+
+function draw_net(PARAMS) {
+    // unpack
+    const [h, k, H, K, R, t] = ["h", "k", "H", "K", "R", "t"].map((e) => PARAMS[e]);
+
+    // lattice
+    const lat_cfg = lattice_config(h, k, H, K, R, t);
+    const ck = lat_cfg.ck;
+    lat_cfg.lattice.flat().forEach((e) => (e.style.fillColor = PARAMS["mer_color_" + e.data.offset] + PARAMS["mer_alpha_" + e.data.offset]));
+    const facets = calc_facets(lat_cfg);
 
     /****/ if (PARAMS.s === 5) {
         const unit1 = new Group(facets.slice(0, 2)).rotate(-degrees(ck[0].angle([1, 0]))).scale(-1, 1);
@@ -760,7 +762,6 @@ function draw_net(PARAMS) {
 
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
-    triangles.forEach((e) => e.remove());
 }
 
 function draw_capsid(PARAMS) {
@@ -770,33 +771,7 @@ function draw_capsid(PARAMS) {
     // lattice
     const lat_cfg = lattice_config(h, k, H, K, R, t);
     lat_cfg.lattice.flat().forEach((e) => (e.style.fillColor = PARAMS["mer_color_" + e.data.offset] + PARAMS["mer_alpha_" + e.data.offset]));
-
-    // facets
-    //// calculate
-    const triangles = [
-        [3, 0],
-        [0, 1],
-        [1, 2],
-    ]
-        .map((e) => [lat_cfg.ck[e[0]], lat_cfg.ck[e[1]]])
-        .map((e) => new Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
-    //// intersect
-    const facets = triangles.map(
-        (e) =>
-            new Group({
-                children: lat_cfg.lattice
-                    .flatMap((f) =>
-                        f.map((g) => {
-                            const x = g.intersect(e, { insert: false });
-                            x.data.has_centroid = e.contains(x.data.centroid);
-                            x.data.centroid_on_vertex = e.segments.map((h) => h.point.getDistance(x.data.centroid)).some((e) => e < 1e-5);
-                            return x;
-                        })
-                    )
-                    .filter((e) => e.segments.length > 0),
-                data: e.data,
-            })
-    );
+    const facets = calc_facets(lat_cfg);
 
     // coordinates
     const ico_cfg = ico_config(PARAMS.s);
