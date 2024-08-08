@@ -4,7 +4,7 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 
 # Run
 
--   Run democapsid (v2.0.0): [https://dnanto.github.io/democapsid/app.html](https://dnanto.github.io/democapsid/app.html).
+-   Run democapsid (v2.1.0): [https://dnanto.github.io/democapsid/app.html](https://dnanto.github.io/democapsid/app.html).
 
 ![screenshot.png](screenshot.png)
 
