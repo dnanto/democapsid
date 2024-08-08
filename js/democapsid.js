@@ -297,7 +297,14 @@ function sd_sphere(p, s) {
     return p.norm() - s;
 }
 
-function spherize(coor, coors, s, sphericity) {
+function spherize(coor, radius, sphericity) {
+    return coor
+        .uvec()
+        .mul(Math.abs(sd_sphere(coor, radius)) * sphericity)
+        .add(coor);
+}
+
+function cylinderize(coor, coors, s, sphericity) {
     const [r, h2] = [body_radius(coors), body_height(coors) / 2];
     let pos, rad;
     /****/ if (s === 5) {
@@ -797,6 +804,9 @@ function draw_capsid(PARAMS) {
 
     // transform
     const th = (2 * Math.PI) / PARAMS.s;
+    const is_equilateral = h == H && k == K;
+    console.log(is_equilateral);
+    const inflater = is_equilateral ? (e) => spherize(e, ico_coors[0].norm(), PARAMS.c) : (e) => cylinderize(e, ico_coors, PARAMS.s, PARAMS.c);
     const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
     let results = [];
     for (let idx = 0, id = 0; idx < ico_cfg.t_idx.length; idx++) {
@@ -810,11 +820,11 @@ function draw_capsid(PARAMS) {
                 const segments = e.segments
                     .map((f) => [f.point.x, f.point.y, 1])
                     .map((f) => mmul(M, f.T()).flat()) // map to face of icosahedron
-                    .map((e) => spherize(e, ico_coors, PARAMS.s, PARAMS.c)) // spherize
+                    .map((e) => inflater(e)) // spherize
                     .map((e) => mmul(CAMERA, e.concat(1).T()).flat()); // camera projection
                 const centroid = mmul(
                     CAMERA,
-                    spherize(mmul(M, [e.data.centroid.x, e.data.centroid.y, 1].T()).flat(), ico_coors, PARAMS.s, PARAMS.c)
+                    inflater(mmul(M, [e.data.centroid.x, e.data.centroid.y, 1].T()).flat())
                         .concat(1)
                         .T()
                 ).flat();
@@ -830,7 +840,7 @@ function draw_capsid(PARAMS) {
                 });
             });
 
-            results = results.concat(new Group({ children: xfacet, data: { centroid: mmul(CAMERA, spherize(X.centroid(), ico_coors, PARAMS.s, PARAMS.c).concat(1).T()).flat() } }));
+            results = results.concat(new Group({ children: xfacet, data: { centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat() } }));
         }
     }
 
