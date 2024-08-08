@@ -26,6 +26,8 @@
                     s: (e) => parseInt(e.value),
                     t: (e) => e.value,
                     c: (e) => parseInt(e.value) / 1000,
+                    l: PARSERS.toggle,
+                    d: PARSERS.toggle,
                     R: (e) => parseFloat(e.value),
                     θ: (e) => parseFloat(e.value),
                     ψ: (e) => parseFloat(e.value),
@@ -40,14 +42,18 @@
                 ])
             );
 
+            let mirror = "levo";
+
             function params() {
-                return Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k))]));
+                const PARAMS = Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k))]));
+                PARAMS.m = PARAMS.l ? "levo" : "dextro";
+                return PARAMS;
             }
 
             function download_svg() {
                 // https://www.mikechambers.com/blog/post/2014-07-01-saving-svg-content-from-paper.js/
                 const PARAMS = params();
-                const name = ["t", "h", "k", "H", "K", "s", "R"].map((k) => PARAMS[k]).join("_");
+                const name = ["h", "k", "H", "K", "s", "R", "t", "c", "m"].map((k) => PARAMS[k]).join("_");
                 var link = document.createElement("a");
                 link.download = name + ".svg";
                 link.href =
@@ -68,19 +74,19 @@
                 const PARAMS = params();
                 const draw = PARAMS.mode_capsid ? draw_capsid : draw_net;
                 const msg = document.getElementById("msg");
-
                 try {
                     with (PARAMS) {
                         draw(PARAMS);
                         msg.children[1].innerText = [
                             ["net", "capsid"][mode_capsid * 1] +
                                 "[" +
-                                [h, k, H, K, "s=" + s, "R=" + R, "t=" + t, `c=${c * 100}%`, "@(" + [θ, ψ, φ].map((e) => e + "°").join(",") + ")"].join(",") +
+                                [h, k, H, K, "s=" + s, "R=" + R, "t=" + t, `c=${c * 100}%`, "m=" + m, "@(" + [θ, ψ, φ].map((e) => e + "°").join(",") + ")"].join(",") +
                                 "]",
                             "model_sa_error=" + model_sa_error(PARAMS) * 100 + "%",
                             `T-Number=(${h})²+(${h})(${k})+(${k})²=` + (h * h + h * k + k * k),
                             `Q-Number=(${H})²+(${H})(${K})+(${K})²=` + (H * H + H * K + K * K),
                         ].join("\n");
+                        if (mirror !== m) view.scale(1, -1);
                     }
                 } catch (e) {
                     paper.clear();
@@ -152,6 +158,12 @@
                     <div>
                         <label for="sphericity">c=</label>
                         <input type="range" min="0" max="1000" value="0" id="c" />
+                    </div>
+                    <div>
+                        <label for="mode_levo">levo=</label>
+                        <input type="radio" id="l" name="mode_mirror" value="levo" checked />
+                        <label for="mode_dextro">dextro=</label>
+                        <input type="radio" id="d" name="mode_mirror" value="dextro" />
                     </div>
                 </fieldset>
                 <fieldset>
