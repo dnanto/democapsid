@@ -309,7 +309,7 @@ function spherize(coor, coors, s, sphericity) {
         rad = p1.sub(pos).norm();
     } else if (s === 2) {
         p1 = coors[0];
-        pos = tetrahedron_circumsphere_center(p1, ...[1, 4, 5].map((i) => coor[i]));
+        pos = tetrahedron_circumsphere_center(p1, ...[1, 4, 5].map((i) => coors[i]));
         rad = p1.sub(pos).norm();
     }
     const [pos1, pos2, tmid, bmid] = [
