@@ -25,6 +25,9 @@
                     K: (e) => parseInt(e.value),
                     s: (e) => parseInt(e.value),
                     t: (e) => e.value,
+                    c: (e) => parseInt(e.value) / 1000,
+                    l: PARSERS.toggle,
+                    d: PARSERS.toggle,
                     R: (e) => parseFloat(e.value),
                     θ: (e) => parseFloat(e.value),
                     ψ: (e) => parseFloat(e.value),
@@ -39,14 +42,18 @@
                 ])
             );
 
+            let mirror = "levo";
+
             function params() {
-                return Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k))]));
+                const PARAMS = Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k))]));
+                PARAMS.m = PARAMS.l ? "levo" : "dextro";
+                return PARAMS;
             }
 
             function download_svg() {
                 // https://www.mikechambers.com/blog/post/2014-07-01-saving-svg-content-from-paper.js/
                 const PARAMS = params();
-                const name = ["t", "h", "k", "H", "K", "s", "R"].map((k) => PARAMS[k]).join("_");
+                const name = ["h", "k", "H", "K", "s", "R", "t", "c", "m"].map((k) => PARAMS[k]).join("_");
                 var link = document.createElement("a");
                 link.download = name + ".svg";
                 link.href =
@@ -67,19 +74,23 @@
                 const PARAMS = params();
                 const draw = PARAMS.mode_capsid ? draw_capsid : draw_net;
                 const msg = document.getElementById("msg");
-
                 try {
                     with (PARAMS) {
                         draw(PARAMS);
                         msg.children[1].innerText = [
-                            ["net", "capsid"][mode_capsid * 1] + "[" + [h, k, H, K, "s=" + s, "R=" + R, "t=" + t, "@(" + [θ, ψ, φ].map((e) => e + "°").join(",") + ")"].join(",") + "]",
+                            ["net", "capsid"][mode_capsid * 1] +
+                                "[" +
+                                [h, k, H, K, "s=" + s, "R=" + R, "t=" + t, `c=${c * 100}%`, "m=" + m, "@(" + [θ, ψ, φ].map((e) => e + "°").join(",") + ")"].join(",") +
+                                "]",
                             "model_sa_error=" + model_sa_error(PARAMS) * 100 + "%",
                             `T-Number=(${h})²+(${h})(${k})+(${k})²=` + (h * h + h * k + k * k),
                             `Q-Number=(${H})²+(${H})(${K})+(${K})²=` + (H * H + H * K + K * K),
                         ].join("\n");
+                        if (mirror !== m) view.scale(1, -1);
                     }
                 } catch (e) {
                     paper.clear();
+                    console.log(e);
                     const canvas = document.getElementById("model");
                     canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
                     msg.children[1].innerText = e;
@@ -102,7 +113,7 @@
         <section class="layout">
             <div class="sidebar">
                 <fieldset style="text-align: center">
-                    <b>&#11041;&nbsp;<a href="https://github.com/dnanto/democapsid">democapsid v2.0.0</a>&nbsp;&#11041;</b>
+                    <b>&#11041;&nbsp;<a href="https://github.com/dnanto/democapsid">democapsid v2.1.0</a>&nbsp;&#11041;</b>
                 </fieldset>
                 <fieldset>
                     <legend>mode</legend>
@@ -144,6 +155,16 @@
                             <option value="dualrhombitrihex">dualrhombitrihex</option>
                         </select>
                     </div>
+                    <div>
+                        <label for="sphericity">c=</label>
+                        <input type="range" min="0" max="1000" value="0" id="c" />
+                    </div>
+                    <div>
+                        <label for="mode_levo">levo=</label>
+                        <input type="radio" id="l" name="mode_mirror" value="levo" checked />
+                        <label for="mode_dextro">dextro=</label>
+                        <input type="radio" id="d" name="mode_mirror" value="dextro" />
+                    </div>
                 </fieldset>
                 <fieldset>
                     <legend>rotation</legend>
@@ -152,7 +173,7 @@
                     <label for="ψ">ψ=</label>
                     <input type="number" id="ψ" step="10" value="0" />
                     <label for="φ">φ=</label>
-                    <input type="number" id="φ" step="10" value="90" />
+                    <input type="number" id="φ" step="10" value="-90" />
                 </fieldset>
                 <fieldset>
                     <legend>fiber</legend>
@@ -243,7 +264,7 @@
                             </tr>
                             <tr>
                                 <td>alpha</td>
-                                <td><input type="number" id="mer_alpha_4" step="1" value="255" min="0" max="255" /></td>
+                                <td><input type="number" id="mer_alpha_4" step="1" value="200" min="0" max="255" /></td>
                                 <td><input type="number" id="mer_alpha_5" step="1" value="255" min="0" max="255" /></td>
                                 <td><input type="number" id="mer_alpha_6" step="1" value="255" min="0" max="255" /></td>
                             </tr>

@@ -1,3 +1,8 @@
+# v2.1.0
+
+-   add spherical models
+-   re-add levo/dextro models
+
 # v2.0.0
 
 -   reimplement and optimize construction algorithms

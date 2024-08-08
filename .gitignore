@@ -2,6 +2,7 @@
 .Rhistory
 .Rproj.user
 .vscode/settings.json
+*.pyc
 *.Rproj
 ~*.xlsx
 paper/paper.html
