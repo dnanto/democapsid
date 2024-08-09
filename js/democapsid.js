@@ -701,13 +701,13 @@ function draw_net(PARAMS) {
         unit2.position.y += unit1.children[0].bounds.height;
         g = new Group({
             children: Array.from({ length: 5 })
-                .map((_, i) => {
+                .flatMap((_, i) => {
                     const [u1, u2] = [unit1.clone(), unit2.clone()];
                     u1.position.x += i * unit1.children[0].bounds.width;
                     u2.position.x += i * unit1.children[0].bounds.width;
                     return [u1, u2];
                 })
-                .flat(),
+                .flatMap((e) => e.children),
             position: view.center,
             style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
@@ -721,17 +721,19 @@ function draw_net(PARAMS) {
         const centroid = [unit0.bounds.topLeft, unit0.bounds.topRight, unit0.bounds.bottomCenter].reduce((a, b) => a.add(b)).divide(3);
         const center1 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[1].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2])))));
         const center2 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[2].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2]) + ck[1].angle(ck[2])))));
-        g = new Group({
-            children: [unit0.clone(), ...[1, 2, 3].map((_, i) => unit1.clone().rotate(i * 120, centroid))],
-            style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
-        });
-        g.children[0].remove();
-        const unit2 = g.clone().rotate(180);
+        const f = new Group([...[1, 2, 3].map((_, i) => unit1.clone().rotate(i * 120, centroid))]);
+        f.children.slice(0, -1).forEach((e) => e.children[1].remove());
+        const unit2 = f.clone().rotate(180);
         unit2.bounds.left = Math.min(center1.x, center2.x);
         unit2.bounds.bottom = unit0.bounds.topRight.y;
         unit2.position.y -= unit2.children[1].children[0].bounds.bottom - center1.y;
-        g.addChild(unit2.clone());
-        g.position = view.center;
+        unit2.children.forEach((e) => f.addChild(e.clone()));
+        f.position = view.center;
+        g = new Group({
+            children: f.children.flatMap((e) => e.children.flat()),
+            style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+        });
+        // clean-up
         [unit0, unit1, unit2].forEach((e) => e.remove());
     } else if (PARAMS.s === 2) {
         const angle = ck[0].angle([1, 0]);
@@ -750,11 +752,13 @@ function draw_net(PARAMS) {
             .reduce((a, b) => (a.y < b.y ? b : a));
         const unit6 = unit5.clone();
         unit6.position = unit6.position.add(unit5.children[1].children[0].children[0].bounds.bottomRight.subtract(point1));
+        const f = new Group([unit5.clone(), unit6.clone()]);
+        f.position = view.center;
+        const children = f.children.flatMap((e) => e.children).flatMap((e) => e.children);
         g = new Group({
-            children: [unit5.clone(), unit6.clone()],
+            children: [...children.filter((_, i) => i % 3 === 0).flatMap((e) => e.children), ...children.filter((_, i) => i % 3 !== 0)],
             style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
-        g.position = view.center;
         // clean-up
         [unit1, unit2, unit3, unit4, unit5, unit6].forEach((e) => e.remove());
     } else {
@@ -817,7 +821,7 @@ function draw_capsid(PARAMS) {
                     style: e.style,
                 });
             });
-            results = results.concat(new Group({ children: xfacet, data: { type: "face", centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat() } }));
+            results = results.concat(new Group({ children: xfacet, data: { type: "facet", centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat() } }));
         }
     }
 
