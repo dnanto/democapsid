@@ -689,6 +689,7 @@ function draw_net(PARAMS) {
     lat_cfg.lattice.flat().forEach((e) => (e.style.fillColor = PARAMS["mer_color_" + e.data.offset] + PARAMS["mer_alpha_" + e.data.offset]));
     const facets = calc_facets(lat_cfg);
 
+    let g;
     /****/ if (PARAMS.s === 5) {
         const unit1 = new Group(facets.slice(0, 2)).rotate(-degrees(ck[0].angle([1, 0]))).scale(-1, 1);
         const unit2 = unit1.clone().rotate(180);
@@ -698,7 +699,7 @@ function draw_net(PARAMS) {
             .reduce((a, b) => (a.y < b.y ? a : b));
         unit2.position.x += unit1.children[0].bounds.right - top_center.x;
         unit2.position.y += unit1.children[0].bounds.height;
-        new Group({
+        g = new Group({
             children: Array.from({ length: 5 })
                 .map((_, i) => {
                     const [u1, u2] = [unit1.clone(), unit2.clone()];
@@ -720,7 +721,7 @@ function draw_net(PARAMS) {
         const centroid = [unit0.bounds.topLeft, unit0.bounds.topRight, unit0.bounds.bottomCenter].reduce((a, b) => a.add(b)).divide(3);
         const center1 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[1].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2])))));
         const center2 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[2].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2]) + ck[1].angle(ck[2])))));
-        const g = new Group({
+        g = new Group({
             children: [unit0.clone(), ...[1, 2, 3].map((_, i) => unit1.clone().rotate(i * 120, centroid))],
             style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
@@ -749,7 +750,7 @@ function draw_net(PARAMS) {
             .reduce((a, b) => (a.y < b.y ? b : a));
         const unit6 = unit5.clone();
         unit6.position = unit6.position.add(unit5.children[1].children[0].children[0].bounds.bottomRight.subtract(point1));
-        const g = new Group({
+        g = new Group({
             children: [unit5.clone(), unit6.clone()],
             style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
@@ -762,6 +763,8 @@ function draw_net(PARAMS) {
 
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
+
+    return g;
 }
 
 function draw_capsid(PARAMS) {
@@ -780,7 +783,6 @@ function draw_capsid(PARAMS) {
     // transform
     const th = (2 * Math.PI) / PARAMS.s;
     const is_equilateral = h == H && k == K;
-    console.log(is_equilateral);
     const inflater = is_equilateral ? (e) => spherize(e, ico_coors[0].norm(), PARAMS.c) : (e) => cylinderize(e, ico_coors, PARAMS.s, PARAMS.c);
     const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
     let results = [];
@@ -808,14 +810,14 @@ function draw_capsid(PARAMS) {
                     data: Object.assign({}, e.data, {
                         id: id,
                         centroid: centroid,
+                        segments_3D: segments,
                         normal: segments[1].sub(segments[0]).cross(segments[2].sub(segments[0])).uvec(),
                     }),
                     closed: true,
                     style: e.style,
                 });
             });
-
-            results = results.concat(new Group({ children: xfacet, data: { centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat() } }));
+            results = results.concat(new Group({ children: xfacet, data: { type: "face", centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat() } }));
         }
     }
 
@@ -873,7 +875,7 @@ function draw_capsid(PARAMS) {
 
     // painter's algorithm
     results.sort((a, b) => a.data.centroid[2] < b.data.centroid[2]);
-    new Group({
+    const g = new Group({
         children: results,
         position: view.center,
         style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
@@ -889,4 +891,6 @@ function draw_capsid(PARAMS) {
     // clean-up
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
+
+    return g;
 }

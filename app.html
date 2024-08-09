@@ -50,21 +50,79 @@
                 return PARAMS;
             }
 
-            function download_svg() {
-                // https://www.mikechambers.com/blog/post/2014-07-01-saving-svg-content-from-paper.js/
+            function download(e) {
                 const PARAMS = params();
                 const name = ["h", "k", "H", "K", "s", "R", "t", "c", "m"].map((k) => PARAMS[k]).join("_");
-                var link = document.createElement("a");
-                link.download = name + ".svg";
-                link.href =
-                    "data:image/svg+xml;utf8," +
-                    encodeURIComponent(
-                        project.exportSVG({
-                            "options.bounds": "content",
-                            asString: true,
-                            "options.matchShapes": true,
-                        })
+                const ext = e.target.id.split("_")[1];
+                let href;
+                /****/ if (ext === "svg") {
+                    href =
+                        "data:image/svg+xml;utf8," +
+                        encodeURIComponent(
+                            project.exportSVG({
+                                "options.bounds": "content",
+                                asString: true,
+                                "options.matchShapes": true,
+                            })
+                        );
+                } else if (ext === "csv" || ext === "tsv") {
+                    const sep = ext === "csv" ? "," : "\t";
+                    const mime = ext === "csv" ? "csv" : "tab-separated-values";
+                    href =
+                        `data:text/${mime};charset=utf-8,` +
+                        encodeURIComponent(
+                            [["x", "y", "z", "facet", "polygon", "segment"].join(sep)]
+                                .concat(
+                                    draw_capsid(PARAMS)
+                                        .children.filter((e) => e.data.type === "face")
+                                        .flatMap((e, i) => e.children.flatMap((f, j) => f.data.segments_3D.map((g, k) => [...g, i + 1, j + 1, k + 1].join(sep))))
+                                )
+                                .join("\r\n")
+                        );
+                } else if (ext === "json") {
+                    href =
+                        "data:application/json;charset=utf-8," +
+                        encodeURIComponent(
+                            JSON.stringify(
+                                draw_capsid(PARAMS)
+                                    .children.filter((e) => e.data.type === "face")
+                                    .map((e, i) => e.children.map((f, j) => f.data.segments_3D)),
+                                null,
+                                4
+                            )
+                        );
+                } else if (ext === "py") {
+                    const data = JSON.stringify(
+                        draw_capsid(PARAMS)
+                            .children.filter((e) => e.data.type === "face")
+                            .map((e, i) => e.children.map((f, j) => f.data.segments_3D)),
+                        null,
+                        4
                     );
+                    href =
+                        "data:text/x-python;charset=utf-8," +
+                        encodeURIComponent(
+                            [
+                                ["import bpy"],
+                                ["facets = " + data],
+                                ["n = 1"],
+                                ["for i, facet in enumerate(facets, start = 1):"],
+                                ['    collection = bpy.data.collections.new(f"facet-{i}")'],
+                                ["    bpy.context.scene.collection.children.link(collection)"],
+                                ["    for j, polygon in enumerate(facet, start = 1):"],
+                                ['        mesh = bpy.data.meshes.new(name=f"polygon_msh-{n}")'],
+                                ["        mesh.from_pydata(polygon, [], [list(range(len(polygon)))])"],
+                                ["        mesh.validate(verbose=True)"],
+                                ['        obj = bpy.data.objects.new(f"polygon_obj-{n}", mesh)'],
+                                ["        collection.objects.link(obj)"],
+                                ["        n += 1"],
+                            ].join("\r\n")
+                        );
+                }
+
+                var link = document.createElement("a");
+                link.download = name + "." + ext;
+                link.href = href;
                 link.click();
             }
 
@@ -100,7 +158,7 @@
 
             window.onload = function (opt) {
                 Object.keys(DEFAULTS).forEach((e) => document.getElementById(e).addEventListener("change", update));
-                document.getElementById("download_svg").addEventListener("click", download_svg);
+                ["svg", "csv", "tsv", "json", "py"].forEach((e) => document.getElementById("download_" + e).addEventListener("click", download));
                 document.getElementById("show_citation").addEventListener("click", () => document.getElementById("citation").showModal());
                 document.getElementById("close_citation").addEventListener("click", () => document.getElementById("citation").close());
                 update();
@@ -155,7 +213,7 @@
                     </div>
                     <div>
                         <label for="sphericity">c=</label>
-                        <input type="range" min="0" max="1000" value="0" id="c" />
+                        <input type="range" min="-1000" max="1000" value="0" id="c" />
                     </div>
                     <div>
                         <label for="mode_levo">levo=</label>
@@ -296,6 +354,10 @@
                 <fieldset>
                     <legend>export</legend>
                     <button id="download_svg">SVG</button>
+                    <button id="download_csv">CSV</button>
+                    <button id="download_tsv">TSV</button>
+                    <button id="download_json">JSON</button>
+                    <button id="download_py">Blender</button>
                     <button id="show_citation">Citation</button>
                 </fieldset>
             </div>
