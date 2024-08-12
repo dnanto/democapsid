@@ -82,8 +82,8 @@ def roro(v, k=np.array([0, 0, 1]), t=0):
     return v * np.cos(t) + np.cross(k, v) * np.sin(t) + k * np.dot(k, v) * (1 - np.cos(t))
 
 
-def on_same_line(a, b, c):
-    return np.isclose(np.linalg.norm(np.cross(b - a, c - a)), 0)
+def on_same_line(a, b, c, d):
+    return np.isclose(np.linalg.norm(np.cross(b - a, c - a)), 0) and np.isclose(np.linalg.norm(np.cross(b - a, d - a)), 0)
 
 
 def triangle_area(p, q, r):
@@ -380,10 +380,10 @@ def main(argv):
         for coor in lattice_coordinates:
             # process tile subunits
             for tiler in TILERS:
-                points = tiler(coor @ basis)
+                path = list(iter_ring(tiler(coor @ basis)))
                 vertices = []
                 # iterate polygon edges
-                for src, tar in iter_ring(points):
+                for src, tar in path:
                     # add point if it is within the triangle bounds
                     in_triangle(src, *triangle) and vertices.append((np.append(src, 1), 0))
                     # iterate triangle edges
@@ -391,13 +391,15 @@ def main(argv):
                         # add point that at the intersetion of the polygon and triangle edges
                         if (x := intersection(src, tar, *edge)).any():
                             vertices.append((np.append(x, 1), 1))
+                # keep edges if they occuron the tile polygon path
                 edges = [
-                    (src, tar)
-                    for src, tar in iter_ring(list(range(len(vertices))))
-                    if (vertices[src][1], vertices[tar][1]) != (1, 1) or ((vertices[src][1], vertices[tar][1]) == (1, 1) and not any(on_same_line(vertices[src][0], vertices[tar][0], np.append(edge, 1)) for edge in triangle))
+                    (s1, t1) 
+                    for s1, t1 in iter_ring(list(range(len(vertices))))
+                    if any(on_same_line(vertices[s1][0], vertices[t1][0], np.append(s2, 1), np.append(t2, 1)) for s2, t2 in path)
                 ]
-                vertices = [ele[0] for ele in vertices]
-                vertices and mesh.append((vertices, edges))
+                # if there are only two edges and they point to each other, then only keep one
+                edges = [edges[0]] if len(edges) == 2 and edges[0] == edges[1][::-1] else edges        
+                edges and mesh.append(([ele[0] for ele in vertices], edges))
         mesh and meshes.append(mesh)
     
     meshes3d = [[], [], [], []]
@@ -429,6 +431,6 @@ if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
         [bpy.data.collections.remove(obj, do_unlink=True) for obj in bpy.data.collections]
-        main(["capsid", "3", "1", "4", "2", "-symmetry", "2", "-sphericity", "0"])
+        main(["capsid", "3", "1", "4", "2", "-symmetry", "5", "-sphericity", "0"])
     else:
         sys.exit(main(sys.argv))
