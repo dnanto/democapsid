@@ -38,13 +38,13 @@ ICO_CONFIG = (
         (1, 1, 1, 1, 2, 2, 2, 2, 3, 3),
         (2, 2, 2, 2, 2, 2, 2, 2, 2, 2),
         ("T1-▔", "T1-▔", "T1▁", "T1▁", "T2-▼", "T2-▲", "T2-▼", "T2-▲", "T3-▼", "T3-▲"),
-        [(0, 2, 1), (2, 4, 1), (9, 6, 10), (9, 10, 11), (0, 6, 2), (9, 2, 6), (2, 9, 4), (9, 4, 11), (0, 5, 6), (10, 6, 5)]
+        [(0, 2, 1), (2, 4, 1), (9, 6, 10), (9, 10, 11), (0, 6, 2), (9, 2, 6), (2, 9, 4), (11, 4, 9), (0, 5, 6), (10, 6, 5)]
     ),
     (
         (1, 1, 1, 1, 2, 2, 3, 3),
         [1, 3, 3, 1, 3, 3, 3, 3],
         ("T1-▔", "T1-▲", "T1-▼", "T1-▁", "T2-▼", "T2-▲", "T3-▼", "T3-▲"),
-        [(0, 1, 2), (1, 3, 2), (6, 9, 11), (9, 10, 11), (1, 6, 3), (9, 3, 6), (1, 5, 6), (11, 6, 5)]
+        [(0, 1, 2), (1, 3, 2), (6, 11, 9), (9, 11, 10), (1, 6, 3), (9, 3, 6), (1, 5, 6), (11, 6, 5)]
     ),   
     (), 
     (
@@ -378,23 +378,21 @@ def main(argv):
             # process tile subunits
             for tiler in TILERS:
                 points = tiler(coor @ basis)
-                p2 = []
+                polygon = []
                 # iterate polygon edges
                 for src, tar in iter_ring(points):
                     # add point if it is within the triangle bounds
-                    in_triangle(src, *triangle) and p2.append(np.append(src, 1))
+                    in_triangle(src, *triangle) and polygon.append(np.append(src, 1))
                     # iterate triangle edges
                     for edge in iter_ring(triangle):
                         # add point that at the intersetion of the polygon and triangle edges
-                        (x := intersection(src, tar, *edge)).any() and p2.append(np.append(x, 1))
-                p2 and mesh.append(p2)
+                        (x := intersection(src, tar, *edge)).any() and polygon.append(np.append(x, 1))
+                polygon and mesh.append(polygon)
         mesh and meshes.append(mesh)
     
     meshes3d = [[], [], [], []]
     config = ICO_CONFIG[s]
     coors = ico_coors(s, ckv)
-    print(coors)
-    # print(config)
     for t_idx, t_rep, t_id, v_idx in zip(*config):
         A = np.linalg.inv(np.transpose(np.hstack((np.stack(ckt[t_idx]), np.ones([3, 1])))))
         for i in range(t_rep):
@@ -423,6 +421,6 @@ if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
         [bpy.data.collections.remove(obj, do_unlink=True) for obj in bpy.data.collections]
-        main(["capsid", "3", "1", "4", "2", "-symmetry", "5", "-sphericity", "0"])
+        main(["capsid", "3", "1", "4", "2", "-symmetry", "2", "-sphericity", "0"])
     else:
         sys.exit(main(sys.argv))
