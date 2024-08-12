@@ -382,11 +382,14 @@ def main(argv):
                 # iterate polygon edges
                 for src, tar in iter_ring(points):
                     # add point if it is within the triangle bounds
-                    in_triangle(src, *triangle) and polygon.append(np.append(src, 1))
+                    in_triangle(src, *triangle) and polygon.append((np.append(src, 1), 0))
                     # iterate triangle edges
                     for edge in iter_ring(triangle):
                         # add point that at the intersetion of the polygon and triangle edges
-                        (x := intersection(src, tar, *edge)).any() and polygon.append(np.append(x, 1))
+                        if (x := intersection(src, tar, *edge)).any():
+                            polygon.append((np.append(x, 1), 1))
+                
+                # polygon and print([ele[1] for ele in polygon])
                 polygon and mesh.append(polygon)
         mesh and meshes.append(mesh)
     
@@ -397,7 +400,7 @@ def main(argv):
         A = np.linalg.inv(np.transpose(np.hstack((np.stack(ckt[t_idx]), np.ones([3, 1])))))
         for i in range(t_rep):
             M = np.transpose(np.apply_along_axis(roro, 1, coors[v_idx,], t=i * (2 * np.pi) / s)) @ A
-            meshes3d.append([[M @ point for point in polygon] for polygon in meshes[t_idx]])
+            meshes3d.append([[(M @ point[0], point[1]) for point in polygon] for polygon in meshes[t_idx]])
 
     if "bpy" in sys.modules:
         for i, mesh in enumerate(meshes3d[1:], start=1):
@@ -405,7 +408,9 @@ def main(argv):
             bpy.context.scene.collection.children.link(collection)
             for j, polygon in enumerate(mesh, start=1):
                 mesh = bpy.data.meshes.new(name=f"polygon_msh[{i},{j}]")
-                mesh.from_pydata([ele for ele in polygon], [], [list(range(len(polygon)))])
+                e_idx = list(iter_ring(list(range(len(polygon)))))
+                edges = [(src, tar) for src, tar in e_idx if (polygon[src][1], polygon[tar][1]) != (1, 1)]
+                mesh.from_pydata([ele[0] for ele in polygon], edges, [])
                 mesh.validate(verbose=True)
                 obj = bpy.data.objects.new(f"polygon_obj-[{i},{j}]", mesh)
                 collection.objects.link(obj)
