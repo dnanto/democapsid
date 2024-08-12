@@ -82,6 +82,10 @@ def roro(v, k=np.array([0, 0, 1]), t=0):
     return v * np.cos(t) + np.cross(k, v) * np.sin(t) + k * np.dot(k, v) * (1 - np.cos(t))
 
 
+def on_same_line(a, b, c):
+    return np.isclose(np.linalg.norm(np.cross(b - a, c - a)), 0)
+
+
 def triangle_area(p, q, r):
     # Weisstein, Eric W. "Triangle Area." From MathWorld--A Wolfram Web Resource.
     # https://mathworld.wolfram.com/TriangleArea.html
@@ -289,7 +293,6 @@ def ico_coors_5(ckv):
     pC = pB + np.array([a, 0, 0])
 
     t = angle(ckv[0], ckv[1])
-    print(a, b, t)
     q = pC + roro(np.array([b, 0, 0]), np.array([0, 1, 0]), -np.pi - t)
     p = pB + proj(q - pB, pC - pB)
     d = np.array([p[0], (-np.abs(p[1]) * np.sqrt(R5 * R5 * p[1] * p[1] - (p[0] * p[1]) ** 2)) / (p[1]* p[1]), 0])
@@ -378,19 +381,23 @@ def main(argv):
             # process tile subunits
             for tiler in TILERS:
                 points = tiler(coor @ basis)
-                polygon = []
+                vertices = []
                 # iterate polygon edges
                 for src, tar in iter_ring(points):
                     # add point if it is within the triangle bounds
-                    in_triangle(src, *triangle) and polygon.append((np.append(src, 1), 0))
+                    in_triangle(src, *triangle) and vertices.append((np.append(src, 1), 0))
                     # iterate triangle edges
                     for edge in iter_ring(triangle):
                         # add point that at the intersetion of the polygon and triangle edges
                         if (x := intersection(src, tar, *edge)).any():
-                            polygon.append((np.append(x, 1), 1))
-                
-                # polygon and print([ele[1] for ele in polygon])
-                polygon and mesh.append(polygon)
+                            vertices.append((np.append(x, 1), 1))
+                edges = [
+                    (src, tar)
+                    for src, tar in iter_ring(list(range(len(vertices))))
+                    if (vertices[src][1], vertices[tar][1]) != (1, 1) or ((vertices[src][1], vertices[tar][1]) == (1, 1) and not any(on_same_line(vertices[src][0], vertices[tar][0], np.append(edge, 1)) for edge in triangle))
+                ]
+                vertices = [ele[0] for ele in vertices]
+                vertices and mesh.append((vertices, edges))
         mesh and meshes.append(mesh)
     
     meshes3d = [[], [], [], []]
@@ -400,7 +407,7 @@ def main(argv):
         A = np.linalg.inv(np.transpose(np.hstack((np.stack(ckt[t_idx]), np.ones([3, 1])))))
         for i in range(t_rep):
             M = np.transpose(np.apply_along_axis(roro, 1, coors[v_idx,], t=i * (2 * np.pi) / s)) @ A
-            meshes3d.append([[(M @ point[0], point[1]) for point in polygon] for polygon in meshes[t_idx]])
+            meshes3d.append([([M @ point for point in vertices], edges) for vertices, edges in meshes[t_idx]])
 
     if "bpy" in sys.modules:
         for i, mesh in enumerate(meshes3d[1:], start=1):
@@ -408,16 +415,12 @@ def main(argv):
             bpy.context.scene.collection.children.link(collection)
             for j, polygon in enumerate(mesh, start=1):
                 mesh = bpy.data.meshes.new(name=f"polygon_msh[{i},{j}]")
-                e_idx = list(iter_ring(list(range(len(polygon)))))
-                edges = [(src, tar) for src, tar in e_idx if (polygon[src][1], polygon[tar][1]) != (1, 1)]
-                mesh.from_pydata([ele[0] for ele in polygon], edges, [])
+                mesh.from_pydata(*polygon, [])
                 mesh.validate(verbose=True)
                 obj = bpy.data.objects.new(f"polygon_obj-[{i},{j}]", mesh)
                 collection.objects.link(obj)
     else:
-        for i, mesh in enumerate(meshes3d[1:], start=1):
-            for j, polygon in enumerate(mesh, start=1):
-                print(i, j, polygon)
+        pass
     
     return 0
 
