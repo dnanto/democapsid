@@ -12,6 +12,7 @@ except ImportError:
     pass
 
 
+SQRT2 = np.sqrt(2)
 SQRT3 = np.sqrt(3)
 SQRT5 = np.sqrt(5)
 PHI = (1 + SQRT5) / 2
@@ -41,7 +42,7 @@ ICO_CONFIG = (
 )
 
 
-def hexagon(R, t=0):
+def calc_hexagon(R, t=0):
     r = R * (SQRT3 / 2)
     points = (
         (0, 1), 
@@ -55,7 +56,19 @@ def hexagon(R, t=0):
     return [rmat_t @ ele for ele in points], r
 
 
-def triangle(R, t=0):
+def calc_square(R, t=0):
+    r = R / SQRT2
+    points = (
+        (0, R),
+        (R, 0),
+        (0, -R),
+        (-R, 0),
+    )
+    rmat_t = rmat(t)
+    return [rmat_t @ ele for ele in points], r
+    
+
+def calc_triangle(R, t=0):
     r = R / 2
     a = SQRT3 * R
     points = (
@@ -67,30 +80,46 @@ def triangle(R, t=0):
     return [rmat_t @ ele for ele in points], r
 
 
-def calc_lattice(t, R):
+def calc_lattice(t, R6):
     if t == "hex":
-        hex, r = hexagon(R)
-        basis = np.array([[2 * r, 0], [r, r * SQRT3]])
+        hex, r6 = calc_hexagon(R6)
+        basis = np.array([[2 * r6, 0], [r6, r6 * SQRT3]])
         tiler = [lambda coor: hex + coor]
     elif t == "trihex": 
-        hex, _ = hexagon(R, np.pi / 6)
-        basis = np.array([[2 * R, 0], [R, R * SQRT3]])
+        hex, _ = calc_hexagon(R6, np.pi / 6)
+        basis = np.array([[2 * R6, 0], [R6, R6 * SQRT3]])
         tiler = [lambda coor: hex + coor]
     elif t == "snubhex":
-        hex, r6 = hexagon(R, np.pi / 6)
-        R3 = 2 / 3 * r6
-        tri1, r3 = triangle(R3, np.pi / 3)
-        tri2, r3 = triangle(R3)
-        basis = np.array([[2.5 * R, R * SQRT3 / 2], [0.5 * R, 3 * R * SQRT3 / 2]])
+        hex, r6 = calc_hexagon(R6, np.pi / 6)
+        tri1, r3 = calc_triangle(R3 := 2 / 3 * r6)
+        tri2, r3 = calc_triangle(R3, np.pi / 3)
+        basis = np.array([[2.5 * R6, R6 * SQRT3 / 2], [0.5 * R6, 3 * R6 * SQRT3 / 2]])
         tiler = [
             lambda coor: hex + coor,
-            lambda coor: tri1 + coor + [0, -(r6 + r3)],
-            lambda coor: tri2 + coor + [R, -(r6 - r3)],
-            lambda coor: tri1 + coor + [R, r6 - r3],
-            lambda coor: tri2 + coor + [0, r6 + r3],
-            lambda coor: tri2 + coor + [R, r6 + r3],
-            lambda coor: tri2 + coor + [1.5 * R, r3]
+            lambda coor: tri2 + coor + [0, -(r6 + r3)],
+            lambda coor: tri1 + coor + [R6, -(r6 - r3)],
+            lambda coor: tri2 + coor + [R6, r6 - r3],
+            lambda coor: tri1 + coor + [0, r6 + r3],
+            lambda coor: tri1 + coor + [R6, r6 + r3],
+            lambda coor: tri1 + coor + [1.5 * R6, r3]
         ]
+    elif t == "rhombitrihex":
+        hex, r6 = calc_hexagon(R6, np.pi / 6)
+        sqr1, r4 = calc_square(R4 := np.sqrt(2 * R6 * R6) / 2, np.pi / 4)
+        sqr1 = [ele + [0, r4 + r6] for ele in sqr1]
+        sqr2 = [rmat(np.pi / 3) @ ele for ele in sqr1]
+        sqr3 = [rmat(2 * np.pi / 3) @ ele for ele in sqr1]
+        basis = np.array([
+            [R6 + r6 + 0.5 * R6, 0.5 * R6 + r6],
+            [0, 2 * r6 + R6]
+        ])
+        tiler = [
+            lambda coor: hex + coor,
+            lambda coor: sqr1 + coor,
+            lambda coor: sqr2 + coor,
+            lambda coor: sqr3 + coor,
+        ]
+
     else:
         raise ValueError("invalid tile mode!")
     return (basis, tiler)
@@ -372,7 +401,7 @@ def main(argv):
     h, k, H, K, s, c = args.h, args.k, args.H, args.K, args.symmetry, args.sphericity
 
     # tile
-    tile = "snubhex"
+    tile = "rhombitrihex"
 
     # lattice basis
     lattice = calc_lattice(tile, 1)
