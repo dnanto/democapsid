@@ -184,7 +184,20 @@ def calc_lattice(t, R6):
             *((lambda coor, sgm=sgm: sgm + coor) for sgm in sgms)
         ]
     elif t == "dualrhombitrihex":
-        pass
+        basis = np.array([
+            [(3 / 2) * R, r],
+            [0, 2 * r],
+        ])
+        sgm = np.array([
+            [0, 0],
+            [0, r6],
+            [0.5 * R6, r6],
+            [(SQRT3 / 2) * r6, 0.5 * r6]
+        )]
+        sgms = [[rmat(i * np.pi / 3) @ ele for ele in sgm] for i in range(6)]
+        tiler = [
+            *((lambda coor, sgm=sgm: sgm + coor) for sgm in sgms)
+        ]
     else:
         raise ValueError("invalid tile mode!")
     return (basis, tiler)
