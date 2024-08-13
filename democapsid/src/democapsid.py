@@ -16,37 +16,6 @@ SQRT3 = np.sqrt(3)
 SQRT5 = np.sqrt(5)
 PHI = (1 + SQRT5) / 2
 
-R6 = 1
-r6 = R6 * (SQRT3 / 2)
-
-HEXAGON_1 = np.array([
-        [0, 1], 
-        [r6, 0.5], 
-        [r6, -0.5], 
-        [0, -1], 
-        [-r6, -0.5], 
-        [-r6, 0.5]
-    ]
-)
-HEXAGON_2 = [
-    [R6 / 2, r6],
-    [R6, 0],
-    [R6 / 2, -r6],
-    [-R6 / 2, -r6],
-    [-R6, 0],
-    [-R6 / 2, r6]
-]
-LATTICE = {
-    "hex": (
-        lambda R: (R * (SQRT3 / 2)) * np.array([[2, 0], [1, SQRT3]]),
-        [lambda coor: HEXAGON + coor]
-    ),
-    "trihex": (
-        lambda R: np.array([[2 * R, 0], [R, R * SQRT3]]),
-        [lambda coor: HEXAGON_2 + coor]
-    )
-}
-
 ICO_CONFIG = (
     (),
     (),
@@ -70,6 +39,62 @@ ICO_CONFIG = (
         [(0, 2, 1), (6, 7, 11), (2, 6, 1), (6, 2, 7)]
     )
 )
+
+
+def hexagon(R, t=0):
+    r = R * (SQRT3 / 2)
+    points = (
+        (0, 1), 
+        (r, 0.5), 
+        (r, -0.5), 
+        (0, -1), 
+        (-r, -0.5), 
+        (-r, 0.5)
+    )
+    rmat_t = rmat(t)
+    return [rmat_t @ ele for ele in points], r
+
+
+def triangle(R, t=0):
+    r = R / 2
+    a = SQRT3 * R
+    points = (
+        (0, R),
+        (a / 2, -r),
+        (-a / 2, -r)
+    )
+    rmat_t = rmat(t)
+    return [rmat_t @ ele for ele in points], r
+
+
+def calc_lattice(t, R):
+    if t == "hex":
+        hex, r = hexagon(R)
+        basis = np.array([[2 * r, 0], [r, r * SQRT3]])
+        tiler = [lambda coor: hex + coor]
+    elif t == "trihex": 
+        hex, _ = hexagon(R, np.pi / 6)
+        basis = np.array([[2 * R, 0], [R, R * SQRT3]])
+        tiler = [lambda coor: hex + coor]
+    elif t == "snubhex":
+        hex, r6 = hexagon(R, np.pi / 6)
+        R3 = 2 / 3 * r6
+        tri1, r3 = triangle(R3, np.pi / 3)
+        tri2, r3 = triangle(R3)
+        basis = np.array([[2.5 * R, R * SQRT3 / 2], [0.5 * R, 3 * R * SQRT3 / 2]])
+        tiler = [
+            lambda coor: hex + coor,
+            lambda coor: tri1 + coor + [0, -(r6 + r3)],
+            lambda coor: tri2 + coor + [R, -(r6 - r3)],
+            lambda coor: tri1 + coor + [R, r6 - r3],
+            lambda coor: tri2 + coor + [0, r6 + r3],
+            lambda coor: tri2 + coor + [R, r6 + r3],
+            lambda coor: tri2 + coor + [1.5 * R, r3]
+        ]
+    else:
+        raise ValueError("invalid tile mode!")
+    return (basis, tiler)
+
 
 def iter_ring(elements):
     yield from ((elements[i], elements[(i + 1) % len(elements)]) for i in range(len(elements))) if len(elements) > 1 else ()
@@ -347,10 +372,11 @@ def main(argv):
     h, k, H, K, s, c = args.h, args.k, args.H, args.K, args.symmetry, args.sphericity
 
     # tile
-    tile = "trihex"
+    tile = "snubhex"
 
     # lattice basis
-    basis = LATTICE[tile][0](1)
+    lattice = calc_lattice(tile, 1)
+    basis = lattice[0]
     v1, v2, v3 = (*basis, basis[1] @ rmat(np.pi / 3)) 
 
     # Caspar-Klug vectors
@@ -383,7 +409,7 @@ def main(argv):
         mesh = []
         for coor in lattice_coordinates:
             # process tile subunits
-            for calc_tile in LATTICE[tile][1]:
+            for calc_tile in lattice[1]:
                 path = list(iter_ring(calc_tile(coor @ basis)))
                 vertices = []
                 # iterate polygon edges
@@ -395,15 +421,15 @@ def main(argv):
                         # add point that at the intersetion of the polygon and triangle edges
                         if (x := intersection(src, tar, *edge)).any():
                             vertices.append((np.append(x, 1), 1))
-            # keep edges if they occur on the tile polygon path
-            edges = [
-                (s1, t1) 
-                for s1, t1 in iter_ring(list(range(len(vertices))))
-                if any(on_same_line(vertices[s1][0], vertices[t1][0], np.append(s2, 1), np.append(t2, 1)) for s2, t2 in path)
-            ]
-            # if there are only two edges and they point to each other, then only keep one
-            edges = [edges[0]] if len(edges) == 2 and edges[0] == edges[1][::-1] else edges        
-            edges and mesh.append(([ele[0] for ele in vertices], edges))
+                # keep edges if they occur on the tile polygon path
+                edges = [
+                    (s1, t1) 
+                    for s1, t1 in iter_ring(list(range(len(vertices))))
+                    if any(on_same_line(vertices[s1][0], vertices[t1][0], np.append(s2, 1), np.append(t2, 1)) for s2, t2 in path)
+                ]
+                # if there are only two edges and they point to each other, then only keep one
+                edges = [edges[0]] if len(edges) == 2 and edges[0] == edges[1][::-1] else edges        
+                edges and mesh.append(([ele[0] for ele in vertices], edges))
         mesh and meshes.append(mesh)
     
     meshes3d = [[], [], [], []]
