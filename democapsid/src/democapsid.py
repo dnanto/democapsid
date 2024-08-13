@@ -105,7 +105,7 @@ def calc_lattice(t, R6):
         ]
     elif t == "rhombitrihex":
         hex, r6 = calc_hexagon(R6, np.pi / 6)
-        sqr1, r4 = calc_square(R4 := np.sqrt(2 * R6 * R6) / 2, np.pi / 4)
+        sqr1, r4 = calc_square(np.sqrt(2 * R6 * R6) / 2, np.pi / 4)
         sqr1 = [ele + [0, r4 + r6] for ele in sqr1]
         sqr2 = [rmat(np.pi / 3) @ ele for ele in sqr1]
         sqr3 = [rmat(2 * np.pi / 3) @ ele for ele in sqr1]
@@ -119,7 +119,28 @@ def calc_lattice(t, R6):
             lambda coor: sqr2 + coor,
             lambda coor: sqr3 + coor,
         ]
-
+    elif t == "dualhex":
+        #                 center: e.coor.add([0, r - (R * SQRT3) / 6]),
+        r6 = R6 * (SQRT3 / 2)
+        basis = np.array([
+            [(3 / 2) * R6, r6],
+            [0, 2 * r6],
+        ])
+        tri1, r3 = calc_triangle(R3 := R6 / SQRT3)
+        tri1 = [ele + [0, -(r6 - r3)] for ele in tri1]
+        tri2 = [rmat(np.pi / 3) @ ele for ele in tri1]
+        tri3 = [rmat(2 * np.pi / 3) @ ele for ele in tri1]
+        tri4 = [rmat(3 * np.pi / 3) @ ele for ele in tri1]
+        tri5 = [rmat(4 * np.pi / 3) @ ele for ele in tri1]
+        tri6 = [rmat(5 * np.pi / 3) @ ele for ele in tri1]
+        tiler = [
+            lambda coor: tri1 + coor,
+            lambda coor: tri2 + coor,
+            lambda coor: tri3 + coor,
+            lambda coor: tri4 + coor,
+            lambda coor: tri5 + coor,
+            lambda coor: tri6 + coor,
+        ]
     else:
         raise ValueError("invalid tile mode!")
     return (basis, tiler)
@@ -401,7 +422,7 @@ def main(argv):
     h, k, H, K, s, c = args.h, args.k, args.H, args.K, args.symmetry, args.sphericity
 
     # tile
-    tile = "rhombitrihex"
+    tile = "dualhex"
 
     # lattice basis
     lattice = calc_lattice(tile, 1)
