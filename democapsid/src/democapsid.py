@@ -141,6 +141,32 @@ def calc_lattice(t, R6):
             lambda coor: tri5 + coor,
             lambda coor: tri6 + coor,
         ]
+    elif t == "dualtrihex":
+        r6 = R6 * (SQRT3 / 2)
+        rot = rmat(np.pi / 3)
+        sin, cos = np.sin(np.pi / 6), np.cos(np.pi / 3)
+        rmb1 = np.array([
+            [0, 0],
+            [0.5 * r6, -(0.25 * R6 * sin) / cos],
+            [r6, 0],
+            [0.5 * r6, (0.25 * R6 * sin) / cos]
+        ])
+        rmb2 = [
+            [-0.5 * r6, 0.5 * R6 + (0.25 * R6 * sin) / cos],
+            [0, 0.5 * R6],
+            [r6 - 0.5 * r6, 0.5 * R6 + (0.25 * R6 * sin) / cos],
+            [0, 0.5 * R6 + (2 * (0.25 * R6 * sin)) / cos]
+        ]
+        rmbs1 = [[rmat(i * np.pi / 3) @ ele for ele in rmb1] for i in range(6)]
+        rmbs2 = [[rmat(i * np.pi / 3) @ ele for ele in rmb2] for i in range(6)]
+        basis = np.array([
+            [2 * r6, 0],
+            [r6, SQRT3 * r6],
+        ])
+        tiler = [
+            *((lambda coor, rmb=rmb: rmb + coor) for rmb in rmbs1),
+            *((lambda coor, rmb=rmb: rmb + coor) for rmb in rmbs2),
+        ]
     else:
         raise ValueError("invalid tile mode!")
     return (basis, tiler)
@@ -422,7 +448,7 @@ def main(argv):
     h, k, H, K, s, c = args.h, args.k, args.H, args.K, args.symmetry, args.sphericity
 
     # tile
-    tile = "dualhex"
+    tile = "dualtrihex"
 
     # lattice basis
     lattice = calc_lattice(tile, 1)
@@ -492,7 +518,7 @@ def main(argv):
             meshes3d.append([([M @ point for point in vertices], edges) for vertices, edges in meshes[t_idx]])
 
     if "bpy" in sys.modules:
-        for i, mesh in enumerate(meshes3d[1:], start=1):
+        for i, mesh in enumerate(meshes[1:], start=1):
             collection = bpy.data.collections.new(f"facet-{i}")
             bpy.context.scene.collection.children.link(collection)
             for j, polygon in enumerate(mesh, start=1):
