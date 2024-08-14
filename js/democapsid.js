@@ -796,7 +796,7 @@ function draw_capsid(PARAMS) {
         const V = [0, 1, 2].map((e) => ico_coors[ico_cfg.v_idx[idx][e]]);
         for (let i = 0; i < ico_cfg.t_rep[idx]; i++, id++) {
             const X = V.map((e) => e.roro([0, 0, 1], i * th));
-            const M = mmul(T(X), inv3(A));
+            const M = mmul(T(X), A);
             const xfacet = facet.children.map((e) => {
                 const segments = e.segments
                     .map((f) => [f.point.x, f.point.y, 1])
