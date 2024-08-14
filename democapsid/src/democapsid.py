@@ -126,20 +126,11 @@ def calc_lattice(t, R6):
             [(3 / 2) * R6, r6],
             [0, 2 * r6],
         ])
-        tri1, r3 = calc_triangle(R3 := R6 / SQRT3)
-        tri1 = [ele + [0, -(r6 - r3)] for ele in tri1]
-        tri2 = [rmat(np.pi / 3) @ ele for ele in tri1]
-        tri3 = [rmat(2 * np.pi / 3) @ ele for ele in tri1]
-        tri4 = [rmat(3 * np.pi / 3) @ ele for ele in tri1]
-        tri5 = [rmat(4 * np.pi / 3) @ ele for ele in tri1]
-        tri6 = [rmat(5 * np.pi / 3) @ ele for ele in tri1]
+        tri, r3 = calc_triangle(R3 := R6 / SQRT3)
+        tri = [ele + [0, -(r6 - r3)] for ele in tri]
+        tris = [[rmat(i * np.pi / 3) @ ele for ele in tri] for i in range(6)]
         tiler = [
-            lambda coor: tri1 + coor,
-            lambda coor: tri2 + coor,
-            lambda coor: tri3 + coor,
-            lambda coor: tri4 + coor,
-            lambda coor: tri5 + coor,
-            lambda coor: tri6 + coor,
+            *((lambda coor, tri=tri: tri + coor) for tri in tris)
         ]
     elif t == "dualtrihex":
         r6 = R6 * (SQRT3 / 2)
@@ -167,7 +158,7 @@ def calc_lattice(t, R6):
             *((lambda coor, rmb=rmb: rmb + coor) for rmb in rmbs2),
         ]
     elif t == "dualsnubhex":
-        r6 = R6 * (SQRT3 / 2);
+        r6 = R6 * (SQRT3 / 2)
         basis = np.array([
             [2.5 * R6, r6],
             [0.5 * R6, 2 * r6 + 2 * ((R6 * SQRT3) / 3) - (R6 * SQRT3) / 6],
@@ -184,16 +175,17 @@ def calc_lattice(t, R6):
             *((lambda coor, sgm=sgm: sgm + coor) for sgm in sgms)
         ]
     elif t == "dualrhombitrihex":
+        r6 = R6 * (SQRT3 / 2)
         basis = np.array([
-            [(3 / 2) * R, r],
-            [0, 2 * r],
+            [(3 / 2) * R6, r6],
+            [0, 2 * r6],
         ])
         sgm = np.array([
             [0, 0],
             [0, r6],
             [0.5 * R6, r6],
             [(SQRT3 / 2) * r6, 0.5 * r6]
-        )]
+        ])
         sgms = [[rmat(i * np.pi / 3) @ ele for ele in sgm] for i in range(6)]
         tiler = [
             *((lambda coor, sgm=sgm: sgm + coor) for sgm in sgms)
@@ -479,7 +471,7 @@ def main(argv):
     h, k, H, K, s, c = args.h, args.k, args.H, args.K, args.symmetry, args.sphericity
 
     # tile
-    tile = "dualtrihex"
+    tile = "dualrhombitrihex"
 
     # lattice basis
     lattice = calc_lattice(tile, 1)
@@ -509,8 +501,8 @@ def main(argv):
         lattice_coordinates = chain(
             (
                 [i, j]
-                for i in range(bounds[:, 0].min(), bounds[:, 0].max() + 1)
-                for j in range(bounds[:, 1].min(), bounds[:, 1].max() + 1)
+                for i in range(bounds[:, 0].min(), bounds[:, 0].max() + 2)
+                for j in range(bounds[:, 1].min(), bounds[:, 1].max() + 2)
             )
         )
         mesh = []
@@ -522,21 +514,21 @@ def main(argv):
                 # iterate polygon edges
                 for src, tar in path:
                     # add point if it is within the triangle bounds
-                    in_triangle(src, *triangle) and vertices.append((np.append(src, 1), 0))
+                    in_triangle(src, *triangle) and vertices.append(np.append(src, 1))
                     # iterate triangle edges
                     for edge in iter_ring(triangle):
                         # add point that at the intersetion of the polygon and triangle edges
                         if (x := intersection(src, tar, *edge)).any():
-                            vertices.append((np.append(x, 1), 1))
+                            vertices.append(np.append(x, 1))
                 # keep edges if they occur on the tile polygon path
                 edges = [
                     (s1, t1) 
                     for s1, t1 in iter_ring(list(range(len(vertices))))
-                    if any(on_same_line(vertices[s1][0], vertices[t1][0], np.append(s2, 1), np.append(t2, 1)) for s2, t2 in path)
+                    if any(on_same_line(vertices[s1], vertices[t1], np.append(s2, 1), np.append(t2, 1)) for s2, t2 in path)
                 ]
                 # if there are only two edges and they point to each other, then only keep one
                 edges = [edges[0]] if len(edges) == 2 and edges[0] == edges[1][::-1] else edges        
-                edges and mesh.append(([ele[0] for ele in vertices], edges))
+                edges and mesh.append((vertices, edges))
         mesh and meshes.append(mesh)
     
     meshes3d = [[], [], [], []]
@@ -549,7 +541,7 @@ def main(argv):
             meshes3d.append([([M @ point for point in vertices], edges) for vertices, edges in meshes[t_idx]])
 
     if "bpy" in sys.modules:
-        for i, mesh in enumerate(meshes[1:], start=1):
+        for i, mesh in enumerate(meshes3d[1:], start=1):
             collection = bpy.data.collections.new(f"facet-{i}")
             bpy.context.scene.collection.children.link(collection)
             for j, polygon in enumerate(mesh, start=1):
