@@ -792,6 +792,7 @@ function draw_capsid(PARAMS) {
     let results = [];
     for (let idx = 0, id = 0; idx < ico_cfg.t_idx.length; idx++) {
         const facet = facets[ico_cfg.t_idx[idx] - 1];
+        const A = inv3(T(facet.data.vectors.map((e) => e.concat(1))));
         const V = [0, 1, 2].map((e) => ico_coors[ico_cfg.v_idx[idx][e]]);
         for (let i = 0; i < ico_cfg.t_rep[idx]; i++, id++) {
             const X = V.map((e) => e.roro([0, 0, 1], i * th));

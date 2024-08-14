@@ -3,6 +3,7 @@
 import sys
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from itertools import chain
+from functools import partial
 
 import numpy as np
 
@@ -299,8 +300,41 @@ def sd_sphere(p, s):
     return np.linalg.norm(p) - s
 
 
-def zproj(coor):
-    return np.array([0, 0, coor[2]])
+def spherize(coor, verts, sphericity):
+    return coor + uvec(coor) * (np.abs(sd_sphere(coor, np.linalg.norm(verts[6] - verts[6][2]))) * -sphericity)
+
+
+def cylinderize(coor, verts, sphericity, s=5):
+    r = np.linalg.norm(verts[6] - verts[6][2])
+    h2 = (verts[4][2] - verts[6][2]) / 2
+
+    if s == 5:
+        pos = np.array([0, 0, h2 - (r / 2)])
+        rad = verts[0][2] + (r / 2) - h2
+    elif s == 3:
+        p1, p2 = verts[0], verts[3]
+        pos = triangle_circumcircle_center(p1, p2, np.array([p2[0], -p2[1], p2[2]]))
+        rad = np.linalg.norm(p1 - pos)
+    elif s == 2:
+        p1 = verts[0]
+        pos = tetrahedron_circumsphere_center(p1, *verts[(1, 4, 5), :])
+        rad = np.linalg.norm(p1 - pos)
+
+    pos1 = np.array([0, 0, pos[2]])
+    pos2 = np.array([0, 0, -pos[2]])
+    tmid = np.array([0, 0, h2])
+    bmid = np.array([0, 0, -h2])
+    if h2 < coor[2]:    # top cap
+        d = sd_sphere(coor - pos1, rad)
+        d = np.abs(d)
+        return (d * sphericity * uvec(coor - tmid)) + coor
+    elif coor[2] < -h2: # bottom cap
+        d = sd_sphere(coor - pos2, rad)
+        d = np.abs(d)
+        return (d * sphericity * uvec(coor - bmid)) + coor
+    
+    # body cylinder
+    return ((r - np.linalg.norm(coor[:2])) * sphericity * uvec(coor - coor[2])) + coor
 
 
 def ico_coors_2(ckv, iter=100, tol=1E-15):
@@ -471,7 +505,7 @@ def main(argv):
     h, k, H, K, s, c = args.h, args.k, args.H, args.K, args.symmetry, args.sphericity
 
     # tile
-    tile = "dualrhombitrihex"
+    tile = "hex"
 
     # lattice basis
     lattice = calc_lattice(tile, 1)
@@ -534,11 +568,13 @@ def main(argv):
     meshes3d = [[], [], [], []]
     config = ICO_CONFIG[s]
     coors = ico_coors(s, ckv)
+    inflater = spherize if h == H and k == K else partial(cylinderize, s=s)
+    print(c)
     for t_idx, t_rep, t_id, v_idx in zip(*config):
         A = np.linalg.inv(np.transpose(np.hstack((np.stack(ckt[t_idx]), np.ones([3, 1])))))
         for i in range(t_rep):
             M = np.transpose(np.apply_along_axis(roro, 1, coors[v_idx,], t=i * (2 * np.pi) / s)) @ A
-            meshes3d.append([([M @ point for point in vertices], edges) for vertices, edges in meshes[t_idx]])
+            meshes3d.append([([inflater(M @ point, coors, c) for point in vertices], edges) for vertices, edges in meshes[t_idx]])
 
     if "bpy" in sys.modules:
         for i, mesh in enumerate(meshes3d[1:], start=1):
@@ -560,6 +596,6 @@ if __name__ == "__main__":
     if "bpy" in sys.modules:
         [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
         [bpy.data.collections.remove(obj, do_unlink=True) for obj in bpy.data.collections]
-        main(["capsid", "3", "1", "4", "2", "-symmetry", "5", "-sphericity", "0"])
+        main(["capsid", "1", "1", "1", "2", "-symmetry", "5", "-sphericity", "0.5"])
     else:
         sys.exit(main(sys.argv))
