@@ -490,47 +490,31 @@ def ico_coors(s, ckv, iter=100, tol=1E-15):
         raise ValueError("invalid symmetry mode!")
 
 
-def parse_args(argv):
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    for ele in "hkHK":
-        parser.add_argument(ele, default=1, type=int, help=f"the {ele} lattice parameter")
-    choices = (5, 3, 2)
-    parser.add_argument("-symmetry", default=choices[0], type=int, help=f"the axial symmetry: {choices}")
-    parser.add_argument("-sphericity", default=0, type=float, help="the sphericity value")
-    return parser.parse_args(argv)
-
-
-def main(argv):
-    args = parse_args(argv[1:])
-    h, k, H, K, s, c = args.h, args.k, args.H, args.K, args.symmetry, args.sphericity
-
-    # tile
-    tile = "hex"
-
-    # lattice basis
-    lattice = calc_lattice(tile, 1)
-    basis = lattice[0]
+def calc_ckv(h, k, H, K, basis):
     v1, v2, v3 = (*basis, basis[1] @ rmat(np.pi / 3)) 
-
-    # Caspar-Klug vectors
-    ckv = [
+    return [
         [h, k] @ basis,
         [H, K] @ np.stack([v2, v3]),
         [-h - k, h] @ basis,
         [k, -h] @ np.stack([v1, v3])
     ]
-    # Caspar-Klug triangles
-    ckt = [
+
+
+def calc_ckt(ckv):
+    return [
         [],
         [np.array([0, 0]), ckv[0], ckv[3]],
         [np.array([0, 0]), ckv[1], ckv[0]],
-        [np.array([0, 0]), ckv[2], ckv[1]],
+        [np.array([0, 0]), ckv[2], ckv[1]]
     ]
 
+
+def calc_ckm(ckv, lattice):
+    ckt = calc_ckt(ckv)
     meshes = [[]]
     for t_idx in range(1, 4):
         triangle = ckt[t_idx]
-        bounds = np.array([ele @ np.linalg.inv(basis) for ele in ckv]).astype(int)
+        bounds = np.array([ele @ np.linalg.inv(lattice[0]) for ele in ckv]).astype(int)
         # lattice grid
         lattice_coordinates = chain(
             (
@@ -543,7 +527,7 @@ def main(argv):
         for coor in lattice_coordinates:
             # process tile subunits
             for calc_tile in lattice[1]:
-                path = list(iter_ring(calc_tile(coor @ basis)))
+                path = list(iter_ring(calc_tile(coor @ lattice[0])))
                 vertices = []
                 # iterate polygon edges
                 for src, tar in path:
@@ -552,8 +536,7 @@ def main(argv):
                     # iterate triangle edges
                     for edge in iter_ring(triangle):
                         # add point that at the intersetion of the polygon and triangle edges
-                        if (x := intersection(src, tar, *edge)).any():
-                            vertices.append(np.append(x, 1))
+                        (x := intersection(src, tar, *edge)).any() and vertices.append(np.append(x, 1))
                 # keep edges if they occur on the tile polygon path
                 edges = [
                     (s1, t1) 
@@ -564,21 +547,58 @@ def main(argv):
                 edges = [edges[0]] if len(edges) == 2 and edges[0] == edges[1][::-1] else edges        
                 edges and mesh.append((vertices, edges))
         mesh and meshes.append(mesh)
-    
-    meshes3d = [[], [], [], []]
+    return meshes
+
+
+def calc_ico(ckv, ckm, s, c, inflater):
+    ckt = calc_ckt(ckv)
     config = ICO_CONFIG[s]
     coors = ico_coors(s, ckv)
-    inflater = spherize if h == H and k == K else partial(cylinderize, s=s)
-    print(c)
+    meshes = [[], [], [], []]
     for t_idx, t_rep, t_id, v_idx in zip(*config):
         A = np.linalg.inv(np.transpose(np.hstack((np.stack(ckt[t_idx]), np.ones([3, 1])))))
         for i in range(t_rep):
             M = np.transpose(np.apply_along_axis(roro, 1, coors[v_idx,], t=i * (2 * np.pi) / s)) @ A
-            meshes3d.append([([inflater(M @ point, coors, c) for point in vertices], edges) for vertices, edges in meshes[t_idx]])
+            meshes.append([([inflater(M @ point, coors, c) for point in vertices], edges) for vertices, edges in ckm[t_idx]])
+    return meshes
+
+
+def parse_args(argv):
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    for ele in "hkHK":
+        parser.add_argument(ele, default=1, type=int, help=f"the {ele} lattice parameter")
+    choices = (5, 3, 2)
+    parser.add_argument("-symmetry", default=choices[0], type=int, help=f"the axial symmetry: {choices}")
+    parser.add_argument("-radius", default=1, type=int, help="the hexagonal lattice unit radius")
+    choices = ("hex", "trihex", "snubhex", "rhombitrihex")
+    choices = (*choices, *("dual" + ele for ele in choices))
+    parser.add_argument("-tile", default=choices[0], help="the hexagonal lattice unit tile")
+    parser.add_argument("-sphericity", default=0, type=float, help="the sphericity value")
+    choices = ("ico", "net")
+    parser.add_argument("-mode", default=choices[0], help="the sphericity value")
+    return parser.parse_args(argv)
+
+
+def main(argv):
+    args = parse_args(argv[1:])
+    h, k, H, K, s, R, t, c = args.h, args.k, args.H, args.K, args.symmetry, args.radius, args.tile, args.sphericity
+
+    lattice = calc_lattice(t, R)
+    ckv = calc_ckv(h, k, H, K, lattice[0])
+    ckm = calc_ckm(ckv, lattice)
+    
+    if args.mode == "ico":
+        inflater = spherize if h == H and k == K else partial(cylinderize, s=s)
+        meshes = calc_ico(ckv, ckm, s, c, inflater)
+    else:
+        meshes = ckm
 
     if "bpy" in sys.modules:
-        for i, mesh in enumerate(meshes3d[1:], start=1):
-            collection = bpy.data.collections.new(f"facet-{i}")
+        for obj in bpy.data.objects:
+            bpy.data.objects.remove(obj, do_unlink=True)
+
+        for i, mesh in enumerate(meshes[1:], start=1):
+            collection = bpy.data.collections.new(f"face-{i}")
             bpy.context.scene.collection.children.link(collection)
             for j, polygon in enumerate(mesh, start=1):
                 mesh = bpy.data.meshes.new(name=f"polygon_msh[{i},{j}]")
@@ -587,15 +607,17 @@ def main(argv):
                 obj = bpy.data.objects.new(f"polygon_obj-[{i},{j}]", mesh)
                 collection.objects.link(obj)
     else:
-        pass
+        print("x", "y", "z", "face", "polygon", "point", sep="\t")
+        for i, mesh in enumerate(meshes[1:], start=1):
+            for j, polygon in enumerate(mesh, start=1):
+                for k, point in enumerate(polygon[0], start=1):
+                    print(*point, i, j, k, sep="\t")
     
     return 0
 
 
 if __name__ == "__main__":
     if "bpy" in sys.modules:
-        [bpy.data.objects.remove(obj, do_unlink=True) for obj in bpy.data.objects]
-        [bpy.data.collections.remove(obj, do_unlink=True) for obj in bpy.data.collections]
-        main(["capsid", "1", "1", "1", "2", "-symmetry", "5", "-sphericity", "0.5"])
+        main(["capsid", "1", "1", "1", "2", "-symmetry", "5", "-sphericity", "0"])
     else:
         sys.exit(main(sys.argv))
