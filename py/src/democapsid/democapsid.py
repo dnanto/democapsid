@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 
 import sys
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-from itertools import chain
 from functools import partial
+from itertools import chain
 
 import numpy as np
-
-try:
-    import bpy
-except ImportError:
-    pass
-
 
 SQRT2 = np.sqrt(2)
 SQRT3 = np.sqrt(3)
 SQRT5 = np.sqrt(5)
 PHI = (1 + SQRT5) / 2
+
 
 ICO_CONFIG = (
     (),
@@ -561,63 +555,3 @@ def calc_ico(ckv, ckm, s, c, inflater):
             M = np.transpose(np.apply_along_axis(roro, 1, coors[v_idx,], t=i * (2 * np.pi) / s)) @ A
             meshes.append([([inflater(M @ point, coors, c) for point in vertices], edges) for vertices, edges in ckm[t_idx]])
     return meshes
-
-
-def parse_args(argv):
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    for ele in "hkHK":
-        parser.add_argument(ele, default=1, type=int, help=f"the {ele} lattice parameter")
-    choices = (5, 3, 2)
-    parser.add_argument("-symmetry", default=choices[0], type=int, help=f"the axial symmetry: {choices}")
-    parser.add_argument("-radius", default=1, type=int, help="the hexagonal lattice unit radius")
-    choices = ("hex", "trihex", "snubhex", "rhombitrihex")
-    choices = (*choices, *("dual" + ele for ele in choices))
-    parser.add_argument("-tile", default=choices[0], help="the hexagonal lattice unit tile")
-    parser.add_argument("-sphericity", default=0, type=float, help="the sphericity value")
-    choices = ("ico", "net")
-    parser.add_argument("-mode", default=choices[0], help="the sphericity value")
-    return parser.parse_args(argv)
-
-
-def main(argv):
-    args = parse_args(argv[1:])
-    h, k, H, K, s, R, t, c = args.h, args.k, args.H, args.K, args.symmetry, args.radius, args.tile, args.sphericity
-
-    lattice = calc_lattice(t, R)
-    ckv = calc_ckv(h, k, H, K, lattice[0])
-    ckm = calc_ckm(ckv, lattice)
-    
-    if args.mode == "ico":
-        inflater = spherize if h == H and k == K else partial(cylinderize, s=s)
-        meshes = calc_ico(ckv, ckm, s, c, inflater)
-    else:
-        meshes = ckm
-
-    if "bpy" in sys.modules:
-        for obj in bpy.data.objects:
-            bpy.data.objects.remove(obj, do_unlink=True)
-
-        for i, mesh in enumerate(meshes[1:], start=1):
-            collection = bpy.data.collections.new(f"face-{i}")
-            bpy.context.scene.collection.children.link(collection)
-            for j, polygon in enumerate(mesh, start=1):
-                mesh = bpy.data.meshes.new(name=f"polygon_msh[{i},{j}]")
-                mesh.from_pydata(*polygon, [])
-                mesh.validate(verbose=True)
-                obj = bpy.data.objects.new(f"polygon_obj-[{i},{j}]", mesh)
-                collection.objects.link(obj)
-    else:
-        print("x", "y", "z", "face", "polygon", "point", sep="\t")
-        for i, mesh in enumerate(meshes[1:], start=1):
-            for j, polygon in enumerate(mesh, start=1):
-                for k, point in enumerate(polygon[0], start=1):
-                    print(*point, i, j, k, sep="\t")
-    
-    return 0
-
-
-if __name__ == "__main__":
-    if "bpy" in sys.modules:
-        main(["capsid", "1", "1", "1", "2", "-symmetry", "5", "-sphericity", "0"])
-    else:
-        sys.exit(main(sys.argv))
