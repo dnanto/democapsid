@@ -3,7 +3,7 @@
 import sys
 
 from .cli import parse_args
-from .democapsid import calc_ckm, calc_ckv, calc_ico, calc_lattice, cylinderize
+from .democapsid import calc_ckm, calc_ico, calc_lattice
 
 args = parse_args(sys.argv[1:])
 h, k, H, K, a, R, t, s, m = (getattr(args, key) for key in "h,k,H,K,a,R,t,s,m".split(","))

@@ -1,0 +1,1 @@
+democapsid @ git+https://github.com/dnanto/democapsid.git#egg=democapsid&subdirectory=py
