@@ -37,7 +37,141 @@ ICO_CONFIG = (
 )
 
 
+def iter_ring(elements):
+    """Iterate successive element pairs as a ring.
+
+    "ABCD"  -> [('A', 'B'), ('B', 'C'), ('C', 'D'), ('D', 'A')]
+    "AB"    -> [('A', 'B'), ('B', 'A')]
+    "A"     -> []
+    ""      -> []
+
+    Args:
+        elements (list): the list of elements
+
+    Yields:
+        tuple: the next pair
+    """
+    yield from ((elements[i], elements[(i + 1) % len(elements)]) for i in range(len(elements))) if len(elements) > 1 else ()
+
+
+def angle(p, q):
+    """Calculate the angle between two vectors.
+
+    Args:
+        p (list): the vector
+        q (list): the vector
+
+    Returns:
+        float: the angle (radians)
+    """
+    return np.arccos(np.dot(p, q) / (np.linalg.norm(p) * np.linalg.norm(q)))
+
+
+def uvec(v):
+    """Calculate the unit vector.
+
+    Args:
+        v (list): the vector
+
+    Returns:
+        np.array: the numpy array
+    """
+    return v / np.linalg.norm(v)
+
+
+def proj(p, q):
+    """Calculate the vector projection of p onto q.
+
+    Args:
+        p (np.array): the vector
+        q (np.array): the vector
+
+    Returns:
+        np.array: the vector projection
+    """
+    return (np.dot(p, q) / np.dot(q, q)) * q
+
+
+def rmat_2d(t):
+    """Calculate the two-dimensional rotation matrix.
+
+    Args:
+        t (float): the rotation angle (radians)
+
+    Returns:
+        np.array: the two-dimensional rotation matrix
+    """
+    cos, sin = np.cos(t), np.sin(t)
+    return np.array([[cos, sin], [-sin, cos]])
+
+
+def roro(v, k=np.array([0, 0, 1]), t=0):
+    """Calculate the rotated vector based on Rodrigues' rotation formula.
+
+    Args:
+        v (np.array): the vector
+        k (np.array, optional): the rotation axis vector. Defaults to np.array([0, 0, 1]).
+        t (int, optional): the rotation angle (radians). Defaults to 0.
+
+    Returns:
+        _type_: _description_
+    """
+    # https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+    return v * np.cos(t) + np.cross(k, v) * np.sin(t) + k * np.dot(k, v) * (1 - np.cos(t))
+
+
+def calc_triangle(R, t=0):
+    """Calculate equilateral triangle coordinates (△).
+
+    Args:
+        R (float): the circumradius
+        t (int, optional): The rotation angle (radians). Defaults to 0.
+
+    Returns:
+        tuple: the tuple of shape coordinates and inradius
+    """
+    r = R / 2
+    a = SQRT3 * R
+    points = (
+        (0, R),
+        (a / 2, -r),
+        (-a / 2, -r)
+    )
+    rmat_t = rmat_2d(t)
+    return [rmat_t @ ele for ele in points], r
+
+
+def calc_square(R, t=0):
+    """Calculate square coordinates (◇).
+
+    Args:
+        R (float): the circumradius
+        t (int, optional): The rotation angle in (radians). Defaults to 0.
+
+    Returns:
+        tuple: the tuple of shape coordinates and inradius
+    """
+    r = R / SQRT2
+    points = (
+        (0, R),
+        (R, 0),
+        (0, -R),
+        (-R, 0),
+    )
+    rmat_t = rmat_2d(t)
+    return [rmat_t @ ele for ele in points], r
+    
+
 def calc_hexagon(R, t=0):
+    """Calculate regular hexagon coordinates (⬡).
+
+    Args:
+        R (float): the circumradius
+        t (int, optional): The rotation angle in (radians). Defaults to 0.
+
+    Returns:
+        tuple: the tuple of shape coordinates and inradius
+    """
     r = R * (SQRT3 / 2)
     points = (
         (0, 1), 
@@ -47,31 +181,7 @@ def calc_hexagon(R, t=0):
         (-r, -0.5), 
         (-r, 0.5)
     )
-    rmat_t = rmat(t)
-    return [rmat_t @ ele for ele in points], r
-
-
-def calc_square(R, t=0):
-    r = R / SQRT2
-    points = (
-        (0, R),
-        (R, 0),
-        (0, -R),
-        (-R, 0),
-    )
-    rmat_t = rmat(t)
-    return [rmat_t @ ele for ele in points], r
-    
-
-def calc_triangle(R, t=0):
-    r = R / 2
-    a = SQRT3 * R
-    points = (
-        (0, R),
-        (a / 2, -r),
-        (-a / 2, -r)
-    )
-    rmat_t = rmat(t)
+    rmat_t = rmat_2d(t)
     return [rmat_t @ ele for ele in points], r
 
 
@@ -102,8 +212,8 @@ def calc_lattice(t, R6):
         hex, r6 = calc_hexagon(R6, np.pi / 6)
         sqr1, r4 = calc_square(np.sqrt(2 * R6 * R6) / 2, np.pi / 4)
         sqr1 = [ele + [0, r4 + r6] for ele in sqr1]
-        sqr2 = [rmat(np.pi / 3) @ ele for ele in sqr1]
-        sqr3 = [rmat(2 * np.pi / 3) @ ele for ele in sqr1]
+        sqr2 = [rmat_2d(np.pi / 3) @ ele for ele in sqr1]
+        sqr3 = [rmat_2d(2 * np.pi / 3) @ ele for ele in sqr1]
         basis = np.array([
             [R6 + r6 + 0.5 * R6, 0.5 * R6 + r6],
             [0, 2 * r6 + R6]
@@ -123,7 +233,7 @@ def calc_lattice(t, R6):
         ])
         tri, r3 = calc_triangle(R3 := R6 / SQRT3)
         tri = [ele + [0, -(r6 - r3)] for ele in tri]
-        tris = [[rmat(i * np.pi / 3) @ ele for ele in tri] for i in range(6)]
+        tris = [[rmat_2d(i * np.pi / 3) @ ele for ele in tri] for i in range(6)]
         tiler = [
             *((lambda coor, tri=tri: tri + coor) for tri in tris)
         ]
@@ -142,8 +252,8 @@ def calc_lattice(t, R6):
             [r6 - 0.5 * r6, 0.5 * R6 + (0.25 * R6 * sin) / cos],
             [0, 0.5 * R6 + (2 * (0.25 * R6 * sin)) / cos]
         ]
-        rmbs1 = [[rmat(i * np.pi / 3) @ ele for ele in rmb1] for i in range(6)]
-        rmbs2 = [[rmat(i * np.pi / 3) @ ele for ele in rmb2] for i in range(6)]
+        rmbs1 = [[rmat_2d(i * np.pi / 3) @ ele for ele in rmb1] for i in range(6)]
+        rmbs2 = [[rmat_2d(i * np.pi / 3) @ ele for ele in rmb2] for i in range(6)]
         basis = np.array([
             [2 * r6, 0],
             [r6, SQRT3 * r6],
@@ -165,7 +275,7 @@ def calc_lattice(t, R6):
             [R6, r6 + (R6 * SQRT3) / 6],
             [R6, (R6 * SQRT3) / 3],
         ])
-        sgms = [[rmat(i * np.pi / 3) @ ele for ele in sgm] for i in range(6)]
+        sgms = [[rmat_2d(i * np.pi / 3) @ ele for ele in sgm] for i in range(6)]
         tiler = [
             *((lambda coor, sgm=sgm: sgm + coor) for sgm in sgms)
         ]
@@ -181,7 +291,7 @@ def calc_lattice(t, R6):
             [0.5 * R6, r6],
             [(SQRT3 / 2) * r6, 0.5 * r6]
         ])
-        sgms = [[rmat(i * np.pi / 3) @ ele for ele in sgm] for i in range(6)]
+        sgms = [[rmat_2d(i * np.pi / 3) @ ele for ele in sgm] for i in range(6)]
         tiler = [
             *((lambda coor, sgm=sgm: sgm + coor) for sgm in sgms)
         ]
@@ -190,50 +300,64 @@ def calc_lattice(t, R6):
     return (basis, tiler)
 
 
-def iter_ring(elements):
-    yield from ((elements[i], elements[(i + 1) % len(elements)]) for i in range(len(elements))) if len(elements) > 1 else ()
+def triangle_area(p1, p2, p3):
+    """Calculate the area of a triangle.
 
+    Args:
+        p1 (np.array): the point
+        p2 (np.array): the point
+        p3 (np.array): the point
 
-def proj(p, q):
-    return (np.dot(p, q) / np.dot(q, q)) * q
-
-
-def angle(p, q):
-    return np.arccos(np.dot(p, q) / (np.linalg.norm(p) * np.linalg.norm(q)))
-
-
-def uvec(v):
-    return v / np.linalg.norm(v)
-
-
-def rmat(t):
-    cos, sin = np.cos(t), np.sin(t)
-    return np.array([[cos, sin], [-sin, cos]])
-
-
-def roro(v, k=np.array([0, 0, 1]), t=0):
-    # https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
-    return v * np.cos(t) + np.cross(k, v) * np.sin(t) + k * np.dot(k, v) * (1 - np.cos(t))
-
-
-def on_same_line(a, b, c, d):
-    return np.isclose(np.linalg.norm(np.cross(b - a, c - a)), 0) and np.isclose(np.linalg.norm(np.cross(b - a, d - a)), 0)
-
-
-def triangle_area(p, q, r):
+    Returns:
+        float: the area
+    """
     # Weisstein, Eric W. "Triangle Area." From MathWorld--A Wolfram Web Resource.
     # https://mathworld.wolfram.com/TriangleArea.html
-    return 0.5 * np.abs(np.cross(p - q, p - r))
+    return 0.5 * np.abs(np.cross(p1 - p2, p1 - p3))
 
 
-def in_triangle(p, q1, q2, q3):
-    return np.isclose(
-        triangle_area(q1, q2, q3),
-        sum(triangle_area(p, *ele) for ele in iter_ring((q1, q2, q3)))
-    )
+def in_triangle(q, p1, p2, p3):
+    """Calculate whether a point occurs within a triangle.
+
+    Args:
+        q (np.array): the point to test
+        p1 (np.array): the triangle point
+        p2 (np.array): the triangle point
+        p3 (np.array): the triangle point
+
+    Returns:
+        bool: the test result
+    """
+    return np.isclose(triangle_area(p1, p2, p3), sum(triangle_area(q, *ele) for ele in iter_ring((p1, p2, p3))))
+
+
+def on_same_line(p1, q1, p2, q2):
+    """Calculate whether two line segments occur on the same line.
+
+    Args:
+        p1 (np.array): the first point of the first segment
+        q1 (np.array): the second point of the first segment
+        p2 (np.array): the first point of the second segment
+        q2 (np.array): the second point of the second segment
+
+    Returns:
+        bool: the test result
+    """
+    return np.isclose(np.linalg.norm(np.cross(q1 - p1, p2 - p1)), 0) and np.isclose(np.linalg.norm(np.cross(q1 - p1, q2 - p1)), 0)
 
 
 def intersection(p1, q1, p2, q2):
+    """Calculate the intersection point of two segments.
+
+    Args:
+        p1 (list): the first point of the first segment
+        q1 (list): the second point of the first segment
+        p2 (list): the first point of the second segment
+        q2 (list): the second point of the second segment
+
+    Returns:
+        np.array: the intersection point or empty array
+    """
     # http://paulbourke.net/geometry/pointlineplane/edge_intersection.py
 
     x1, y1, x2, y2, x3, y3, x4, y4 = *p1, *q1, *p2, *q2
@@ -255,20 +379,40 @@ def intersection(p1, q1, p2, q2):
 
 
 def brackets(f, a, b, iter):
-    frac = b / iter
-    prev = np.sign(f(a))
+    """Calculate the roots of a function within the interval.
+
+    Args:
+        f (function): the function
+        a (float): the initial bracket interval value
+        b (float): the final bracket interval value
+        iter (int): the number of interations
+
+    Yields:
+        float: the next root-generating function parameter
+    """
+    prev, frac = np.sign(f(a)), b / iter
     for i in range(iter):
-        x = a + i * frac
-        curr = np.sign(f(x))
+        curr = np.sign(f(x := a + i * frac))
         if prev != curr:
             yield a + (i - 1) * frac, x
             prev = curr
 
 
-def bisection(f, a, b, tol, iter):
+def bisection(f, a, b, iter, tol):
+    """Caculate the root of a function within the interval
+
+    Args:
+        f (function): the function
+        a (float): the initial bracket interval value
+        b (float): the final bracket interval value
+        iter (int): the maximum number of interations
+        tol (float): the machine tolerance
+
+    Returns:
+        tuple: the iteration number, the root value, the root-generating parameter
+    """
     for i in range(iter):
-        c = (a + b) / 2
-        f_of_c = f(c)
+        f_of_c = f(c := (a + b) / 2)
         if f_of_c == 0 or (b - a) / 2 < tol:
             break
         if np.sign(f_of_c) == np.sign(f(a)):
@@ -278,38 +422,68 @@ def bisection(f, a, b, tol, iter):
     return i, f_of_c, c
 
 
-def triangle_circumcircle_center(p, q, r):
+def triangle_circumcircle_center(p1, p2, p3):
+    """Calculate the triangle circumcircle center.
+
+    Args:
+        p1 (np.array): the triangle point
+        p2 (np.array): the triangle point
+        p3 (np.array): the triangle point
+
+    Returns:
+        np.array: the triangle circumcircle center
+    """
     # https://en.wikipedia.org/wiki/Circumcircle#Higher_dimensions
-    a, b = p - r, q - r
-    return np.cross(np.dot(np.linalg.norm(a) ** 2, b) - np.dot(np.linalg.norm(b) ** 2, a), np.cross(a, b)) / (2 * np.linalg.norm(np.cross(a, b)) ** 2) + r
+    a, b = p1 - p3, p2 - p3
+    return np.cross(np.dot(np.linalg.norm(a) ** 2, b) - np.dot(np.linalg.norm(b) ** 2, a), np.cross(a, b)) / (2 * np.linalg.norm(np.cross(a, b)) ** 2) + p3
 
 
-def tetrahedron_circumsphere_center(v0, v1, v2, v3):
+def tetrahedron_circumsphere_center(p1, p2, p3, p4):
+    """Calculate the tetrahedron circumsphere center.
+
+    Args:
+        p1 (np.array): the tetrahedron point
+        p2 (np.array): the tetrahedron point
+        p3 (np.array): the tetrahedron point
+        p4 (np.array): the tetrahedron point
+
+    Returns:
+        np.array: the tetrahedron circumsphere center
+    """
     # https://rodolphe-vaillant.fr/entry/127/find-a-tetrahedron-circumcenter 
-    e1, e2, e3 = v1 - v0, v2 - v0, v3 - v0
-    return v0 + (1 / (2 * np.linalg.det(np.stack((e1, e2, e3))))) * (np.linalg.norm(e3) ** 2 * np.cross(e1, e2) + np.linalg.norm(e2) ** 2 * np.cross(e3, e1) + np.linalg.norm(e1) ** 2 * np.cross(e2, e3))
+    e1, e2, e3 = p2 - p1, p3 - p1, p4 - p1
+    return p1 + (1 / (2 * np.linalg.det(np.stack((e1, e2, e3))))) * (np.linalg.norm(e3) ** 2 * np.cross(e1, e2) + np.linalg.norm(e2) ** 2 * np.cross(e3, e1) + np.linalg.norm(e1) ** 2 * np.cross(e2, e3))
 
 
-def sd_sphere(p, s):
-    return np.linalg.norm(p) - s
+def sd_sphere(p, r):
+    """Calculate the signed distance of a point from a sphere centered at the origin.
+
+    Args:
+        p (np.array): the point
+        r (float): the radius
+
+    Returns:
+        float: the signed distance
+    """
+    return np.linalg.norm(p) - r
 
 
 def spherize(coor, verts, sphericity):
     return coor + uvec(coor) * (np.abs(sd_sphere(coor, np.linalg.norm(verts[6] - verts[6][2]))) * -sphericity)
 
 
-def cylinderize(coor, verts, sphericity, s=5):
+def cylinderize(coor, verts, sphericity, a=5):
     r = np.linalg.norm(verts[6] - verts[6][2])
     h2 = (verts[4][2] - verts[6][2]) / 2
 
-    if s == 5:
+    if a == 5:
         pos = np.array([0, 0, h2 - (r / 2)])
         rad = verts[0][2] + (r / 2) - h2
-    elif s == 3:
+    elif a == 3:
         p1, p2 = verts[0], verts[3]
         pos = triangle_circumcircle_center(p1, p2, np.array([p2[0], -p2[1], p2[2]]))
         rad = np.linalg.norm(p1 - pos)
-    elif s == 2:
+    elif a == 2:
         p1 = verts[0]
         pos = tetrahedron_circumsphere_center(p1, *verts[(1, 4, 5), :])
         rad = np.linalg.norm(p1 - pos)
@@ -351,7 +525,7 @@ def ico_coors_2(ckv, iter=100, tol=1E-15):
         p, q = pA + proj(o, v), pA + o
         v, k = q - p, uvec(pA - pC)
         f = lambda t: c - np.linalg.norm((p + roro(v, k, t)) - pF)
-        t = next(bisection(f, a, b, tol=tol, iter=iter)[2] for a, b in brackets(f, 0, 2 * np.pi, iter))
+        t = next(bisection(f, a, b, iter=iter, tol=tol)[2] for a, b in brackets(f, 0, 2 * np.pi, iter))
         pG = p + roro(v, k, t)
         
         return pE, pF, pG, np.linalg.norm(pE - np.array([0, 0, pE[2]])) - np.linalg.norm(pG - np.array([0, 0, pG[2]]))
@@ -364,13 +538,13 @@ def ico_coors_2(ckv, iter=100, tol=1E-15):
         except StopIteration:
             pass
     obj = lambda t: fold(t)[-1]
-    t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
+    t = next(bisection(obj, a, b, iter=iter, tol=tol)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
     pE, pF, pG, _ = fold(t)
 
     def obj(t):
         pK = roro(pA, np.array([0, 0, 1]), t) + np.array([0, 0, pG[2] + pE[2]])
         return np.linalg.norm(pK - pF) - b
-    t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, 0, 2 * np.pi, iter))
+    t = next(bisection(obj, a, b, iter=iter, tol=tol)[2] for a, b in brackets(obj, 0, 2 * np.pi, iter))
     pK = roro(pA, np.array([0, 0, 1]), t) + np.array([0, 0, pG[2] + pE[2]])
     pI = pD[1] * roro(uvec(pK - np.array([0, 0, pK[2]])), np.array([0, 0, 1]), np.pi / 2) + np.array([0, 0, pG[2] + pE[2] - pD[2]])
 
@@ -407,7 +581,7 @@ def ico_coors_3(ckv, iter=100, tol=1E-15):
         p, q = pB + proj(o, v), pB + o
         v, k = q - p, uvec(pB - pD)
         f = lambda t: c - np.linalg.norm((p + roro(v, k, t)) - pF)
-        t = next(bisection(f, a, b, tol=tol, iter=iter)[2] for a, b in brackets(f, 0, 2 * np.pi, iter))
+        t = next(bisection(f, a, b, iter=iter, tol=tol)[2] for a, b in brackets(f, 0, 2 * np.pi, iter))
         pG = p + roro(v, k, t)
 
         return pD, pF, pG, np.abs(pD[1]) - np.linalg.norm(pG - np.array([0, 0, pG[2]]))
@@ -420,7 +594,7 @@ def ico_coors_3(ckv, iter=100, tol=1E-15):
         except StopIteration:
             pass
     obj = lambda t: fold(t)[-1]
-    t = next(bisection(obj, a, b, tol=tol, iter=iter)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
+    t = next(bisection(obj, a, b, iter=iter, tol=tol)[2] for a, b in brackets(obj, t, np.pi / 4, iter))
     pD, pF, pG, _ = fold(t)
 
     t = (2 * np.pi) / 3
@@ -473,19 +647,20 @@ def ico_coors_5(ckv):
     return coor + np.array([0, 0, -pG[2] / 2])
 
 
-def ico_coors(s, ckv, iter=100, tol=1E-15):
-    if s == 2:
+def ico_coors(a, ckv, iter=100, tol=1E-15):
+    if a == 2:
         return ico_coors_2(ckv, iter, tol)
-    elif s == 3:
+    elif a == 3:
         return ico_coors_3(ckv, iter, tol)
-    elif s == 5:
+    elif a == 5:
         return ico_coors_5(ckv)
     else:
         raise ValueError("invalid symmetry mode!")
 
 
-def calc_ckv(h, k, H, K, basis):
-    v1, v2, v3 = (*basis, basis[1] @ rmat(np.pi / 3)) 
+def calc_ckv(ckp, basis):
+    h, k, H, K = ckp
+    v1, v2, v3 = (*basis, basis[1] @ rmat_2d(np.pi / 3)) 
     return [
         [h, k] @ basis,
         [H, K] @ np.stack([v2, v3]),
@@ -503,12 +678,12 @@ def calc_ckt(ckv):
     ]
 
 
-def calc_ckm(ckv, lattice):
-    ckt = calc_ckt(ckv)
+def calc_ckm(ckp, lat):
+    ckt = calc_ckt(ckv := calc_ckv(ckp, lat[0]))
     meshes = [[]]
     for t_idx in range(1, 4):
         triangle = ckt[t_idx]
-        bounds = np.array([ele @ np.linalg.inv(lattice[0]) for ele in ckv]).astype(int)
+        bounds = np.array([ele @ np.linalg.inv(lat[0]) for ele in ckv]).astype(int)
         # lattice grid
         lattice_coordinates = chain(
             (
@@ -520,8 +695,8 @@ def calc_ckm(ckv, lattice):
         mesh = []
         for coor in lattice_coordinates:
             # process tile subunits
-            for calc_tile in lattice[1]:
-                path = list(iter_ring(calc_tile(coor @ lattice[0])))
+            for calc_tile in lat[1]:
+                path = list(iter_ring(calc_tile(coor @ lat[0])))
                 vertices = []
                 # iterate polygon edges
                 for src, tar in path:
@@ -544,14 +719,15 @@ def calc_ckm(ckv, lattice):
     return meshes
 
 
-def calc_ico(ckv, ckm, s, c, inflater):
-    ckt = calc_ckt(ckv)
-    config = ICO_CONFIG[s]
-    coors = ico_coors(s, ckv)
+def calc_ico(ckp, lat, a=5, s=0):
+    h, k, H, K = ckp
+    inflater = spherize if h == H and k == K else partial(cylinderize, a=a)
+    ckt, ckm = calc_ckt(ckv := calc_ckv(ckp, lat[0])), calc_ckm(ckp, lat)
+    coors = ico_coors(a, ckv)
     meshes = [[], [], [], []]
-    for t_idx, t_rep, t_id, v_idx in zip(*config):
+    for t_idx, t_rep, t_id, v_idx in zip(*ICO_CONFIG[a]):
         A = np.linalg.inv(np.transpose(np.hstack((np.stack(ckt[t_idx]), np.ones([3, 1])))))
         for i in range(t_rep):
-            M = np.transpose(np.apply_along_axis(roro, 1, coors[v_idx,], t=i * (2 * np.pi) / s)) @ A
-            meshes.append([([inflater(M @ point, coors, c) for point in vertices], edges) for vertices, edges in ckm[t_idx]])
+            M = np.transpose(np.apply_along_axis(roro, 1, coors[v_idx,], t=i * (2 * np.pi) / a)) @ A
+            meshes.append([([inflater(M @ point, coors, s) for point in vertices], edges) for vertices, edges in ckm[t_idx]])
     return meshes
