@@ -4,6 +4,7 @@
 .vscode/settings.json
 *.pyc
 *.Rproj
+*.zip
 ~*.xlsx
 paper/paper.html
 paper/paper.log
