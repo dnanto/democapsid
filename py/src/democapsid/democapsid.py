@@ -11,7 +11,6 @@ SQRT3 = np.sqrt(3)
 SQRT5 = np.sqrt(5)
 PHI = (1 + SQRT5) / 2
 
-
 ICO_CONFIG = (
     (),
     (),
@@ -46,10 +45,10 @@ def iter_ring(elements):
     ""      -> []
 
     Args:
-        elements (list): the list of elements
+        elements (list): The list of elements.
 
     Yields:
-        tuple: the next pair
+        tuple: The next pair.
     """
     yield from ((elements[i], elements[(i + 1) % len(elements)]) for i in range(len(elements))) if len(elements) > 1 else ()
 
@@ -58,11 +57,11 @@ def angle(p, q):
     """Calculate the angle between two vectors.
 
     Args:
-        p (list): the vector
-        q (list): the vector
+        p (list): The vector.
+        q (list): The vector.
 
     Returns:
-        float: the angle (radians)
+        float: The angle (radians).
     """
     return np.arccos(np.dot(p, q) / (np.linalg.norm(p) * np.linalg.norm(q)))
 
@@ -71,10 +70,10 @@ def uvec(v):
     """Calculate the unit vector.
 
     Args:
-        v (list): the vector
+        v (list): The vector.
 
     Returns:
-        np.array: the numpy array
+        np.array: The numpy array.
     """
     return v / np.linalg.norm(v)
 
@@ -83,11 +82,11 @@ def proj(p, q):
     """Calculate the vector projection of p onto q.
 
     Args:
-        p (np.array): the vector
-        q (np.array): the vector
+        p (np.array): The vector.
+        q (np.array): The vector.
 
     Returns:
-        np.array: the vector projection
+        np.array: The vector projection.
     """
     return (np.dot(p, q) / np.dot(q, q)) * q
 
@@ -96,10 +95,10 @@ def rmat_2d(t):
     """Calculate the two-dimensional rotation matrix.
 
     Args:
-        t (float): the rotation angle (radians)
+        t (float): The rotation angle (radians).
 
     Returns:
-        np.array: the two-dimensional rotation matrix
+        np.array: The two-dimensional rotation matrix.
     """
     cos, sin = np.cos(t), np.sin(t)
     return np.array([[cos, sin], [-sin, cos]])
@@ -109,12 +108,12 @@ def roro(v, k=np.array([0, 0, 1]), t=0):
     """Calculate the rotated vector based on Rodrigues' rotation formula.
 
     Args:
-        v (np.array): the vector
-        k (np.array, optional): the rotation axis vector. Defaults to np.array([0, 0, 1]).
-        t (int, optional): the rotation angle (radians). Defaults to 0.
+        v (np.array): The vector.
+        k (np.array, optional): The rotation axis vector. Defaults to np.array([0, 0, 1]).
+        t (int, optional): The rotation angle (radians). Defaults to 0.
 
     Returns:
-        _type_: _description_
+        np.array: The rotated vector.
     """
     # https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
     return v * np.cos(t) + np.cross(k, v) * np.sin(t) + k * np.dot(k, v) * (1 - np.cos(t))
@@ -124,11 +123,11 @@ def calc_triangle(R, t=0):
     """Calculate equilateral triangle coordinates (△).
 
     Args:
-        R (float): the circumradius
+        R (float): The circumradius.
         t (int, optional): The rotation angle (radians). Defaults to 0.
 
     Returns:
-        tuple: the tuple of shape coordinates and inradius
+        tuple: The tuple of shape coordinates and inradius.
     """
     r = R / 2
     a = SQRT3 * R
@@ -145,11 +144,11 @@ def calc_square(R, t=0):
     """Calculate square coordinates (◇).
 
     Args:
-        R (float): the circumradius
+        R (float): The circumradius.
         t (int, optional): The rotation angle in (radians). Defaults to 0.
 
     Returns:
-        tuple: the tuple of shape coordinates and inradius
+        tuple: The tuple of shape coordinates and inradius.
     """
     r = R / SQRT2
     points = (
@@ -166,11 +165,11 @@ def calc_hexagon(R, t=0):
     """Calculate regular hexagon coordinates (⬡).
 
     Args:
-        R (float): the circumradius
+        R (float): The circumradius.
         t (int, optional): The rotation angle in (radians). Defaults to 0.
 
     Returns:
-        tuple: the tuple of shape coordinates and inradius
+        tuple: The tuple of shape coordinates and inradius.
     """
     r = R * (SQRT3 / 2)
     points = (
@@ -190,7 +189,7 @@ def calc_lattice(t, R6):
         hex, r6 = calc_hexagon(R6)
         basis = np.array([[2 * r6, 0], [r6, r6 * SQRT3]])
         tiler = [lambda coor: hex + coor]
-    elif t == "trihex": 
+    elif t == "trihex":
         hex, _ = calc_hexagon(R6, np.pi / 6)
         basis = np.array([[2 * R6, 0], [R6, R6 * SQRT3]])
         tiler = [lambda coor: hex + coor]
@@ -225,7 +224,6 @@ def calc_lattice(t, R6):
             lambda coor: sqr3 + coor,
         ]
     elif t == "dualhex":
-        #                 center: e.coor.add([0, r - (R * SQRT3) / 6]),
         r6 = R6 * (SQRT3 / 2)
         basis = np.array([
             [(3 / 2) * R6, r6],
@@ -304,12 +302,12 @@ def triangle_area(p1, p2, p3):
     """Calculate the area of a triangle.
 
     Args:
-        p1 (np.array): the point
-        p2 (np.array): the point
-        p3 (np.array): the point
+        p1 (np.array): The point.
+        p2 (np.array): The point.
+        p3 (np.array): The point.
 
     Returns:
-        float: the area
+        float: The area.
     """
     # Weisstein, Eric W. "Triangle Area." From MathWorld--A Wolfram Web Resource.
     # https://mathworld.wolfram.com/TriangleArea.html
@@ -320,13 +318,13 @@ def in_triangle(q, p1, p2, p3):
     """Calculate whether a point occurs within a triangle.
 
     Args:
-        q (np.array): the point to test
-        p1 (np.array): the triangle point
-        p2 (np.array): the triangle point
-        p3 (np.array): the triangle point
+        q (np.array): The point to test.
+        p1 (np.array): The triangle point.
+        p2 (np.array): The triangle point.
+        p3 (np.array): The triangle point.
 
     Returns:
-        bool: the test result
+        bool: The test result.
     """
     return np.isclose(triangle_area(p1, p2, p3), sum(triangle_area(q, *ele) for ele in iter_ring((p1, p2, p3))))
 
@@ -335,13 +333,13 @@ def on_same_line(p1, q1, p2, q2):
     """Calculate whether two line segments occur on the same line.
 
     Args:
-        p1 (np.array): the first point of the first segment
-        q1 (np.array): the second point of the first segment
-        p2 (np.array): the first point of the second segment
-        q2 (np.array): the second point of the second segment
+        p1 (np.array): The first point of the first segment.
+        q1 (np.array): The second point of the first segment.
+        p2 (np.array): The first point of the second segment.
+        q2 (np.array): The second point of the second segment.
 
     Returns:
-        bool: the test result
+        bool: The test result.
     """
     return np.isclose(np.linalg.norm(np.cross(q1 - p1, p2 - p1)), 0) and np.isclose(np.linalg.norm(np.cross(q1 - p1, q2 - p1)), 0)
 
@@ -350,13 +348,13 @@ def intersection(p1, q1, p2, q2):
     """Calculate the intersection point of two segments.
 
     Args:
-        p1 (list): the first point of the first segment
-        q1 (list): the second point of the first segment
-        p2 (list): the first point of the second segment
-        q2 (list): the second point of the second segment
+        p1 (list): The first point of the first segment.
+        q1 (list): The second point of the first segment.
+        p2 (list): The first point of the second segment.
+        q2 (list): The second point of the second segment.
 
     Returns:
-        np.array: the intersection point or empty array
+        np.array: The intersection point or empty array.
     """
     # http://paulbourke.net/geometry/pointlineplane/edge_intersection.py
 
@@ -382,13 +380,13 @@ def brackets(f, a, b, iter):
     """Calculate the roots of a function within the interval.
 
     Args:
-        f (function): the function
-        a (float): the initial bracket interval value
-        b (float): the final bracket interval value
-        iter (int): the number of interations
+        f (function): The function.
+        a (float): The initial bracket interval value.
+        b (float): The final bracket interval value.
+        iter (int): The number of interations.
 
     Yields:
-        float: the next root-generating function parameter
+        float: The next root-generating function parameter.
     """
     prev, frac = np.sign(f(a)), b / iter
     for i in range(iter):
@@ -399,17 +397,17 @@ def brackets(f, a, b, iter):
 
 
 def bisection(f, a, b, iter, tol):
-    """Caculate the root of a function within the interval
+    """Caculate the root of a function within the interval.
 
     Args:
-        f (function): the function
-        a (float): the initial bracket interval value
-        b (float): the final bracket interval value
-        iter (int): the maximum number of interations
-        tol (float): the machine tolerance
+        f (function): The function.
+        a (float): The initial bracket interval value.
+        b (float): The final bracket interval value.
+        iter (int): The maximum number of interations.
+        tol (float): The machine tolerance.
 
     Returns:
-        tuple: the iteration number, the root value, the root-generating parameter
+        tuple: The iteration number, the root value, the root-generating parameter.
     """
     for i in range(iter):
         f_of_c = f(c := (a + b) / 2)
@@ -426,12 +424,12 @@ def triangle_circumcircle_center(p1, p2, p3):
     """Calculate the triangle circumcircle center.
 
     Args:
-        p1 (np.array): the triangle point
-        p2 (np.array): the triangle point
-        p3 (np.array): the triangle point
+        p1 (np.array): The triangle point.
+        p2 (np.array): The triangle point.
+        p3 (np.array): The triangle point.
 
     Returns:
-        np.array: the triangle circumcircle center
+        np.array: The triangle circumcircle center.
     """
     # https://en.wikipedia.org/wiki/Circumcircle#Higher_dimensions
     a, b = p1 - p3, p2 - p3
@@ -442,13 +440,13 @@ def tetrahedron_circumsphere_center(p1, p2, p3, p4):
     """Calculate the tetrahedron circumsphere center.
 
     Args:
-        p1 (np.array): the tetrahedron point
-        p2 (np.array): the tetrahedron point
-        p3 (np.array): the tetrahedron point
-        p4 (np.array): the tetrahedron point
+        p1 (np.array): The tetrahedron point.
+        p2 (np.array): The tetrahedron point.
+        p3 (np.array): The tetrahedron point.
+        p4 (np.array): The tetrahedron point.
 
     Returns:
-        np.array: the tetrahedron circumsphere center
+        np.array: The tetrahedron circumsphere center.
     """
     # https://rodolphe-vaillant.fr/entry/127/find-a-tetrahedron-circumcenter 
     e1, e2, e3 = p2 - p1, p3 - p1, p4 - p1
@@ -459,20 +457,41 @@ def sd_sphere(p, r):
     """Calculate the signed distance of a point from a sphere centered at the origin.
 
     Args:
-        p (np.array): the point
-        r (float): the radius
+        p (np.array): The point.
+        r (float): The radius.
 
     Returns:
-        float: the signed distance
+        float: The signed distance.
     """
     return np.linalg.norm(p) - r
 
 
 def spherize(coor, verts, sphericity):
+    """Project the coordinates to the circumsphere.
+
+    Args:
+        coor (np.array): The coordinate.
+        verts (np.array): The icosahedron coordinates.
+        sphericity (float): The sphericity factor.
+
+    Returns:
+        np.array: The projected coordinate.
+    """
     return coor + uvec(coor) * (np.abs(sd_sphere(coor, np.linalg.norm(verts[6] - verts[6][2]))) * -sphericity)
 
 
 def cylinderize(coor, verts, sphericity, a=5):
+    """Project the coordinate to the encapsulating cylinder.
+
+    Args:
+        coor (np.array): The coordinate.
+        verts (np.array): The icosahedron coordinates.
+        sphericity (float): The sphericity factor.
+        a (int, optional): The axial symmetry. Defaults to 5.
+
+    Returns:
+        np.array: The projected coordinate.
+    """
     r = np.linalg.norm(verts[6] - verts[6][2])
     h2 = (verts[4][2] - verts[6][2]) / 2
 
@@ -506,6 +525,16 @@ def cylinderize(coor, verts, sphericity, a=5):
 
 
 def ico_coors_2(ckv, iter=100, tol=1E-15):
+    """Calculate icosahedron vertex coordinates with two-fold axial symmetry.
+
+    Args:
+        ckv (list): The Casar-Klug vectors.
+        iter (int, optional): The number of iterations for numerical methods. Defaults to 100.
+        tol (float, optional): The machine epsilon. Defaults to 1E-15.
+
+    Returns:
+        np.array: The array of vertex coordinates.
+    """
     a, b, c = np.linalg.norm(ckv[0]), np.linalg.norm(ckv[1]), np.linalg.norm(ckv[2] - ckv[1])
 
     pA = np.array([a / 2, 0, 0])
@@ -561,6 +590,16 @@ def ico_coors_2(ckv, iter=100, tol=1E-15):
 
 
 def ico_coors_3(ckv, iter=100, tol=1E-15):
+    """Calculate icosahedron vertex coordinates with three-fold axial symmetry.
+
+    Args:
+        ckv (list): The Casar-Klug vectors.
+        iter (int, optional): The number of iterations for numerical methods. Defaults to 100.
+        tol (float, optional): The machine epsilon. Defaults to 1E-15.
+
+    Returns:
+        np.array: The array of vertex coordinates.
+    """
     a, b, c = np.linalg.norm(ckv[0]), np.linalg.norm(ckv[1]), np.linalg.norm(ckv[2] - ckv[1])
 
     pA = np.array([0, a * (1 / SQRT3), 0])
@@ -615,6 +654,14 @@ def ico_coors_3(ckv, iter=100, tol=1E-15):
 
 
 def ico_coors_5(ckv):
+    """Calculate icosahedron vertex coordinates with five-fold axial symmetry.
+
+    Args:
+        ckv (list): The Casar-Klug vectors.
+
+    Returns:
+        np.array: The array of vertex coordinates.
+    """
     a, b = np.linalg.norm(ckv[0]), np.linalg.norm(ckv[1])
     
     # regular pentagon circumradius
@@ -647,18 +694,16 @@ def ico_coors_5(ckv):
     return coor + np.array([0, 0, -pG[2] / 2])
 
 
-def ico_coors(a, ckv, iter=100, tol=1E-15):
-    if a == 2:
-        return ico_coors_2(ckv, iter, tol)
-    elif a == 3:
-        return ico_coors_3(ckv, iter, tol)
-    elif a == 5:
-        return ico_coors_5(ckv)
-    else:
-        raise ValueError("invalid symmetry mode!")
-
-
 def calc_ckv(ckp, basis):
+    """Calcaulte the Caspar-Klug vectors.
+
+    Args:
+        ckp (tuple): The Caspar-Klug parameter tuple (h, k, H, K).
+        basis (np.array): The lattice basis.
+
+    Returns:
+        list: The list of Caspar-Klug vectors.
+    """
     h, k, H, K = ckp
     v1, v2, v3 = (*basis, basis[1] @ rmat_2d(np.pi / 3)) 
     return [
@@ -670,6 +715,14 @@ def calc_ckv(ckp, basis):
 
 
 def calc_ckt(ckv):
+    """Calculate the Caspar-Klug triangles.
+
+    Args:
+        ckv (tuple): The Caspara-Klug vectors.
+
+    Returns:
+        list: The list of triangles.
+    """
     return [
         [],
         [np.array([0, 0]), ckv[0], ckv[3]],
@@ -679,6 +732,15 @@ def calc_ckt(ckv):
 
 
 def calc_ckm(ckp, lat):
+    """Calculate the Caspar-Klug mesh for each Caspar-Klug triangle.
+
+    Args:
+        ckp (tuple): The Caspar-Klug parameter tuple (h, k, H, K).
+        lat (tuple): The lattice tuple (basis, list of unit tiler functions).
+
+    Returns:
+        list: The list of meshes, each mesh is a tuple (vertices, edges).
+    """
     ckt = calc_ckt(ckv := calc_ckv(ckp, lat[0]))
     meshes = [[]]
     for t_idx in range(1, 4):
@@ -719,15 +781,32 @@ def calc_ckm(ckp, lat):
     return meshes
 
 
-def calc_ico(ckp, lat, a=5, s=0):
+def calc_ico(ckp, lat, a=5, s=0, iter=100, tol=1E-15):
+    """Calculate the icosahedral mesh.
+
+    Args:
+        ckp (tuple): The Caspar-Klug parameter tuple (h, k, H, K).
+        lat (tuple): The lattice tuple (basis, list of unit tiler functions).
+        a (int, optional): The axial symmetry. Defaults to 5.
+        s (int, optional): The sphericity. Defaults to 0.
+        iter (int, optional): The number of iterations for numerical methods. Defaults to 100.
+        tol (_type_, optional): The machine epsilon. Defaults to 1E-15.
+
+    Returns:
+        list: The list of meshes for each face.
+    """
     h, k, H, K = ckp
     inflater = spherize if h == H and k == K else partial(cylinderize, a=a)
     ckt, ckm = calc_ckt(ckv := calc_ckv(ckp, lat[0])), calc_ckm(ckp, lat)
-    coors = ico_coors(a, ckv)
+    coors = (None, None, ico_coors_2, ico_coors_3, None, lambda ckv, _, __: ico_coors_5(ckv))[a](ckv, iter, tol)
     meshes = [[], [], [], []]
     for t_idx, t_rep, t_id, v_idx in zip(*ICO_CONFIG[a]):
+        # calculate matrix of ck-triangle net
         A = np.linalg.inv(np.transpose(np.hstack((np.stack(ckt[t_idx]), np.ones([3, 1])))))
         for i in range(t_rep):
+            # rotate the icosahedron triangle face around symmetry axis
+            # to calculate the matrix for the affine transform
             M = np.transpose(np.apply_along_axis(roro, 1, coors[v_idx,], t=i * (2 * np.pi) / a)) @ A
+            # apply transform and inflate coordinates
             meshes.append([([inflater(M @ point, coors, s) for point in vertices], edges) for vertices, edges in ckm[t_idx]])
     return meshes

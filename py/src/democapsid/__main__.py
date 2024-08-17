@@ -7,14 +7,15 @@ from .democapsid import calc_ckm, calc_ckv, calc_ico, calc_lattice, cylinderize
 
 args = parse_args(sys.argv[1:])
 h, k, H, K, a, R, t, s, m = (getattr(args, key) for key in "h,k,H,K,a,R,t,s,m".split(","))
+iter, tol = args.iter, args.tol
 
 ckp = (h, k, H, K)
-lattice = calc_lattice(t, R)
+lat = calc_lattice(t, R)
 
 if m == "ico":
-    meshes = calc_ico(ckp, lattice, a, s)
+    meshes = calc_ico(ckp, lat, a=a, s=s, iter=iter, tol=tol)
 elif m == "tri":
-    meshes = calc_ckm(ckp, lattice)
+    meshes = calc_ckm(ckp, lat)
 
 print("x", "y", "z", "face", "polygon", "point", sep="\t")
 for i, mesh in enumerate(meshes[1:], start=1):
