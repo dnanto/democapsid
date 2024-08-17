@@ -3,94 +3,29 @@
 
 cff-version: 1.2.0
 title: >-
-  democapsid
-message: 'If you use this software, please cite it as below.'
+    democapsid
+message: "If you use this software, please cite it as below."
 type: software
 authors:
-  - given-names: Daniel
-    family-names: Negrón
-    email: dnegron2@gmu.edu
-    affiliation: George Mason University
-    orcid: 'https://orcid.org/0000-0002-6123-2441'
-identifiers:
-  - type: doi
-    value: 10.1101/2020.12.02.408252
-    description: The bioRxiv preprint of the paper.
-repository-code: 'https://github.com/dnanto/democapsid'
-url: 'https://github.com/dnanto/democapsid/capsid.html'
-abstract: >-
-  This work implements Caspar-Klug Theory to
-  generate high-quality, vectorized capsid cartoons 
-  in the browser and is the first online tool that 
-  provides comprehensive style customization,
-   geometry, and SVG export of icosahedra and nets
-  with different lattice structures.
-keywords:
-  - virus
-  - capsid
-  - caspar-klug
-  - moody
-  - icosahedron
-  - prolate
-  - oblate
-  - elongated 
-  - lattice
-  - 2D
-  - 3D
-  - svg
-  - biology
-  - graphics
-  - render
-  - projection
-  - perspective
-  - publication
-  - figure
-  - demoscene
-license: MIT
-preferred-citation:
-  type: article
-  authors:
     - given-names: Daniel
       family-names: Negrón
       email: dnegron2@gmu.edu
       affiliation: George Mason University
-      orcid: 'https://orcid.org/0000-0002-6123-2441'
-  doi: 10.1101/2020.12.02.408252
-  journal: bioRxiv
-  abstract: >-
+      orcid: "https://orcid.org/0000-0002-6123-2441"
+identifiers:
+    - type: doi
+      value: 10.1101/2020.12.02.408252
+      description: The bioRxiv preprint of the paper.
+repository-code: "https://github.com/dnanto/democapsid"
+url: "https://github.com/dnanto/democapsid/capsid.html"
+abstract: >-
     This work implements Caspar-Klug Theory to
     generate high-quality, vectorized capsid cartoons 
     in the browser and is the first online tool that 
     provides comprehensive style customization,
      geometry, and SVG export of icosahedra and nets
     with different lattice structures.
-    Motivation Few online services exist for rendering
-    high-quality viral capsid figures compatible with
-    common productivity software to develop effective
-    infographics in the field of virology.
-
-
-    Results The capsid.js library renders class I viral
-    capsids within an online application that
-    parameterizes style options, perspectives, and
-    lattice patterns with SVG export.
-
-
-    Availability This project is actively developed on
-    GitHub (https://github.com/dnanto/capsid),
-    distributed under the MIT License, hosted on GitHub
-    Pages, and runs on modern browsers
-    (https://dnanto.github.io/capsid/capsid.html).
-
-
-    Supplementary information Supplementary data are
-    available on GitHub.
-  month: 12
-  title: >-
-    Vectorized Capsid Rendering in the Browser with
-    Capsid.js
-  year: 2021
-  keywords:
+keywords:
     - virus
     - capsid
     - caspar-klug
@@ -98,7 +33,7 @@ preferred-citation:
     - icosahedron
     - prolate
     - oblate
-    - elongated 
+    - elongated
     - lattice
     - 2D
     - 3D
@@ -111,3 +46,68 @@ preferred-citation:
     - publication
     - figure
     - demoscene
+license: MIT
+preferred-citation:
+    type: article
+    authors:
+        - given-names: Daniel
+          family-names: Negrón
+          email: dnegron2@gmu.edu
+          affiliation: George Mason University
+          orcid: "https://orcid.org/0000-0002-6123-2441"
+    doi: 10.1101/2020.12.02.408252
+    journal: bioRxiv
+    abstract: >-
+        This work implements Caspar-Klug Theory to
+        generate high-quality, vectorized capsid cartoons 
+        in the browser and is the first online tool that 
+        provides comprehensive style customization,
+         geometry, and SVG export of icosahedra and nets
+        with different lattice structures.
+        Motivation Few online services exist for rendering
+        high-quality viral capsid figures compatible with
+        common productivity software to develop effective
+        infographics in the field of virology.
+
+
+        Results The capsid.js library renders class I viral
+        capsids within an online application that
+        parameterizes style options, perspectives, and
+        lattice patterns with SVG export.
+
+
+        Availability This project is actively developed on
+        GitHub (https://github.com/dnanto/capsid),
+        distributed under the MIT License, hosted on GitHub
+        Pages, and runs on modern browsers
+        (https://dnanto.github.io/capsid/capsid.html).
+
+
+        Supplementary information Supplementary data are
+        available on GitHub.
+    month: 12
+    title: >-
+        Vectorized Capsid Rendering in the Browser with
+        Capsid.js
+    year: 2021
+    keywords:
+        - 2D
+        - 3D
+        - biology
+        - capsid
+        - caspar-klug
+        - demoscene
+        - elongated
+        - figure
+        - graphics
+        - icosahedron
+        - lattice
+        - oblate
+        - perspective
+        - projection
+        - prolate
+        - publication
+        - render
+        - svg
+        - virology
+        - virus

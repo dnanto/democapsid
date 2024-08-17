@@ -11,7 +11,7 @@ authors = [
 maintainers = [
   { name="Daniel Antonio Negrón", email="dnegron2@gmu.edu" },
 ]
-description = "This package includes methods to calculate the coordinates of viral capsids."
+description = "Calculate meshes for icosahedral virus capsids."
 readme = "README.md"
 license = {text = "MIT License"}
 requires-python = ">=3.9.11"
