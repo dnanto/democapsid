@@ -758,7 +758,7 @@ def calc_ckm(ckp, lat):
         for coor in lattice_coordinates:
             # process tile subunits
             for calc_tile in lat[1]:
-                path = [(np.append(src, 0), np.append(tar, 0)) for src, tar in iter_ring(calc_tile(coor @ lat[0]))]
+                path = [(np.append(src, 1), np.append(tar, 1)) for src, tar in iter_ring(calc_tile(coor @ lat[0]))]
                 vertices = []
                 # iterate polygon edges
                 for src, tar in path:
@@ -767,7 +767,7 @@ def calc_ckm(ckp, lat):
                     # iterate triangle edges
                     for edge in iter_ring(triangle):
                         # add point that at the intersetion of the polygon and triangle edges
-                        (x := intersection(src[:2], tar[:2], *edge)).any() and vertices.append(np.append(x, 0))
+                        (x := intersection(src[:2], tar[:2], *edge)).any() and vertices.append(np.append(x, 1))
                 # keep edges if they occur on the tile polygon path
                 edges = [
                     (s1, t1) 
