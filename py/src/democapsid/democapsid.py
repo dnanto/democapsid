@@ -529,8 +529,8 @@ def ico_coors_2(ckv, iter=100, tol=1E-15):
 
     Args:
         ckv (list): The Casar-Klug vectors.
-        iter (int, optional): The number of iterations for numerical methods. Defaults to 100.
-        tol (float, optional): The machine epsilon. Defaults to 1E-15.
+        iter (int, optional): The iteration number for numerical methods. Defaults to 100.
+        tol (float, optional): The machine epsilon for numerical methods. Defaults to 1E-15.
 
     Returns:
         np.array: The array of vertex coordinates.
@@ -594,8 +594,8 @@ def ico_coors_3(ckv, iter=100, tol=1E-15):
 
     Args:
         ckv (list): The Casar-Klug vectors.
-        iter (int, optional): The number of iterations for numerical methods. Defaults to 100.
-        tol (float, optional): The machine epsilon. Defaults to 1E-15.
+        iter (int, optional): The iteration number for numerical methods. Defaults to 100.
+        tol (float, optional): The machine epsilon for numerical methods. Defaults to 1E-15.
 
     Returns:
         np.array: The array of vertex coordinates.
@@ -789,8 +789,8 @@ def calc_ico(ckp, lat, a=5, s=0, iter=100, tol=1E-15):
         lat (tuple): The lattice tuple (basis, list of unit tiler functions).
         a (int, optional): The axial symmetry. Defaults to 5.
         s (int, optional): The sphericity. Defaults to 0.
-        iter (int, optional): The number of iterations for numerical methods. Defaults to 100.
-        tol (_type_, optional): The machine epsilon. Defaults to 1E-15.
+        iter (int, optional): The iteration number for numerical methods. Defaults to 100.
+        tol (float, optional): The machine epsilon for numerical methods. Defaults to 1E-15.
 
     Returns:
         list: The list of meshes for each face.
