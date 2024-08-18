@@ -758,21 +758,21 @@ def calc_ckm(ckp, lat):
         for coor in lattice_coordinates:
             # process tile subunits
             for calc_tile in lat[1]:
-                path = list(iter_ring(calc_tile(coor @ lat[0])))
+                path = [(np.append(src, 0), np.append(tar, 0)) for src, tar in iter_ring(calc_tile(coor @ lat[0]))]
                 vertices = []
                 # iterate polygon edges
                 for src, tar in path:
                     # add point if it is within the triangle bounds
-                    in_triangle(src, *triangle) and vertices.append(np.append(src, 1))
+                    in_triangle(src[:2], *triangle) and vertices.append(src)
                     # iterate triangle edges
                     for edge in iter_ring(triangle):
                         # add point that at the intersetion of the polygon and triangle edges
-                        (x := intersection(src, tar, *edge)).any() and vertices.append(np.append(x, 1))
+                        (x := intersection(src[:2], tar[:2], *edge)).any() and vertices.append(np.append(x, 0))
                 # keep edges if they occur on the tile polygon path
                 edges = [
                     (s1, t1) 
                     for s1, t1 in iter_ring(list(range(len(vertices))))
-                    if any(on_same_line(vertices[s1], vertices[t1], np.append(s2, 1), np.append(t2, 1)) for s2, t2 in path)
+                    if any(on_same_line(vertices[s1], vertices[t1], s2, t2) for s2, t2 in path)
                 ]
                 # if there are only two edges and they point to each other, then only keep one
                 edges = [edges[0]] if len(edges) == 2 and edges[0] == edges[1][::-1] else edges        
