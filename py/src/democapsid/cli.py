@@ -8,11 +8,11 @@ def parse_args(argv):
         description="Calculate meshes for icosahedral virus capsids."
     )
     for ele in "hkHK":
-        parser.add_argument(ele, default=1, type=int, help=f"the {ele} Caspar-Klug parameter")
+        parser.add_argument(ele, type=int, help=f"the {ele} Caspar-Klug parameter")
     choices = (5, 3, 2)
     parser.add_argument("-a", "-axis", default=choices[0], choices=choices, type=int, help="the axial symmetry")
     parser.add_argument("-R", "-radius", default=1, type=int, help="the hexagonal lattice unit circumradius")
-    choices = (pfx + ele for pfx in ("", "dual") for ele in ("hex", "trihex", "snubhex", "rhombitrihex"))
+    choices = tuple(pfx + ele for pfx in ("", "dual") for ele in ("hex", "trihex", "snubhex", "rhombitrihex"))
     parser.add_argument("-t", "-tile", default=choices[0], choices=choices, help="the hexagonal lattice unit tile")
     parser.add_argument("-s", "-sphericity", default=0, type=float, help="the sphericity value")
     choices = ("ico", "tri")
