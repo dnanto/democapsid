@@ -1,4 +1,6 @@
--   [ ] comments/documentation
--   [ ] python package
+-   [ ] update paper
+-   [ ] comments/documentation javascript
+-   [x] comments/documentation python
+-   [x] python package
 -   [ ] R package
--   [ ] Blender addo
+-   [x] Blender add-on
