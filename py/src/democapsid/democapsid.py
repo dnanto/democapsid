@@ -475,7 +475,7 @@ def spherize(coor, verts, sphericity):
         sphericity (float): The sphericity factor.
 
     Returns:
-        np.array: The projected coordinate.
+        np.array: The spherized coordinate.
     """
     return coor + uvec(coor) * (np.abs(sd_sphere(coor, np.linalg.norm(verts[6] - verts[6][2]))) * -sphericity)
 
@@ -490,38 +490,33 @@ def cylinderize(coor, verts, sphericity, a=5):
         a (int, optional): The axial symmetry. Defaults to 5.
 
     Returns:
-        np.array: The projected coordinate.
+        np.array: The cylinderized coordinate.
     """
-    r = np.linalg.norm(verts[6] - verts[6][2])
+    r = np.linalg.norm(verts[6] - np.array([0, 0, verts[6][2]]))
     h2 = (verts[4][2] - verts[6][2]) / 2
 
     if a == 5:
-        pos = np.array([0, 0, h2 - (r / 2)])
-        rad = verts[0][2] + (r / 2) - h2
+        pos = np.array([0, 0, h2 - r / 2])
+        rad = verts[0][2] + r / 2 - h2
     elif a == 3:
-        p1, p2 = verts[0], verts[3]
-        pos = triangle_circumcircle_center(p1, p2, np.array([p2[0], -p2[1], p2[2]]))
+        pos = triangle_circumcircle_center(verts[0], verts[3], np.array([p2[0], -p2[1], p2[2]]))
         rad = np.linalg.norm(p1 - pos)
     elif a == 2:
-        p1 = verts[0]
-        pos = tetrahedron_circumsphere_center(p1, *verts[(1, 4, 5), :])
+        pos = tetrahedron_circumsphere_center(verts[0], *verts[(1, 4, 5), :])
         rad = np.linalg.norm(p1 - pos)
 
-    pos1 = np.array([0, 0, pos[2]])
-    pos2 = np.array([0, 0, -pos[2]])
-    tmid = np.array([0, 0, h2])
-    bmid = np.array([0, 0, -h2])
+    pos1, pos2 = np.array([0, 0, pos[2]]), np.array([0, 0, -pos[2]])
+    tmid, bmid = np.array([0, 0, h2]), np.array([0, 0, -h2])
+
     if h2 < coor[2]:    # top cap
-        d = sd_sphere(coor - pos1, rad)
-        d = np.abs(d)
+        d = np.abs(sd_sphere(coor - pos1, rad))
         return (d * sphericity * uvec(coor - tmid)) + coor
     elif coor[2] < -h2: # bottom cap
-        d = sd_sphere(coor - pos2, rad)
-        d = np.abs(d)
+        d = np.abs(sd_sphere(coor - pos2, rad))
         return (d * sphericity * uvec(coor - bmid)) + coor
-    
+
     # body cylinder
-    return ((r - np.linalg.norm(coor[:2])) * sphericity * uvec(coor - coor[2])) + coor
+    return ((r - np.linalg.norm(coor[:2])) * sphericity * uvec(coor - np.array([0, 0, coor[2]]))) + coor
 
 
 def ico_coors_2(ckv, iter=100, tol=1E-15):
@@ -810,3 +805,22 @@ def calc_ico(ckp, lat, a=5, s=0, iter=100, tol=1E-15):
             # apply transform and inflate coordinates
             meshes.append([([inflater(M @ point, coors, s) for point in vertices], edges) for vertices, edges in ckm[t_idx]])
     return meshes
+
+
+def meshes_to_chimerax(meshes):
+    """Calculate meshes compatible with ChimeraX.
+
+    Args:
+        meshes (list): The list of vertex-list, edge-list tuples.
+
+    Yields:
+        (tuple): The next tuple specifying the i-th mesh, j-th polygon, Nx3 vertex list, MX3 triangle list, and Mx1 edge mask.
+    """
+    for i, mesh in enumerate(meshes, start=1):
+        for j, polygon in enumerate(mesh, start=1):
+            vertices, edges = polygon
+            vertices.append(np.mean(vertices, axis=0))
+            vertices = np.vstack(vertices)
+            triangles = np.vstack([(len(vertices) - 1, src, tar) for src, tar in edges])
+            edge_mask = 2 * np.ones(len(triangles)).astype(int)
+            yield i, j, vertices, triangles, edge_mask
