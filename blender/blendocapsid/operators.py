@@ -3,8 +3,8 @@ import bpy
 
 class CapsidMesh(bpy.types.Operator):
     """Add icosahedral capsid mesh."""
-    bl_idname = "object.add_mesh"
-    bl_label = "Add Capsid Mesh"
+    bl_idname = "mesh.capsid"
+    bl_label = "Capsid"
     bl_options = {"REGISTER", "UNDO"}
     axis_items = [
         ("2", "2", "two-fold axial symmetry", 2),
@@ -60,12 +60,13 @@ class CapsidMesh(bpy.types.Operator):
 
 
 def menu_func(self, context):
-    self.layout.operator(CapsidMesh.bl_idname)
+    self.layout.separator()
+    self.layout.operator(CapsidMesh.bl_idname, text="Capsid", icon="MESH_ICOSPHERE")
 
 
 def register():
     bpy.utils.register_class(CapsidMesh)
-    bpy.types.VIEW3D_MT_object.append(menu_func)
+    bpy.types.VIEW3D_MT_mesh_add.append(menu_func)
 
 
 def unregister():

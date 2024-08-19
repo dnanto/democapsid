@@ -3,9 +3,10 @@ bl_info = {
     'author': 'Daniel Antonio Negrón',
     'version': (0, 0, 1),
     'blender': (3, 0, 0),
-    'location': 'Objects > Add Capsid Mesh',
+    'location': 'View3D > Add > Mesh',
     'description': 'Calculate meshes for icosahedral virus capsids with democapsid.',
     'warning': '',
+    "doc_url": 'https://github.com/dnanto/democapsid',
     'wiki_url': 'https://github.com/dnanto/democapsid',
     'support': 'COMMUNITY',
     'category': 'Add Mesh'

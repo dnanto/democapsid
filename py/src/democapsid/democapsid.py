@@ -499,10 +499,10 @@ def cylinderize(coor, verts, sphericity, a=5):
         pos = np.array([0, 0, h2 - r / 2])
         rad = verts[0][2] + r / 2 - h2
     elif a == 3:
-        pos = triangle_circumcircle_center(verts[0], verts[3], np.array([p2[0], -p2[1], p2[2]]))
+        pos = triangle_circumcircle_center(p1 := verts[0], p2 := verts[3], np.array([p2[0], -p2[1], p2[2]]))
         rad = np.linalg.norm(p1 - pos)
     elif a == 2:
-        pos = tetrahedron_circumsphere_center(verts[0], *verts[(1, 4, 5), :])
+        pos = tetrahedron_circumsphere_center(p1 := verts[0], *verts[(1, 4, 5), :])
         rad = np.linalg.norm(p1 - pos)
 
     pos1, pos2 = np.array([0, 0, pos[2]]), np.array([0, 0, -pos[2]])
