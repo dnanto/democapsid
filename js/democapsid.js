@@ -300,7 +300,7 @@ function sd_sphere(p, s) {
 function spherize(coor, radius, sphericity) {
     return coor
         .uvec()
-        .mul(sd_sphere(coor, radius) * sphericity)
+        .mul(Math.abs(sd_sphere(coor, radius)) * sphericity)
         .add(coor);
 }
 
