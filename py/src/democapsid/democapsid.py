@@ -173,12 +173,12 @@ def calc_hexagon(R, t=0):
     """
     r = R * (SQRT3 / 2)
     points = (
-        (0, 1), 
-        (r, 0.5), 
-        (r, -0.5), 
-        (0, -1), 
-        (-r, -0.5), 
-        (-r, 0.5)
+        (0, R), 
+        (r, R / 2), 
+        (r, -R / 2), 
+        (0, -R), 
+        (-r, -R / 2), 
+        (-r, R)
     )
     rmat_t = rmat_2d(t)
     return [rmat_t @ ele for ele in points], r
