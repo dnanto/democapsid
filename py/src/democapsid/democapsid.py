@@ -489,7 +489,7 @@ def spherize(coor, verts, sphericity):
     Returns:
         np.array: The spherized coordinate.
     """
-    return coor + uvec(coor) * (np.abs(sd_sphere(coor, np.linalg.norm(verts[6] - verts[6][2]))) * -sphericity)
+    return coor + uvec(coor) * (np.abs(sd_sphere(coor, np.linalg.norm(verts[0]))) * sphericity)
 
 
 def cylinderize(coor, verts, sphericity, a=5):
