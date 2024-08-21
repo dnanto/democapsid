@@ -3,19 +3,19 @@
 import sys
 
 from .cli import parse_args
-from .democapsid import calc_ckm, calc_ico, calc_lattice
+from .democapsid import calc_ckm, calc_ico, calc_lattice, dextrize
 
 args = parse_args(sys.argv[1:])
-h, k, H, K, a, R, t, s, m = (getattr(args, key) for key in "h,k,H,K,a,R,t,s,m".split(","))
-iter, tol = args.iter, args.tol
 
-ckp = (h, k, H, K)
-lat = calc_lattice(t, R)
+ckp = (args.h, args.k, args.H, args.K)
+lat = calc_lattice(args.t, args.R)
 
-if m == "ico":
-    meshes = calc_ico(ckp, lat, a=a, s=s, iter=iter, tol=tol)
-elif m == "tri":
+if args.m == "ico":
+    meshes = calc_ico(ckp, lat, a=args.a, s=args.s, iter=args.iter, tol=args.tol)
+elif args.m == "tri":
     meshes = calc_ckm(ckp, lat)
+
+meshes = meshes if args.c == "levo" else dextrize(meshes)
 
 print("x", "y", "z", "face", "polygon", "point", sep="\t")
 for i, mesh in enumerate(meshes[1:], start=1):

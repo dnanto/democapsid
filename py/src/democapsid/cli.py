@@ -17,6 +17,8 @@ def parse_args(argv):
     parser.add_argument("-s", "-sphericity", default=0, type=float, help="the sphericity value")
     choices = ("ico", "tri")
     parser.add_argument("-m", "-mode", default=choices[0], choices=choices, help="the render mode")
+    choices = ("levo", "dextro")
+    parser.add_argument("-c", "-chirality", default=choices[0], choices=choices, help="the chirality")
     parser.add_argument("-iter", default=100, type=int, help="the iteration number for numerical methods")
     parser.add_argument("-tol", default=1E-15, type=float, help="the machine epsilon for numerical methods")
     return parser.parse_args(argv)
