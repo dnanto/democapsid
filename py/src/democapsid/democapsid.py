@@ -173,18 +173,30 @@ def calc_hexagon(R, t=0):
     """
     r = R * (SQRT3 / 2)
     points = (
-        (0, 1), 
-        (r, 0.5), 
-        (r, -0.5), 
-        (0, -1), 
-        (-r, -0.5), 
-        (-r, 0.5)
+        (0, R), 
+        (r, R / 2), 
+        (r, -R / 2), 
+        (0, -R), 
+        (-r, -R / 2), 
+        (-r, R / 2)
     )
     rmat_t = rmat_2d(t)
     return [rmat_t @ ele for ele in points], r
 
 
 def calc_lattice(t, R6):
+    """Calculate the lattice configuration.
+
+    Args:
+        t (str): The tile name.
+        R6 (float): The hexagon subunit circumradius.
+
+    Raises:
+        ValueError: for incorrect tile name...
+
+    Returns:
+        tuple: the 2x2 basis and list of tiling functions for the lattice primitive
+    """
     if t == "hex":
         hex, r6 = calc_hexagon(R6)
         basis = np.array([[2 * r6, 0], [r6, r6 * SQRT3]])
@@ -477,7 +489,7 @@ def spherize(coor, verts, sphericity):
     Returns:
         np.array: The spherized coordinate.
     """
-    return coor + uvec(coor) * (np.abs(sd_sphere(coor, np.linalg.norm(verts[6] - verts[6][2]))) * -sphericity)
+    return coor + uvec(coor) * (np.abs(sd_sphere(coor, np.linalg.norm(verts[0]))) * sphericity)
 
 
 def cylinderize(coor, verts, sphericity, a=5):
@@ -744,7 +756,7 @@ def calc_ckm(ckp, lat):
         # lattice grid
         lattice_coordinates = chain(
             (
-                [i, j]
+                [i, j] @ lat[0]
                 for i in range(bounds[:, 0].min(), bounds[:, 0].max() + 2)
                 for j in range(bounds[:, 1].min(), bounds[:, 1].max() + 2)
             )
@@ -753,7 +765,7 @@ def calc_ckm(ckp, lat):
         for coor in lattice_coordinates:
             # process tile subunits
             for calc_tile in lat[1]:
-                path = [(np.append(src, 1), np.append(tar, 1)) for src, tar in iter_ring(calc_tile(coor @ lat[0]))]
+                path = [(np.append(src, 1), np.append(tar, 1)) for src, tar in iter_ring(calc_tile(coor))]
                 vertices = []
                 # iterate polygon edges
                 for src, tar in path:
@@ -805,6 +817,10 @@ def calc_ico(ckp, lat, a=5, s=0, iter=100, tol=1E-15):
             # apply transform and inflate coordinates
             meshes.append([([inflater(M @ point, coors, s) for point in vertices], edges) for vertices, edges in ckm[t_idx]])
     return meshes
+
+
+def dextrize(meshes):
+    return [[([ele * np.array([-1, 1, 1]) for ele in vertices], edges) for vertices, edges in mesh] for mesh in meshes]
 
 
 def meshes_to_chimerax(meshes):
