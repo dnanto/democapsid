@@ -293,8 +293,8 @@ function body_height(coors) {
     return coors[4][2] - coors[6][2];
 }
 
-function sd_sphere(p, s) {
-    return p.norm() - s;
+function sd_sphere(p, r) {
+    return p.norm() - r;
 }
 
 function spherize(coor, radius, sphericity) {
@@ -304,17 +304,17 @@ function spherize(coor, radius, sphericity) {
         .add(coor);
 }
 
-function cylinderize(coor, coors, s, sphericity) {
+function cylinderize(coor, coors, a, sphericity) {
     const [r, h2] = [body_radius(coors), body_height(coors) / 2];
     let pos, rad;
-    /****/ if (s === 5) {
+    /****/ if (a === 5) {
         pos = [0, 0, h2 - r / 2];
         rad = coors[0][2] + r / 2 - h2;
-    } else if (s === 3) {
+    } else if (a === 3) {
         const [p1, p2] = [coors[0], coors[3]];
         pos = triangle_circumcircle_center(p1, p2, [p2[0], -p2[1], p2[2]]);
         rad = p1.sub(pos).norm();
-    } else if (s === 2) {
+    } else if (a === 2) {
         p1 = coors[0];
         pos = tetrahedron_circumsphere_center(p1, ...[1, 4, 5].map((i) => coors[i]));
         rad = p1.sub(pos).norm();
@@ -350,9 +350,9 @@ function cylinderize(coor, coors, s, sphericity) {
         .add(coor);
 }
 
-function ico_config(s) {
+function ico_config(a) {
     let values;
-    /****/ if (s === 5) {
+    /****/ if (a === 5) {
         values = [
             [1, 1, 2, 2],
             ["T1-▲", "T1-▼", "T2-▲", "T2-▼"],
@@ -378,7 +378,7 @@ function ico_config(s) {
                 [6, 7, 8, 9, 10],
             ],
         ];
-    } else if (s === 3) {
+    } else if (a === 3) {
         values = [
             [1, 1, 1, 1, 2, 2, 3, 3],
             ["T1-▔", "T1-▲", "T1-▼", "T1-▁", "T2-▼", "T2-▲", "T3-▼", "T3-▲"],
@@ -408,7 +408,7 @@ function ico_config(s) {
                 [5, 6, 8, 9, 10],
             ],
         ];
-    } else if (s === 2) {
+    } else if (a === 2) {
         values = [
             [1, 1, 1, 1, 2, 2, 2, 2, 3, 3],
             ["T1-▔", "T1-▔", "T1▁", "T1▁", "T2-▼", "T2-▲", "T2-▼", "T2-▲", "T3-▼", "T3-▲"],
@@ -441,7 +441,7 @@ function ico_config(s) {
             ],
         ];
     } else {
-        throw new Error("s must be 2, 3, or 5");
+        throw new Error("a must be 2, 3, or 5");
     }
     return Object.fromEntries(["t_idx", "t_id", "v_idx", "t_rep", "v_con"].map((k, i) => [k, values[i]]));
 }
@@ -610,8 +610,8 @@ function model_sa_error(PARAMS) {
         [ck[1], ck[2]],
     ];
     // coordinates
-    const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][PARAMS.s](ck, ITER, TOL);
-    const config = ico_config(PARAMS.s);
+    const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][PARAMS.a](ck, ITER, TOL);
+    const config = ico_config(PARAMS.a);
 
     const n_tris = config.t_id.map((e) => parseInt(e[1])).reduce((a, b) => (a < b ? b : a));
     const n_per_tri = Array.from({ length: n_tris }).fill(0);
@@ -690,7 +690,7 @@ function draw_net(PARAMS) {
     const facets = calc_facets(lat_cfg);
 
     let g;
-    /****/ if (PARAMS.s === 5) {
+    /****/ if (PARAMS.a === 5) {
         const unit1 = new Group(facets.slice(0, 2)).rotate(-degrees(ck[0].angle([1, 0]))).scale(-1, 1);
         const unit2 = unit1.clone().rotate(180);
         const top_center = unit2.children[1].children
@@ -713,7 +713,7 @@ function draw_net(PARAMS) {
         });
         // clean-up
         [unit1, unit2].forEach((e) => e.remove());
-    } else if (PARAMS.s === 3) {
+    } else if (PARAMS.a === 3) {
         const angle = ck[0].angle([1, 0]);
         const unit1 = new Group(facets).rotate(-degrees(angle)).scale(-1, 1);
         const unit0 = facets[0].clone().rotate(180);
@@ -735,7 +735,7 @@ function draw_net(PARAMS) {
         });
         // clean-up
         [unit0, unit1, unit2].forEach((e) => e.remove());
-    } else if (PARAMS.s === 2) {
+    } else if (PARAMS.a === 2) {
         const angle = ck[0].angle([1, 0]);
         const unit1 = new Group(facets).rotate(-degrees(angle)).rotate(-60).scale(-1, 1);
         const unit2 = unit1.children[1].clone();
@@ -781,13 +781,13 @@ function draw_capsid(PARAMS) {
     const facets = calc_facets(lat_cfg);
 
     // coordinates
-    const ico_cfg = ico_config(PARAMS.s);
-    const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][PARAMS.s](lat_cfg.ck, ITER, TOL);
+    const ico_cfg = ico_config(PARAMS.a);
+    const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][PARAMS.a](lat_cfg.ck, ITER, TOL);
 
     // transform
-    const th = (2 * Math.PI) / PARAMS.s;
+    const th = (2 * Math.PI) / PARAMS.a;
     const is_equilateral = h == H && k == K;
-    const inflater = is_equilateral ? (e) => spherize(e, ico_coors[0].norm(), PARAMS.c) : (e) => cylinderize(e, ico_coors, PARAMS.s, PARAMS.c);
+    const inflater = is_equilateral ? (e) => spherize(e, ico_coors[0].norm(), PARAMS.s) : (e) => cylinderize(e, ico_coors, PARAMS.a, PARAMS.s);
     const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
     let results = [];
     for (let idx = 0, id = 0; idx < ico_cfg.t_idx.length; idx++) {

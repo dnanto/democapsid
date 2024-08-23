@@ -23,12 +23,12 @@
                     k: (e) => parseInt(e.value),
                     H: (e) => parseInt(e.value),
                     K: (e) => parseInt(e.value),
-                    s: (e) => parseInt(e.value),
+                    a: (e) => parseInt(e.value),
+                    R: (e) => parseFloat(e.value),
                     t: (e) => e.value,
-                    c: (e) => parseInt(e.value) / 1000,
+                    s: (e) => parseInt(e.value) / 1000,
                     l: PARSERS.toggle,
                     d: PARSERS.toggle,
-                    R: (e) => parseFloat(e.value),
                     θ: (e) => parseFloat(e.value),
                     ψ: (e) => parseFloat(e.value),
                     φ: (e) => parseFloat(e.value),
@@ -42,24 +42,24 @@
                 ])
             );
 
-            let mirror = "levo";
+            let chirality = "levo";
 
             function params() {
                 const PARAMS = Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k))]));
-                PARAMS.m = PARAMS.l ? "levo" : "dextro";
+                PARAMS.c = PARAMS.l ? "levo" : "dextro";
                 return PARAMS;
             }
 
             function download(e) {
                 const PARAMS = params();
                 const [mode, draw] = PARAMS.mode_capsid ? ["capsid", draw_capsid] : ["net", draw_net];
-                let name = ["h", "k", "H", "K", "s", "R", "c", "t", "m"].map((k) => PARAMS[k]);
-                name[6] = name[6].toFixed(2);
+                let name = ["h", "k", "H", "K", "a", "R", "t", "s", "c"].map((k) => PARAMS[k]);
+                name[7] = name[7].toFixed(2);
                 name = mode + "[" + name.join("_") + "]";
                 const ext = e.target.id.split("_")[1];
                 let href;
-                const foo = draw(PARAMS);
-                foo.remove();
+                const obj = draw(PARAMS);
+                obj.remove();
                 // return;
                 /****/ if (ext === "svg") {
                     href =
@@ -143,13 +143,13 @@
                         msg.children[1].innerText = [
                             ["net", "capsid"][mode_capsid * 1] +
                                 "[" +
-                                [h, k, H, K, "s=" + s, "R=" + R, `c=${(c * 100).toFixed(2)}%`, "t=" + t, "m=" + m, "@(" + [θ, ψ, φ].map((e) => e + "°").join(",") + ")"].join(",") +
+                                [h, k, H, K, "a=" + a, "R=" + R, "t=" + t, `s=${(s * 100).toFixed(2)}%`, "c=" + c, "@(" + [θ, ψ, φ].map((e) => e + "°").join(",") + ")"].join(",") +
                                 "]",
                             "model_sa_error=" + model_sa_error(PARAMS) * 100 + "%",
                             `T-Number=(${h})²+(${h})(${k})+(${k})²=` + (h * h + h * k + k * k),
                             `Q-Number=(${H})²+(${H})(${K})+(${K})²=` + (H * H + H * K + K * K),
                         ].join("\n");
-                        if (mirror !== m) view.scale(1, -1);
+                        if (chirality !== c) view.scale(1, -1);
                     }
                 } catch (e) {
                     paper.clear();
@@ -177,13 +177,6 @@
                     <b>&#11041;&nbsp;<a href="https://github.com/dnanto/democapsid">democapsid v2.1.0</a>&nbsp;&#11041;</b>
                 </fieldset>
                 <fieldset>
-                    <legend>mode</legend>
-                    <label for="mode_net">net=</label>
-                    <input type="radio" id="mode_net" name="mode" value="net" />
-                    <label for="mode_capsid">capsid=</label>
-                    <input type="radio" id="mode_capsid" name="mode" value="capsid" checked />
-                </fieldset>
-                <fieldset>
                     <legend>model</legend>
                     <div>
                         <label for="h">h=</label>
@@ -196,8 +189,8 @@
                         <input type="number" id="K" step="1" value="2" min="0" />
                     </div>
                     <div>
-                        <label for="s">S=</label>
-                        <select id="s">
+                        <label for="a">a=</label>
+                        <select id="a">
                             <option value="5">5</option>
                             <option value="3">3</option>
                             <option value="2">2</option>
@@ -217,14 +210,22 @@
                         </select>
                     </div>
                     <div>
-                        <label for="sphericity">c=</label>
-                        <input type="range" min="-1000" max="1000" value="0" id="c" />
+                        <label for="sphericity">s=</label>
+                        <input type="range" min="-1000" max="1000" value="0" id="s" />
                     </div>
                     <div>
-                        <label for="mode_levo">levo=</label>
+                        c=
+                        <label for="mode_levo">levo</label>
                         <input type="radio" id="l" name="mode_mirror" value="levo" checked />
-                        <label for="mode_dextro">dextro=</label>
+                        <label for="mode_dextro">dextro</label>
                         <input type="radio" id="d" name="mode_mirror" value="dextro" />
+                    </div>
+                    <div>
+                        m=
+                        <label for="mode_net">net&nbsp;</label>
+                        <input type="radio" id="mode_net" name="mode" value="net" />
+                        <label for="mode_capsid">capsid</label>
+                        <input type="radio" id="mode_capsid" name="mode" value="capsid" checked />
                     </div>
                 </fieldset>
                 <fieldset>
