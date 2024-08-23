@@ -37,7 +37,7 @@ select {
     box-sizing: border-box;
     vertical-align: middle;
     height: 25px;
-    width: 65px;
+    width: 85px;
 }
 input[type="range"] {
     width: 375px;
