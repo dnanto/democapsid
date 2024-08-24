@@ -1,9 +1,219 @@
+/*!
+ * democapsid v2.1.0 - Render viral capsids in the browser and export SVG.
+ * MIT License
+ * Copyright (c) 2020 - 2024, Daniel Antonio Negrón (dnanto/remaindeer)
+ */
+
+const VERSION = "2.1.0";
+
 const SQRT3 = Math.sqrt(3);
 const SQRT5 = Math.sqrt(5);
 const PHI = (1 + SQRT5) / 2;
 const ITER = 100;
 const TOL = 1e-15;
 const TOL_COLLAPSE = 1e-5;
+
+Array.prototype.mul = function (a) {
+    return this.map((e) => e * a);
+};
+
+Array.prototype.div = function (a) {
+    return this.map((e) => e / a);
+};
+
+Array.prototype.add = function (a) {
+    return this.map((e, i) => e + a[i]);
+};
+
+Array.prototype.sub = function (a) {
+    return this.map((e, i) => e - a[i]);
+};
+
+Array.prototype.dot = function (a) {
+    return this.map((e, i) => e * a[i]).reduce((e, f) => e + f);
+};
+
+Array.prototype.sum = function (initial_value = 0) {
+    return this.reduce((a, b) => a + b, initial_value);
+};
+
+Array.prototype.centroid = function () {
+    return this.reduce((a, b) => a.add(b)).div(this.length);
+};
+
+Array.prototype.cross = function (v) {
+    // https://en.wikipedia.org/wiki/Cross_product
+    return [this[1] * v[2] - this[2] * v[1], this[2] * v[0] - this[0] * v[2], this[0] * v[1] - this[1] * v[0]];
+};
+
+Array.prototype.rot = function (t) {
+    const [cos, sin] = [Math.cos(t), Math.sin(t)];
+    return mmul(
+        [
+            [cos, -sin],
+            [sin, cos],
+        ],
+        this.T()
+    ).flat();
+};
+
+Array.prototype.roro = function (k, t) {
+    // https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+    return this.mul(Math.cos(t))
+        .add(k.cross(this).mul(Math.sin(t)))
+        .add(k.mul(k.dot(this)).mul(1 - Math.cos(t)));
+};
+
+Array.prototype.norm = function () {
+    return Math.sqrt(this.map((e) => e * e).sum());
+};
+
+Array.prototype.uvec = function () {
+    return this.div(this.norm());
+};
+
+Array.prototype.angle = function (v) {
+    return Math.acos(this.dot(v) / (this.norm() * v.norm()));
+};
+
+Array.prototype.proj = function (v) {
+    return v.mul(this.dot(v) / v.dot(v));
+};
+
+Array.prototype.T = function () {
+    return this.map((e) => [e]);
+};
+
+Array.prototype.has = function (q) {
+    return this.some((p) => p.length === q.length && p.every((v, i) => v === q[i]));
+};
+
+function mmul(A, B) {
+    const [m, n, p] = [A.length, A[0].length, B[0].length];
+    var C = new Array(m);
+    for (var i = 0; i < m; i++) C[i] = new Array(p).fill(0);
+    for (var i = 0; i < m; i++) for (var j = 0; j < p; j++) for (var k = 0; k < n; k++) C[i][j] += A[i][k] * B[k][j];
+    return C;
+}
+
+/**
+ * Calculate the 2x2 determinant.
+ * @param {Array} A The 2x2 matrix.
+ * @return {Number} The determinant;
+ */
+function det2(A) {
+    return A[0][0] * A[1][1] - A[0][1] * A[1][0];
+}
+
+/**
+ * Calculate the 3x3 determinant.
+ * @param {Array} A The 3x3 matrix.
+ * @return {Number} The determinant;
+ */
+function det3(A) {
+    return (
+        A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - //
+        A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + //
+        A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0])
+    );
+}
+
+/**
+ * Calculate the 2x2 inverse.
+ * @param {Array} A The 3x3 matrix.
+ * @return {Number} The inverse;
+ */
+function inv2(A) {
+    const d = det2(A);
+    return [[A[1][1], -A[0][1]].div(d), [-A[1][0], A[0][0]].div(d)];
+}
+
+/**
+ * Calculate the 3x3 inverse.
+ * @param {Array} A The 3x3 matrix.
+ * @return {Number} The inverse;
+ */
+function inv3(A) {
+    const [a, b, c, d, e, f, g, h, i] = [A[0][0], A[0][1], A[0][2], A[1][0], A[1][1], A[1][2], A[2][0], A[2][1], A[2][2]];
+    const dA = this.det3(A);
+    return [
+        [(e * i - f * h) / dA, -(b * i - c * h) / dA, (b * f - c * e) / dA],
+        [-(d * i - f * g) / dA, (a * i - c * g) / dA, -(a * f - c * d) / dA],
+        [(d * h - e * g) / dA, -(a * h - b * g) / dA, (a * e - b * d) / dA],
+    ];
+}
+
+function T(A) {
+    var B = Array.from({ length: A[0].length }, () => Array.from({ length: A.length }, () => []));
+    for (var i = 0; i < B.length; i++) B[i] = new Array(A.length);
+    for (var i = 0; i < A.length; i++) for (var j = 0; j < A[0].length; j++) B[j][i] = A[i][j];
+    return B;
+}
+
+function rotmat3(θ, ψ, φ) {
+    // trigonometry
+    const [sinθ, sinψ, sinφ, cosθ, cosψ, cosφ] = [
+        //
+        Math.sin(θ),
+        Math.sin(ψ),
+        Math.sin(φ),
+        Math.cos(θ),
+        Math.cos(ψ),
+        Math.cos(φ),
+    ];
+    // rotation matrix
+    return [
+        [cosθ * cosψ, cosθ * sinψ * sinφ - sinθ * cosφ, cosθ * sinψ * cosφ + sinθ * sinφ],
+        [sinθ * cosψ, sinθ * sinψ * sinφ + cosθ * cosφ, sinθ * sinψ * cosφ - cosθ * sinφ],
+        [-sinψ, cosψ * sinφ, cosψ * cosφ],
+    ];
+}
+
+function camera(θ, ψ, φ, C = [0, 0, 0]) {
+    // calibration
+    const K = [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+    ];
+    // rotation matrix
+    const R = rotmat3(θ, ψ, φ);
+    // translation matrix
+    const IC = [
+        [1, 0, 0, -C[0]],
+        [0, 1, 0, -C[1]],
+        [0, 0, 1, -C[2]],
+    ];
+    // camera matrix
+    return mmul(mmul(K, R), IC);
+}
+
+function* brackets(f, a, b, iter) {
+    const frac = b / iter;
+    let prev = Math.sign(f(a));
+    for (let i = 0; i < iter; i++) {
+        let x = a + i * frac;
+        let curr = Math.sign(f(x));
+        if (prev != curr) {
+            yield [a + (i - 1) * frac, x];
+            prev = curr;
+        }
+    }
+}
+
+function bisection(f, a, b, tol, iter) {
+    let i = 1;
+    let c = (a + b) / 2;
+    let f_of_c = f(c);
+    for (; i <= iter; i++) {
+        c = (a + b) / 2;
+        f_of_c = f(c);
+        if (f_of_c == 0 || (b - a) / 2 < tol) break;
+        if (Math.sign(f_of_c) == Math.sign(f(a))) a = c;
+        else b = c;
+    }
+    return [i, f_of_c, c];
+}
 
 function degrees(v) {
     return (v * 180) / Math.PI;

@@ -1,6 +1,7 @@
 -   [ ] update paper
+-   [ ] tests
 -   [ ] comments/documentation javascript
+-   [?] R package
 -   [x] comments/documentation python
 -   [x] python package
--   [ ] R package
 -   [x] Blender add-on

@@ -4,9 +4,12 @@
 .vscode/settings.json
 *.pyc
 *.Rproj
+*.tar.gz
 *.zip
 ~*.xlsx
+node_modules
 paper/paper.html
 paper/paper.log
 paper/paper.pdf
 /py/src/democapsid.egg-info
+democapsid-2.1.0.tar.gz

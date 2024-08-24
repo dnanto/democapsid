@@ -1,0 +1,31 @@
+{
+    "name": "democapsid",
+    "source": "app.html",
+    "version": "2.1.0",
+    "description": "Render viral capsids in the browser and export SVG.",
+    "directories": {
+        "test": "tests"
+    },
+    "scripts": {
+        "dist": "terser --ecma 5 --comments --compress ecma=5 --ie8 --safari10 --timings js/democapsid.js --mangle toplevel --keep-fnames -o js/democapsid.min.js",
+        "update": "cp node_modules/paper/dist/paper-core.min.js js/lib/paperjs/paper-core.min.js",
+        "zip": "zip -j democapsid-$npm_package_version.zip js/democapsid.js js/democapsid.min.js",
+        "tar": "tar cvzf democapsid-$npm_package_version.tar.gz -C js democapsid.js democapsid.min.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dnanto/democapsid.git"
+    },
+    "author": "Daniel Antonio Negrón",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/dnanto/democapsid/issues"
+    },
+    "homepage": "https://github.com/dnanto/democapsid",
+    "dependencies": {
+        "paper": "^0.12.18"
+    },
+    "devDependencies": {
+        "terser": "^5.31.6"
+    }
+}
