@@ -7,10 +7,10 @@
         "test": "tests"
     },
     "scripts": {
-        "dist": "terser --ecma 5 --comments --compress ecma=5 --ie8 --safari10 --timings js/democapsid.js --mangle toplevel --keep-fnames -o js/democapsid.min.js",
+        "dist": "terser --ecma 5 --comments --compress ecma=5 --ie8 --safari10 --timings js/$npm_package_name.js --mangle toplevel --keep-fnames -o js/$npm_package_name.min.js",
         "update": "cp node_modules/paper/dist/paper-core.min.js js/lib/paperjs/paper-core.min.js",
-        "zip": "zip -j democapsid-$npm_package_version.zip js/democapsid.js js/democapsid.min.js",
-        "tar": "tar cvzf democapsid-$npm_package_version.tar.gz -C js democapsid.js democapsid.min.js"
+        "zip": "zip -j $npm_package_name-$npm_package_version.zip js/$npm_package_name.js js/$npm_package_name.min.js",
+        "tar": "tar cvzf $npm_package_name-$npm_package_version.tar.gz -C js $npm_package_name.js $npm_package_name.min.js"
     },
     "repository": {
         "type": "git",
