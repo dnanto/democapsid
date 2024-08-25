@@ -38,12 +38,25 @@ const DEFAULTS = Object.assign(
     ])
 );
 
-let chirality = "levo";
-
 function params() {
     const PARAMS = Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k))]));
     PARAMS.c = PARAMS.l ? "levo" : "dextro";
     return PARAMS;
+}
+
+function params_to_tag(PARAMS) {
+    return [
+        PARAMS.h,
+        PARAMS.k,
+        PARAMS.H,
+        PARAMS.K,
+        "a=" + PARAMS.a,
+        "R=" + PARAMS.R,
+        "t=" + PARAMS.t,
+        `s=${(PARAMS.s * 100).toFixed(2)}%`,
+        "c=" + PARAMS.c,
+        "@(" + [PARAMS.θ, PARAMS.ψ, PARAMS.φ].map((e) => e + "°").join(",") + ")",
+    ].join(",");
 }
 
 function download(e) {
@@ -134,19 +147,15 @@ function update(e) {
     const draw = PARAMS.mode_capsid ? draw_capsid : draw_net;
     const msg = document.getElementById("msg");
     try {
-        with (PARAMS) {
-            draw(PARAMS);
-            msg.children[1].innerText = [
-                ["net", "capsid"][mode_capsid * 1] +
-                    "[" +
-                    [h, k, H, K, "a=" + a, "R=" + R, "t=" + t, `s=${(s * 100).toFixed(2)}%`, "c=" + c, "@(" + [θ, ψ, φ].map((e) => e + "°").join(",") + ")"].join(",") +
-                    "]",
-                "model_sa_error=" + model_sa_error(PARAMS) * 100 + "%",
-                `T-Number=(${h})²+(${h})(${k})+(${k})²=` + (h * h + h * k + k * k),
-                `Q-Number=(${H})²+(${H})(${K})+(${K})²=` + (H * H + H * K + K * K),
-            ].join("\n");
-            if (chirality !== c) view.scale(1, -1);
-        }
+        draw(PARAMS);
+        const [h, k, H, K] = ["h", "k", "H", "K"].map((e) => PARAMS[e]);
+        msg.children[1].innerText = [
+            ["net", "capsid"][PARAMS.mode_capsid * 1] + "[" + params_to_tag(PARAMS) + "]",
+            "model_sa_error=" + model_sa_error(PARAMS) * 100 + "%",
+            `T-Number=(${h})²+(${h})(${k})+(${k})²=` + (h * h + h * k + k * k),
+            `Q-Number=(${H})²+(${H})(${K})+(${K})²=` + (H * H + H * K + K * K),
+        ].join("\n");
+        if (PARAMS.c === "levo") view.scale(1, -1);
     } catch (e) {
         paper.clear();
         const canvas = document.getElementById("model");
