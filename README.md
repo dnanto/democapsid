@@ -4,7 +4,7 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 
 # Run
 
--   Run democapsid (v2.1.0): [https://dnanto.github.io/democapsid/app.html](https://dnanto.github.io/democapsid/app.html).
+-   Run democapsid (v2.1.1): [https://dnanto.github.io/democapsid/app.html](https://dnanto.github.io/democapsid/app.html).
 
 ![screenshot.png](screenshot.png)
 
@@ -12,7 +12,7 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 
 ```bash
 npm run clean && \
-npm run dist && \
+npm run minify && \
 npm run update && \
 npm run zip && \
 npm run tar

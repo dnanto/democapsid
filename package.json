@@ -1,6 +1,6 @@
 {
     "name": "democapsid",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "author": "Daniel Antonio Negrón",
     "license": "MIT",
     "description": "Render viral capsids in the browser and export SVG.",
@@ -21,7 +21,7 @@
     },
     "scripts": {
         "clean": "rm -f democapsid.tar.gz democapsid.zip js/democapsid.min.js",
-        "dist": "terser --ecma 5 --comments --compress ecma=5 --ie8 --safari10 --timings js/democapsid.js --mangle toplevel --keep-fnames -o js/$npm_package_name.min.js",
+        "minify": "terser --ecma 5 --comments --compress ecma=5 --ie8 --safari10 --timings js/democapsid.js --mangle toplevel --keep-fnames -o js/$npm_package_name.min.js",
         "update": "cp node_modules/paper/dist/paper-core.min.js js/lib/paperjs/paper-core.min.js",
         "zip": "zip -j $npm_package_name-$npm_package_version.zip js/democapsid.js js/democapsid.min.js",
         "tar": "tar cvzf $npm_package_name-$npm_package_version.tar.gz -C js democapsid.js democapsid.min.js"

@@ -1,3 +1,7 @@
+# v2.1.1
+
+-   un-inject paper scope
+
 # v2.1.0
 
 -   add spherical models

@@ -1,5 +1,5 @@
 /*!
- * democapsid v2.1.0 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.1.1 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 - 2024, Daniel Antonio Negrón (dnanto/remaindeer)
  */
