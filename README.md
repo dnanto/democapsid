@@ -8,6 +8,16 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 
 ![screenshot.png](screenshot.png)
 
+# build
+
+```bash
+npm run clean && \
+npm run dist && \
+npm run update && \
+npm run zip && \
+npm run tar
+```
+
 # Paper
 
 -   Negrón, D. A. (2021). Vectorized Capsid Rendering in the Browser with Capsid.js (p. 2020.12.02.408252). https://doi.org/10.1101/2020.12.02.408252

@@ -155,7 +155,7 @@ function update(e) {
             `T-Number=(${h})²+(${h})(${k})+(${k})²=` + (h * h + h * k + k * k),
             `Q-Number=(${H})²+(${H})(${K})+(${K})²=` + (H * H + H * K + K * K),
         ].join("\n");
-        if (PARAMS.c === "levo") view.scale(1, -1);
+        if (PARAMS.c === "levo") paper.view.scale(1, -1);
     } catch (e) {
         paper.clear();
         const canvas = document.getElementById("model");
@@ -163,8 +163,6 @@ function update(e) {
         msg.children[1].innerText = e;
     }
 }
-
-paper.install(window);
 
 window.onload = function (opt) {
     Object.keys(DEFAULTS).forEach((e) => document.getElementById(e).addEventListener("change", update));

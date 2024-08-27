@@ -233,7 +233,7 @@ function calc_tile(t, R) {
                 [r, SQRT3 * r],
             ],
             tile: (e) => [
-                new Path.RegularPolygon({
+                new paper.Path.RegularPolygon({
                     center: e.coor,
                     sides: 6,
                     radius: R,
@@ -249,14 +249,14 @@ function calc_tile(t, R) {
                 [R, R * SQRT3],
             ],
             tile: (e) => [
-                new Path.RegularPolygon({
+                new paper.Path.RegularPolygon({
                     center: e.coor,
                     sides: 6,
                     radius: R,
                     data: { mer: 1 },
                 }).rotate(30),
                 ...Array.from({ length: 2 }, (_, i) =>
-                    new Path.RegularPolygon({
+                    new paper.Path.RegularPolygon({
                         center: e.coor.add([R, -(1 / 3) * r]),
                         sides: 3,
                         radius: (2 / 3) * r,
@@ -275,27 +275,27 @@ function calc_tile(t, R) {
                 [0.5 * R, 3 * r],
             ],
             tile: (e) => [
-                new Path.RegularPolygon({
+                new paper.Path.RegularPolygon({
                     center: e.coor,
                     sides: 6,
                     radius: R,
                     data: { mer: 1 },
                 }).rotate(30),
                 ...Array.from({ length: 6 }, (_, i) =>
-                    new Path.RegularPolygon({
+                    new paper.Path.RegularPolygon({
                         center: e.coor.add([0, -r - (1 / 3) * r]),
                         sides: 3,
                         radius: (2 / 3) * r,
                         data: { mer: 2 },
                     }).rotate(i * 60, e.coor)
                 ),
-                new Path.RegularPolygon({
+                new paper.Path.RegularPolygon({
                     center: e.coor.add([1.5 * R, -(1 / 3) * r]),
                     sides: 3,
                     radius: (2 / 3) * r,
                     data: { mer: 2 },
                 }),
-                new Path.RegularPolygon({
+                new paper.Path.RegularPolygon({
                     center: e.coor.add([-1.5 * R, (2 / 3) * r]),
                     sides: 3,
                     radius: (2 / 3) * r,
@@ -311,14 +311,14 @@ function calc_tile(t, R) {
                 [0, 2 * r + R],
             ],
             tile: (e) => [
-                new Path.RegularPolygon({
+                new paper.Path.RegularPolygon({
                     center: e.coor,
                     sides: 6,
                     radius: R,
                     data: { mer: 1 },
                 }).rotate(30),
                 ...Array.from({ length: 3 }, (_, i) =>
-                    new Path.RegularPolygon({
+                    new paper.Path.RegularPolygon({
                         center: e.coor.add([0, R + R * (SQRT3 / 3)]),
                         sides: 3,
                         radius: R / SQRT3,
@@ -326,7 +326,7 @@ function calc_tile(t, R) {
                     }).rotate(-30 + i * -60, e.coor)
                 ),
                 ...Array.from({ length: 3 }, (_, i) =>
-                    new Path.RegularPolygon({
+                    new paper.Path.RegularPolygon({
                         center: e.coor.add([0, -r - 0.5 * R]),
                         sides: 4,
                         radius: Math.sqrt(2 * R * R) / 2,
@@ -344,7 +344,7 @@ function calc_tile(t, R) {
             ],
             tile: (e) =>
                 Array.from({ length: 6 }, (_, i) =>
-                    new Path.RegularPolygon({
+                    new paper.Path.RegularPolygon({
                         center: e.coor.add([0, r - (R * SQRT3) / 6]),
                         sides: 3,
                         radius: R / SQRT3,
@@ -361,7 +361,7 @@ function calc_tile(t, R) {
             ],
             tile: (e) => [
                 ...Array.from({ length: 6 }, (_, i) =>
-                    new Path({
+                    new paper.Path({
                         segments: [
                             [0, 0],
                             [0.5 * r, -(0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
@@ -373,7 +373,7 @@ function calc_tile(t, R) {
                     }).rotate(i * 60, e.coor)
                 ),
                 ...Array.from({ length: 6 }, (_, i) =>
-                    new Path({
+                    new paper.Path({
                         segments: [
                             [-0.5 * r, 0.5 * R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
                             [0, 0.5 * R],
@@ -395,7 +395,7 @@ function calc_tile(t, R) {
             ],
             tile: (e) =>
                 Array.from({ length: 6 }, (_, i) =>
-                    new Path({
+                    new paper.Path({
                         segments: [
                             [0, 0],
                             [0, r + (R * SQRT3) / 6],
@@ -417,7 +417,7 @@ function calc_tile(t, R) {
             ],
             tile: (e) =>
                 Array.from({ length: 6 }, (_, i) =>
-                    new Path({
+                    new paper.Path({
                         segments: [
                             [0, 0],
                             [0, r],
@@ -868,10 +868,10 @@ function calc_facets(lat_cfg) {
         [1, 2],
     ]
         .map((e) => [lat_cfg.ck[e[0]], lat_cfg.ck[e[1]]])
-        .map((e) => new Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
+        .map((e) => new paper.Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
     const facets = triangles.map(
         (e) =>
-            new Group({
+            new paper.Group({
                 children: lat_cfg.lattice
                     .flatMap((f) =>
                         f.map((g) => {
@@ -901,7 +901,7 @@ function draw_net(PARAMS) {
 
     let g;
     /****/ if (PARAMS.a === 5) {
-        const unit1 = new Group(facets.slice(0, 2)).rotate(-degrees(ck[0].angle([1, 0]))).scale(-1, 1);
+        const unit1 = new paper.Group(facets.slice(0, 2)).rotate(-degrees(ck[0].angle([1, 0]))).scale(-1, 1);
         const unit2 = unit1.clone().rotate(180);
         const top_center = unit2.children[1].children
             .flatMap((e) => e.segments)
@@ -909,7 +909,7 @@ function draw_net(PARAMS) {
             .reduce((a, b) => (a.y < b.y ? a : b));
         unit2.position.x += unit1.children[0].bounds.right - top_center.x;
         unit2.position.y += unit1.children[0].bounds.height;
-        g = new Group({
+        g = new paper.Group({
             children: Array.from({ length: 5 })
                 .flatMap((_, i) => {
                     const [u1, u2] = [unit1.clone(), unit2.clone()];
@@ -918,28 +918,28 @@ function draw_net(PARAMS) {
                     return [u1, u2];
                 })
                 .flatMap((e) => e.children),
-            position: view.center,
+            position: paper.view.center,
             style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
         // clean-up
         [unit1, unit2].forEach((e) => e.remove());
     } else if (PARAMS.a === 3) {
         const angle = ck[0].angle([1, 0]);
-        const unit1 = new Group(facets).rotate(-degrees(angle)).scale(-1, 1);
+        const unit1 = new paper.Group(facets).rotate(-degrees(angle)).scale(-1, 1);
         const unit0 = facets[0].clone().rotate(180);
         unit0.position.x += ck[0].norm() / 2;
         const centroid = [unit0.bounds.topLeft, unit0.bounds.topRight, unit0.bounds.bottomCenter].reduce((a, b) => a.add(b)).divide(3);
         const center1 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[1].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2])))));
         const center2 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[2].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2]) + ck[1].angle(ck[2])))));
-        const f = new Group([...[1, 2, 3].map((_, i) => unit1.clone().rotate(i * 120, centroid))]);
+        const f = new paper.Group([...[1, 2, 3].map((_, i) => unit1.clone().rotate(i * 120, centroid))]);
         f.children.slice(0, -1).forEach((e) => e.children[1].remove());
         const unit2 = f.clone().rotate(180);
         unit2.bounds.left = Math.min(center1.x, center2.x);
         unit2.bounds.bottom = unit0.bounds.topRight.y;
         unit2.position.y -= unit2.children[1].children[0].bounds.bottom - center1.y;
         unit2.children.forEach((e) => f.addChild(e.clone()));
-        f.position = view.center;
-        g = new Group({
+        f.position = paper.view.center;
+        g = new paper.Group({
             children: f.children.flatMap((e) => e.children.flat()),
             style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
@@ -947,14 +947,14 @@ function draw_net(PARAMS) {
         [unit0, unit1, unit2].forEach((e) => e.remove());
     } else if (PARAMS.a === 2) {
         const angle = ck[0].angle([1, 0]);
-        const unit1 = new Group(facets).rotate(-degrees(angle)).rotate(-60).scale(-1, 1);
+        const unit1 = new paper.Group(facets).rotate(-degrees(angle)).rotate(-60).scale(-1, 1);
         const unit2 = unit1.children[1].clone();
         const vector = unit1.children[0].bounds.topLeft.subtract(unit1.children[0].bounds.bottomCenter);
         unit2.position = unit2.position.add(vector);
-        const unit3 = new Group([unit1.clone(), unit1.children[0].clone().rotate(60, unit1.children[0].bounds.topRight), unit2.clone()]);
+        const unit3 = new paper.Group([unit1.clone(), unit1.children[0].clone().rotate(60, unit1.children[0].bounds.topRight), unit2.clone()]);
         const unit4 = unit3.clone().rotate(180, unit3.children[0].children[0].bounds.topRight);
         unit4.position = unit4.position.add(vector.rotate(240));
-        const unit5 = new Group([unit3.clone(), unit4.clone()]);
+        const unit5 = new paper.Group([unit3.clone(), unit4.clone()]);
         const point1 = unit5.children[0].children[2].children
             .filter((e) => e.data.offset === 1)
             .flatMap((e) => e.segments.map((e) => e.point))
@@ -962,10 +962,10 @@ function draw_net(PARAMS) {
             .reduce((a, b) => (a.y < b.y ? b : a));
         const unit6 = unit5.clone();
         unit6.position = unit6.position.add(unit5.children[1].children[0].children[0].bounds.bottomRight.subtract(point1));
-        const f = new Group([unit5.clone(), unit6.clone()]);
-        f.position = view.center;
+        const f = new paper.Group([unit5.clone(), unit6.clone()]);
+        f.position = paper.view.center;
         const children = f.children.flatMap((e) => e.children).flatMap((e) => e.children);
-        g = new Group({
+        g = new paper.Group({
             children: [...children.filter((_, i) => i % 3 === 0).flatMap((e) => e.children), ...children.filter((_, i) => i % 3 !== 0)],
             style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
@@ -1019,7 +1019,7 @@ function draw_capsid(PARAMS) {
                         .concat(1)
                         .T()
                 ).flat();
-                return new Path({
+                return new paper.Path({
                     segments: segments.map((f) => f.slice(0, 2)),
                     data: Object.assign({}, e.data, {
                         id: id,
@@ -1031,7 +1031,7 @@ function draw_capsid(PARAMS) {
                     style: e.style,
                 });
             });
-            results = results.concat(new Group({ children: xfacet, data: { type: "facet", centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat() } }));
+            results = results.concat(new paper.Group({ children: xfacet, data: { type: "facet", centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat() } }));
         }
     }
 
@@ -1076,7 +1076,7 @@ function draw_capsid(PARAMS) {
         ])
         .map(
             (e) =>
-                new Path.Line({
+                new paper.Path.Line({
                     from: e[0],
                     to: e[1],
                     data: { centroid: e[1].mul(2) },
@@ -1084,14 +1084,14 @@ function draw_capsid(PARAMS) {
         );
 
     // knobs
-    const knobs = PARAMS["knob_toggle"] ? fibers.map((e) => new Path.Circle({ center: e.segments[1].point, radius: PARAMS.knob_size, data: { centroid: e.data.centroid } })) : [];
+    const knobs = PARAMS["knob_toggle"] ? fibers.map((e) => new paper.Path.Circle({ center: e.segments[1].point, radius: PARAMS.knob_size, data: { centroid: e.data.centroid } })) : [];
     results = results.concat(fibers).concat(knobs);
 
     // painter's algorithm
     results.sort((a, b) => a.data.centroid[2] < b.data.centroid[2]);
-    const g = new Group({
+    const g = new paper.Group({
         children: results,
-        position: view.center,
+        position: paper.view.center,
         style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
     });
 
@@ -1107,4 +1107,8 @@ function draw_capsid(PARAMS) {
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
 
     return g;
+}
+
+if (typeof exports !== "undefined") {
+    module.exports = { ico_axis_2, ico_axis_3, ico_axis_5 };
 }
