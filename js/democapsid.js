@@ -4,7 +4,7 @@
  * Copyright (c) 2020 - 2024, Daniel Antonio Negrón (dnanto/remaindeer)
  */
 
-const VERSION = "2.1.2";
+const VERSION = "2.1.3";
 
 const SQRT3 = Math.sqrt(3);
 const SQRT5 = Math.sqrt(5);
