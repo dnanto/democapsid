@@ -1,3 +1,9 @@
+# v2.1.2
+
+-   fix net-generation bug
+-   fix levo/dextro bug
+-   fix SVG export bug
+
 # v2.1.1
 
 -   un-inject paper scope

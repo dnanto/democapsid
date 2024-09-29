@@ -1,5 +1,5 @@
 /*!
- * democapsid v2.1.1 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.1.2 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 - 2024, Daniel Antonio Negrón (dnanto/remaindeer)
  */
@@ -74,7 +74,7 @@ function download(e) {
         href =
             "data:image/svg+xml;utf8," +
             encodeURIComponent(
-                project.exportSVG({
+                paper.project.exportSVG({
                     "options.bounds": "content",
                     asString: true,
                     "options.matchShapes": true,
@@ -155,8 +155,9 @@ function update(e) {
             `T-Number=(${h})²+(${h})(${k})+(${k})²=` + (h * h + h * k + k * k),
             `Q-Number=(${H})²+(${H})(${K})+(${K})²=` + (H * H + H * K + K * K),
         ].join("\n");
-        if (PARAMS.c === "levo") paper.view.scale(1, -1);
+        if (PARAMS.c === "dextro") paper.view.scale(1, -1);
     } catch (e) {
+        console.log(e);
         paper.clear();
         const canvas = document.getElementById("model");
         canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);

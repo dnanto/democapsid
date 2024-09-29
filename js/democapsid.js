@@ -1,10 +1,10 @@
 /*!
- * democapsid v2.1.1 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.1.2 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 - 2024, Daniel Antonio Negrón (dnanto/remaindeer)
  */
 
-const VERSION = "2.1.1";
+const VERSION = "2.1.2";
 
 const SQRT3 = Math.sqrt(3);
 const SQRT5 = Math.sqrt(5);
@@ -929,8 +929,8 @@ function draw_net(PARAMS) {
         const unit0 = facets[0].clone().rotate(180);
         unit0.position.x += ck[0].norm() / 2;
         const centroid = [unit0.bounds.topLeft, unit0.bounds.topRight, unit0.bounds.bottomCenter].reduce((a, b) => a.add(b)).divide(3);
-        const center1 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[1].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2])))));
-        const center2 = unit0.bounds.topRight.add(new Point([1, 0].mul(ck[2].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2]) + ck[1].angle(ck[2])))));
+        const center1 = unit0.bounds.topRight.add(new paper.Point([1, 0].mul(ck[1].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2])))));
+        const center2 = unit0.bounds.topRight.add(new paper.Point([1, 0].mul(ck[2].norm()).rot(-(Math.PI / 3 - ck[1].angle(ck[2]) + ck[1].angle(ck[2])))));
         const f = new paper.Group([...[1, 2, 3].map((_, i) => unit1.clone().rotate(i * 120, centroid))]);
         f.children.slice(0, -1).forEach((e) => e.children[1].remove());
         const unit2 = f.clone().rotate(180);
@@ -954,7 +954,7 @@ function draw_net(PARAMS) {
         const unit3 = new paper.Group([unit1.clone(), unit1.children[0].clone().rotate(60, unit1.children[0].bounds.topRight), unit2.clone()]);
         const unit4 = unit3.clone().rotate(180, unit3.children[0].children[0].bounds.topRight);
         unit4.position = unit4.position.add(vector.rotate(240));
-        const unit5 = new paper.Group([unit3.clone(), unit4.clone()]);
+        const unit5 = new paper.Group([unit3, unit4]);
         const point1 = unit5.children[0].children[2].children
             .filter((e) => e.data.offset === 1)
             .flatMap((e) => e.segments.map((e) => e.point))
@@ -962,7 +962,7 @@ function draw_net(PARAMS) {
             .reduce((a, b) => (a.y < b.y ? b : a));
         const unit6 = unit5.clone();
         unit6.position = unit6.position.add(unit5.children[1].children[0].children[0].bounds.bottomRight.subtract(point1));
-        const f = new paper.Group([unit5.clone(), unit6.clone()]);
+        const f = new paper.Group([unit5, unit6]);
         f.position = paper.view.center;
         const children = f.children.flatMap((e) => e.children).flatMap((e) => e.children);
         g = new paper.Group({
@@ -970,6 +970,7 @@ function draw_net(PARAMS) {
             style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
         // clean-up
+        [2, 5, 8, 11].forEach((e) => g.children[e].remove());
         [unit1, unit2, unit3, unit4, unit5, unit6].forEach((e) => e.remove());
     } else {
         throw new Error("invalid symmetry mode!");
