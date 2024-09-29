@@ -1,3 +1,8 @@
+# v2.1.3
+
+-   revert levo/dextro bug-fix, it was correct before...
+-   fix render bug in Google Chrome browser due to centroid sorting implementation
+
 # v2.1.2
 
 -   fix net-generation bug

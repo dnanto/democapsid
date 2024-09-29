@@ -1,5 +1,5 @@
 /*!
- * democapsid v2.1.2 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.1.3 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 - 2024, Daniel Antonio Negrón (dnanto/remaindeer)
  */
@@ -979,7 +979,7 @@ function draw_net(PARAMS) {
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
 
-    return g;
+    return g.scale(-1, 1);
 }
 
 function draw_capsid(PARAMS) {
@@ -1089,7 +1089,7 @@ function draw_capsid(PARAMS) {
     results = results.concat(fibers).concat(knobs);
 
     // painter's algorithm
-    results.sort((a, b) => a.data.centroid[2] < b.data.centroid[2]);
+    results.sort((a, b) => a.data.centroid[2] - b.data.centroid[2]);
     const g = new paper.Group({
         children: results,
         position: paper.view.center,
