@@ -861,7 +861,7 @@ function lattice_config(h, k, H, K, R, t) {
     return { tile: tile, ck: ck, lattice: lattice };
 }
 
-function calc_facets(lat_cfg) {
+function calc_facets(lat_cfg, PARAMS) {
     const triangles = [
         [3, 0],
         [0, 1],
@@ -876,12 +876,28 @@ function calc_facets(lat_cfg) {
                     .flatMap((f) =>
                         f.map((g) => {
                             const x = g.intersect(e, { insert: false });
+                            x.style.strokeColor = PARAMS.line_color + PARAMS.line_alpha;
+                            x.style.fillColor = PARAMS["mer_color_" + x.data.offset] + PARAMS["mer_alpha_" + x.data.offset];
                             x.data.has_centroid = e.contains(x.data.centroid);
-                            x.data.centroid_on_vertex = e.segments.map((h) => h.point.getDistance(x.data.centroid)).some((e) => e < 1e-5);
-                            return x;
+                            x.data.centroid_on_vertex = x.segments.findIndex((e) => e.point.getDistance(x.data.centroid) < 1e-5) > -1;
+                            if (x.data.centroid_on_vertex === true) {
+                                x.style.strokeColor = null;
+                                return x;
+                            }
+                            let flags = x.segments.map((e) => g.segments.some((f) => e.point.getDistance(f.point) < 1e-5));
+                            if (flags.reduce((a, b) => a && b, true)) {
+                                return x;
+                            }
+                            for (let i = 0; (flags[0] || flags[flags.length - 1]) && i < flags.length; i++) {
+                                flags = flags.slice(-1).concat(flags.slice(0, -1));
+                                x.segments = x.segments.slice(-1).concat(x.segments.slice(0, -1));
+                            }
+                            const y = new paper.Path({ segments: x.segments, closed: false, data: x.data, style: x.style });
+                            x.remove();
+                            return y;
                         })
                     )
-                    .filter((e) => e.segments.length > 0),
+                    .filter((e) => e.segments.length),
                 data: e.data,
             })
     );
@@ -896,8 +912,7 @@ function draw_net(PARAMS) {
     // lattice
     const lat_cfg = lattice_config(h, k, H, K, R, t);
     const ck = lat_cfg.ck;
-    lat_cfg.lattice.flat().forEach((e) => (e.style.fillColor = PARAMS["mer_color_" + e.data.offset] + PARAMS["mer_alpha_" + e.data.offset]));
-    const facets = calc_facets(lat_cfg);
+    const facets = calc_facets(lat_cfg, PARAMS);
 
     let g;
     /****/ if (PARAMS.a === 5) {
@@ -919,7 +934,7 @@ function draw_net(PARAMS) {
                 })
                 .flatMap((e) => e.children),
             position: paper.view.center,
-            style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+            style: { strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
         // clean-up
         [unit1, unit2].forEach((e) => e.remove());
@@ -941,7 +956,7 @@ function draw_net(PARAMS) {
         f.position = paper.view.center;
         g = new paper.Group({
             children: f.children.flatMap((e) => e.children.flat()),
-            style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+            style: { strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
         // clean-up
         [unit0, unit1, unit2].forEach((e) => e.remove());
@@ -967,7 +982,7 @@ function draw_net(PARAMS) {
         const children = f.children.flatMap((e) => e.children).flatMap((e) => e.children);
         g = new paper.Group({
             children: [...children.filter((_, i) => i % 3 === 0).flatMap((e) => e.children), ...children.filter((_, i) => i % 3 !== 0)],
-            style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+            style: { strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
         // clean-up
         [2, 5, 8, 11].forEach((e) => g.children[e].remove());
@@ -988,8 +1003,7 @@ function draw_capsid(PARAMS) {
 
     // lattice
     const lat_cfg = lattice_config(h, k, H, K, R, t);
-    lat_cfg.lattice.flat().forEach((e) => (e.style.fillColor = PARAMS["mer_color_" + e.data.offset] + PARAMS["mer_alpha_" + e.data.offset]));
-    const facets = calc_facets(lat_cfg);
+    const facets = calc_facets(lat_cfg, PARAMS);
 
     // coordinates
     const ico_cfg = ico_config(PARAMS.a);
@@ -1022,13 +1036,13 @@ function draw_capsid(PARAMS) {
                 ).flat();
                 return new paper.Path({
                     segments: segments.map((f) => f.slice(0, 2)),
+                    closed: e.closed,
                     data: Object.assign({}, e.data, {
                         id: id,
                         centroid: centroid,
                         segments_3D: segments,
                         normal: segments[1].sub(segments[0]).cross(segments[2].sub(segments[0])).uvec(),
                     }),
-                    closed: true,
                     style: e.style,
                 });
             });
@@ -1089,15 +1103,18 @@ function draw_capsid(PARAMS) {
     results = results.concat(fibers).concat(knobs);
 
     // painter's algorithm
-    results.sort((a, b) => a.data.centroid[2] - b.data.centroid[2]);
+    results.sort((a, b) => a.data.centroid[2] < b.data.centroid[2]);
     const g = new paper.Group({
         children: results,
         position: paper.view.center,
-        style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
+        style: { strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
     });
 
     // styling
-    knobs.forEach((e) => (e.style.fillColor = PARAMS.knob_color + PARAMS.knob_alpha));
+    knobs.forEach((e) => {
+        e.style.strokeColor = PARAMS.line_color + PARAMS.line_alpha;
+        e.style.fillColor = PARAMS.knob_color + PARAMS.knob_alpha;
+    });
     fibers.forEach((e) => {
         e.style.strokeColor = PARAMS.fiber_color + PARAMS.fiber_alpha;
         e.style.strokeWidth = PARAMS.fiber_size;
