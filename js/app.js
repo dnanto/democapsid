@@ -155,7 +155,7 @@ function update(e) {
             `T-Number=(${h})²+(${h})(${k})+(${k})²=` + (h * h + h * k + k * k),
             `Q-Number=(${H})²+(${H})(${K})+(${K})²=` + (H * H + H * K + K * K),
         ].join("\n");
-        if (PARAMS.c === "levo") paper.view.scale(1, -1);
+        if (PARAMS.c === "dextro") paper.view.scale(1, -1);
     } catch (e) {
         console.log(e);
         paper.clear();

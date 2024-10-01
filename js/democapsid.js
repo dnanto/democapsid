@@ -880,7 +880,9 @@ function calc_facets(lat_cfg, PARAMS) {
                             x.style.fillColor = PARAMS["mer_color_" + x.data.offset] + PARAMS["mer_alpha_" + x.data.offset];
                             x.data.has_centroid = e.contains(x.data.centroid);
                             x.data.centroid_on_vertex = x.segments.findIndex((e) => e.point.getDistance(x.data.centroid) < 1e-5) > -1;
+                            console.log(x.data.offset);
                             if (x.data.centroid_on_vertex === true) {
+                                // if (x.data.offset === 1) {
                                 x.style.strokeColor = null;
                                 return x;
                             }
@@ -897,6 +899,7 @@ function calc_facets(lat_cfg, PARAMS) {
                             return y;
                         })
                     )
+                    .sort((a, b) => a.data.offset - b.data.offset)
                     .filter((e) => e.segments.length),
                 data: e.data,
             })
@@ -994,7 +997,7 @@ function draw_net(PARAMS) {
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
 
-    return g.scale(-1, 1);
+    return g;
 }
 
 function draw_capsid(PARAMS) {
