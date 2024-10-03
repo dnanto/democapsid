@@ -877,14 +877,6 @@ function lattice_config(h, k, H, K, R, t) {
     return { tile: tile, ck: ck, lattice: lattice };
 }
 
-function point_line_distance(p0, p1, p2) {
-    return Math.abs((p2.y - p1.y) * p0.x - (p2.x - p1.x) * p0.y + p2.x * p1.y - p2.y * p1.x) / p1.getDistance(p2);
-}
-
-function is_point_on_path_border(e, p0, tol = 1e-5) {
-    return e.curves.findIndex((c) => point_line_distance(p0, c.segment1.point, c.segment2.point) < tol);
-}
-
 function path_curves_to_points(c) {
     return c.curves.map((e) => [e.segment1.point, e.segment2.point]);
 }
@@ -899,52 +891,59 @@ function calc_facets(lat_cfg, PARAMS) {
         .map((e) => new paper.Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
 
     const facets = triangles.map(
-        (tri) =>
+        (tri, idx) =>
             new paper.Group({
                 children: lat_cfg.lattice
                     .flatMap((tile) =>
                         tile.map((subtile) => {
                             const x = subtile.intersect(tri, { insert: false });
                             if (!x.segments.length) return x;
-                            // console.log(
-                            //     path_curves_to_points(x).map((e, i) => {
-                            //         const [j, k] = e.map((f) => is_point_on_path_border(tri, f));
-                            //         // return [i, (i + 1) % x.segments.length, j != -1 && j == k];
-                            //         return j != -1 && j == k ? -1 : i;
-                            //     })
-                            // );
-                            // console.log(
-                            //     path_curves_to_points(x)
-                            //         .map((e, i) => {
-                            //             const [j, k] = e.map((f) => is_point_on_path_border(tri, f));
-                            //             // return [i, (i + 1) % x.segments.length, j != -1 && j == k];
-                            //             return j != -1 && j == k ? -1 : i;
-                            //         })
-                            //         .split(-1)
-                            //         .map((e) => {
-                            //             if (e.length < x.curves.length) e.push((e[e.length - 1] + 1) % x.curves.length);
-                            //             return e;
-                            //         })
-                            // );
-                            // console.log();
+                            const ori = x.segments.map((e) => subtile.segments.findIndex((f) => e.point.getDistance(f.point) < 1e-5));
+                            const bar = x.segments.map((e) => x.data.centroid.getDistance(e.point) < 1e-5);
                             x.style.fillColor = PARAMS["mer_color_" + x.data.offset] + PARAMS["mer_alpha_" + x.data.offset];
+                            const vectors = path_curves_to_points(subtile);
                             x.data.strokes = path_curves_to_points(x)
                                 .map((e, i) => {
+                                    console.log(
+                                        i,
+                                        vectors.some((f) => [0, 1].every((i) => f[0].subtract(e[i]).cross(f[1].subtract(e[i])) < 1e-5))
+                                    );
+                                    return vectors.some((f) => [0, 1].every((i) => f[0].subtract(e[i]).cross(f[1].subtract(e[i])) < 1e-5)) ? i : -1;
+                                    // console.log(scurves);
+                                    // if (bar[i] || bar[(i + 1) % ori.length]) {
+                                    //     return -1;
+                                    // }
+                                    // if (ori[i] > -1 && ori[(i + 1) % ori.length] > -1 && subtile.segments.length == ori.length) {
+                                    //     return i;
+                                    // }
+                                    if (ori[i] == -1 && ori[(i + 1) % ori.length] == -1) {
+                                        return -1;
+                                    }
+                                    const diff = ori[(i + 1) % ori.length] - ori[i];
+                                    if (!(ori[i] == -1 || ori[(i + 1) % ori.length] == -1) && (diff == 1 || diff == 1 - subtile.segments.length)) {
+                                        return i;
+                                    }
+
                                     const [j, k] = e.map((f) => is_point_on_path_border(tri, f));
                                     return j != -1 && j == k ? -1 : i;
                                 })
                                 .split(-1)
                                 .map((e) => {
-                                    if (e.length < x.curves.length) e.push((e[e.length - 1] + 1) % x.curves.length);
+                                    e.push((e[e.length - 1] + 1) % x.curves.length);
                                     return e;
                                 });
                             x.data.has_centroid = tri.contains(x.data.centroid);
+                            // console.log(idx);
+                            // console.log(ori);
+                            // // console.log(bar);
+                            // // console.log(x.segments.map((e) => x.data.centroid.getDistance(e.point)));
+                            // console.log(x.data.strokes);
+                            console.log();
                             x.data.centroid_on_vertex = x.segments.findIndex((e) => e.point.getDistance(x.data.centroid) < 1e-5) > -1;
                             return x;
                         })
                     )
-                    .filter((e) => e.segments.length > 0)
-                    .sort((a, b) => a.data.offset - b.data.offset),
+                    .filter((e) => e.segments.length > 0),
                 data: tri.data,
             })
     );
@@ -1043,7 +1042,7 @@ function draw_net(PARAMS) {
     g.children.forEach((e) =>
         e.children.forEach((e) => {
             const points = e.segments.map((e) => e.point);
-            e.data.strokes.forEach((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: points.length == f.length, style: { strokeColor: "black" } }));
+            e.data.strokes.forEach((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: "black" } }));
         })
     );
     return g;
