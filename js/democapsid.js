@@ -84,8 +84,24 @@ Array.prototype.T = function () {
     return this.map((e) => [e]);
 };
 
-Array.prototype.has = function (q) {
-    return this.some((p) => p.length === q.length && p.every((v, i) => v === q[i]));
+Array.prototype.distance = function (q) {
+    return this.sub(q).norm();
+};
+
+Array.prototype.has = function (q, tol = TOL) {
+    return this.some((p) => p.length === q.length && p.distance(q) < tol);
+};
+
+Array.prototype.split = function (sep) {
+    // https://stackoverflow.com/a/34513786
+    return this.reduce(
+        function (arr, val) {
+            if (val === -1) arr.push([]);
+            else arr[arr.length - 1].push(val);
+            return arr;
+        },
+        [[]]
+    ).filter((e) => e.length);
 };
 
 function mmul(A, B) {
@@ -710,7 +726,7 @@ function ico_axis_3(ck, iter = ITER, tol = TOL) {
     }
 
     const delta = Math.PI / 180 / 10;
-    t = 0;
+    let t = 0;
     for (let i = 0; i * delta < Math.PI / 2; i++) {
         t = i * delta;
         try {
@@ -769,7 +785,7 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
     }
 
     const delta = Math.PI / 180 / 10;
-    t = 0;
+    let t = 0;
     for (let i = 0; i * delta < Math.PI / 2; i++) {
         t = i * delta;
         try {
@@ -861,6 +877,18 @@ function lattice_config(h, k, H, K, R, t) {
     return { tile: tile, ck: ck, lattice: lattice };
 }
 
+function point_line_distance(p0, p1, p2) {
+    return Math.abs((p2.y - p1.y) * p0.x - (p2.x - p1.x) * p0.y + p2.x * p1.y - p2.y * p1.x) / p1.getDistance(p2);
+}
+
+function is_point_on_path_border(e, p0, tol = 1e-5) {
+    return e.curves.findIndex((c) => point_line_distance(p0, c.segment1.point, c.segment2.point) < tol);
+}
+
+function path_curves_to_points(c) {
+    return c.curves.map((e) => [e.segment1.point, e.segment2.point]);
+}
+
 function calc_facets(lat_cfg, PARAMS) {
     const triangles = [
         [3, 0],
@@ -869,39 +897,55 @@ function calc_facets(lat_cfg, PARAMS) {
     ]
         .map((e) => [lat_cfg.ck[e[0]], lat_cfg.ck[e[1]]])
         .map((e) => new paper.Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
+
     const facets = triangles.map(
-        (e) =>
+        (tri) =>
             new paper.Group({
                 children: lat_cfg.lattice
-                    .flatMap((f) =>
-                        f.map((g) => {
-                            const x = g.intersect(e, { insert: false });
-                            x.style.strokeColor = PARAMS.line_color + PARAMS.line_alpha;
+                    .flatMap((tile) =>
+                        tile.map((subtile) => {
+                            const x = subtile.intersect(tri, { insert: false });
+                            if (!x.segments.length) return x;
+                            // console.log(
+                            //     path_curves_to_points(x).map((e, i) => {
+                            //         const [j, k] = e.map((f) => is_point_on_path_border(tri, f));
+                            //         // return [i, (i + 1) % x.segments.length, j != -1 && j == k];
+                            //         return j != -1 && j == k ? -1 : i;
+                            //     })
+                            // );
+                            // console.log(
+                            //     path_curves_to_points(x)
+                            //         .map((e, i) => {
+                            //             const [j, k] = e.map((f) => is_point_on_path_border(tri, f));
+                            //             // return [i, (i + 1) % x.segments.length, j != -1 && j == k];
+                            //             return j != -1 && j == k ? -1 : i;
+                            //         })
+                            //         .split(-1)
+                            //         .map((e) => {
+                            //             if (e.length < x.curves.length) e.push((e[e.length - 1] + 1) % x.curves.length);
+                            //             return e;
+                            //         })
+                            // );
+                            // console.log();
                             x.style.fillColor = PARAMS["mer_color_" + x.data.offset] + PARAMS["mer_alpha_" + x.data.offset];
-                            x.data.has_centroid = e.contains(x.data.centroid);
+                            x.data.strokes = path_curves_to_points(x)
+                                .map((e, i) => {
+                                    const [j, k] = e.map((f) => is_point_on_path_border(tri, f));
+                                    return j != -1 && j == k ? -1 : i;
+                                })
+                                .split(-1)
+                                .map((e) => {
+                                    if (e.length < x.curves.length) e.push((e[e.length - 1] + 1) % x.curves.length);
+                                    return e;
+                                });
+                            x.data.has_centroid = tri.contains(x.data.centroid);
                             x.data.centroid_on_vertex = x.segments.findIndex((e) => e.point.getDistance(x.data.centroid) < 1e-5) > -1;
-                            console.log(x.data.offset);
-                            if (x.data.centroid_on_vertex === true) {
-                                // if (x.data.offset === 1) {
-                                x.style.strokeColor = null;
-                                return x;
-                            }
-                            let flags = x.segments.map((e) => g.segments.some((f) => e.point.getDistance(f.point) < 1e-5));
-                            if (flags.reduce((a, b) => a && b, true)) {
-                                return x;
-                            }
-                            for (let i = 0; (flags[0] || flags[flags.length - 1]) && i < flags.length; i++) {
-                                flags = flags.slice(-1).concat(flags.slice(0, -1));
-                                x.segments = x.segments.slice(-1).concat(x.segments.slice(0, -1));
-                            }
-                            const y = new paper.Path({ segments: x.segments, closed: false, data: x.data, style: x.style });
-                            x.remove();
-                            return y;
+                            return x;
                         })
                     )
-                    .sort((a, b) => a.data.offset - b.data.offset)
-                    .filter((e) => e.segments.length),
-                data: e.data,
+                    .filter((e) => e.segments.length > 0)
+                    .sort((a, b) => a.data.offset - b.data.offset),
+                data: tri.data,
             })
     );
     triangles.forEach((e) => e.remove());
@@ -996,7 +1040,12 @@ function draw_net(PARAMS) {
 
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
-
+    g.children.forEach((e) =>
+        e.children.forEach((e) => {
+            const points = e.segments.map((e) => e.point);
+            e.data.strokes.forEach((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: points.length == f.length, style: { strokeColor: "black" } }));
+        })
+    );
     return g;
 }
 
