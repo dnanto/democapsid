@@ -891,55 +891,28 @@ function calc_facets(lat_cfg, PARAMS) {
         .map((e) => new paper.Path({ segments: [[0, 0], ...e], closed: true, data: { vectors: [[0, 0], ...e] } }));
 
     const facets = triangles.map(
-        (tri, idx) =>
+        (tri) =>
             new paper.Group({
                 children: lat_cfg.lattice
                     .flatMap((tile) =>
                         tile.map((subtile) => {
+                            const border = path_curves_to_points(subtile);
                             const x = subtile.intersect(tri, { insert: false });
-                            if (!x.segments.length) return x;
-                            const ori = x.segments.map((e) => subtile.segments.findIndex((f) => e.point.getDistance(f.point) < 1e-5));
-                            const bar = x.segments.map((e) => x.data.centroid.getDistance(e.point) < 1e-5);
+                            x.data.has_centroid = tri.contains(x.data.centroid);
+                            x.data.centroid_on_vertex = x.segments.findIndex((e) => e.point.getDistance(x.data.centroid) < 1e-5) > -1;
                             x.style.fillColor = PARAMS["mer_color_" + x.data.offset] + PARAMS["mer_alpha_" + x.data.offset];
-                            const vectors = path_curves_to_points(subtile);
                             x.data.strokes = path_curves_to_points(x)
                                 .map((e, i) => {
-                                    console.log(
-                                        i,
-                                        vectors.some((f) => [0, 1].every((i) => f[0].subtract(e[i]).cross(f[1].subtract(e[i])) < 1e-5))
-                                    );
-                                    return vectors.some((f) => [0, 1].every((i) => f[0].subtract(e[i]).cross(f[1].subtract(e[i])) < 1e-5)) ? i : -1;
-                                    // console.log(scurves);
-                                    // if (bar[i] || bar[(i + 1) % ori.length]) {
-                                    //     return -1;
-                                    // }
-                                    // if (ori[i] > -1 && ori[(i + 1) % ori.length] > -1 && subtile.segments.length == ori.length) {
-                                    //     return i;
-                                    // }
-                                    if (ori[i] == -1 && ori[(i + 1) % ori.length] == -1) {
-                                        return -1;
-                                    }
-                                    const diff = ori[(i + 1) % ori.length] - ori[i];
-                                    if (!(ori[i] == -1 || ori[(i + 1) % ori.length] == -1) && (diff == 1 || diff == 1 - subtile.segments.length)) {
-                                        return i;
-                                    }
-
-                                    const [j, k] = e.map((f) => is_point_on_path_border(tri, f));
-                                    return j != -1 && j == k ? -1 : i;
+                                    // TODO: simplify...
+                                    return border.some((f) => [0, 1].every((i) => f[0].subtract(e[i]).cross(f[1].subtract(e[i])) < 1e-5) && f[0].subtract(f[1]).isCollinear(e[0].subtract(e[1])))
+                                        ? i
+                                        : -1;
                                 })
                                 .split(-1)
                                 .map((e) => {
                                     e.push((e[e.length - 1] + 1) % x.curves.length);
                                     return e;
                                 });
-                            x.data.has_centroid = tri.contains(x.data.centroid);
-                            // console.log(idx);
-                            // console.log(ori);
-                            // // console.log(bar);
-                            // // console.log(x.segments.map((e) => x.data.centroid.getDistance(e.point)));
-                            // console.log(x.data.strokes);
-                            console.log();
-                            x.data.centroid_on_vertex = x.segments.findIndex((e) => e.point.getDistance(x.data.centroid) < 1e-5) > -1;
                             return x;
                         })
                     )
