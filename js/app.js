@@ -31,7 +31,7 @@ const DEFAULTS = Object.assign(
     },
     Object.fromEntries([
         ...["net", "capsid"].map((e) => ["mode_" + e, PARSERS.toggle]),
-        ...["penton_fiber", "knob"].map((e) => [e + "_toggle", PARSERS.toggle]),
+        ...["penton_fiber", "knob", "facet"].map((e) => [e + "_toggle", PARSERS.toggle]),
         ...["line", "fiber", "knob"].flatMap((e) => ["color", "alpha", "size"].map((f) => [e + "_" + f, PARSERS[f]])),
         ...["color", "alpha", "size", "length"].map((e) => ["fiber_" + e, PARSERS[e]]),
         ...["color", "alpha", "toggle"].flatMap((e) => Array.from({ length: 6 }, (_, i) => ["mer_" + e + "_" + (i + 1), PARSERS[e]])),

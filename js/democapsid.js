@@ -1012,14 +1012,21 @@ function draw_net(PARAMS) {
     // clean-up
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
+
+    if (PARAMS.facet_toggle) {
+        g.style.strokeColor = PARAMS.line_color;
+        g.style.strokeWidth = PARAMS.line_size;
+        return g;
+    }
     const G = new paper.Group(
         g.children.map(
             (e) =>
                 new paper.Group(
                     e.children.map((e) => {
                         const points = e.segments.map((e) => e.point);
-                        const border = new paper.Group(e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: "black" } })));
-                        border.style.strokeWidth = PARAMS.line_size;
+                        const border = new paper.Group(
+                            e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color, strokeWidth: PARAMS.line_size } }))
+                        );
                         return new paper.Group([e.clone(), border]);
                     })
                 )
@@ -1158,14 +1165,24 @@ function draw_capsid(PARAMS) {
     // clean-up
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
+    if (PARAMS.facet_toggle) {
+        g.children
+            .filter((e) => e.data.type === "facet")
+            .forEach((e) => {
+                e.style.strokeColor = PARAMS.line_color;
+                e.style.strokeWidth = PARAMS.line_size;
+            });
+        return g;
+    }
     const G = new paper.Group(
         g.children.map((e) => {
             if (Object.hasOwn(e.data, "type") && e.data.type === "facet") {
                 return new paper.Group(
                     e.children.map((e) => {
                         const points = e.segments.map((e) => e.point);
-                        const border = new paper.Group(e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: "black" } })));
-                        border.style.strokeWidth = PARAMS.line_size;
+                        const border = new paper.Group(
+                            e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color, strokeWidth: PARAMS.line_size } }))
+                        );
                         return new paper.Group([e.clone(), border]);
                     })
                 );
