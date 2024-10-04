@@ -725,6 +725,7 @@ function ico_axis_3(ck, iter = ITER, tol = TOL) {
         return [pD, pF, pG, Math.abs(pD[1]) - pG.sub([0, 0, pG[2]]).norm()];
     }
 
+    // TODO: parameterize increment...
     const delta = Math.PI / 180 / 10;
     let t = 0;
     for (let i = 0; i * delta < Math.PI / 2; i++) {
@@ -784,6 +785,7 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
         return [pE, pF, pG, pE.sub([0, 0, pE[2]]).norm() - pG.sub([0, 0, pG[2]]).norm()];
     }
 
+    // TODO: parameterize increment...
     const delta = Math.PI / 180 / 10;
     let t = 0;
     for (let i = 0; i * delta < Math.PI / 2; i++) {
@@ -953,7 +955,6 @@ function draw_net(PARAMS) {
                 })
                 .flatMap((e) => e.children),
             position: paper.view.center,
-            style: { strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
         // clean-up
         [unit1, unit2].forEach((e) => e.remove());
@@ -975,7 +976,6 @@ function draw_net(PARAMS) {
         f.position = paper.view.center;
         g = new paper.Group({
             children: f.children.flatMap((e) => e.children.flat()),
-            style: { strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
         // clean-up
         [unit0, unit1, unit2].forEach((e) => e.remove());
@@ -1001,7 +1001,6 @@ function draw_net(PARAMS) {
         const children = f.children.flatMap((e) => e.children).flatMap((e) => e.children);
         g = new paper.Group({
             children: [...children.filter((_, i) => i % 3 === 0).flatMap((e) => e.children), ...children.filter((_, i) => i % 3 !== 0)],
-            style: { strokeWidth: PARAMS.line_size, strokeCap: "round", strokeJoin: "round" },
         });
         // clean-up
         [2, 5, 8, 11].forEach((e) => g.children[e].remove());
@@ -1010,15 +1009,27 @@ function draw_net(PARAMS) {
         throw new Error("invalid symmetry mode!");
     }
 
+    // clean-up
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
-    g.children.forEach((e) =>
-        e.children.forEach((e) => {
-            const points = e.segments.map((e) => e.point);
-            e.data.strokes.forEach((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: "black" } }));
-        })
+    const G = new paper.Group(
+        g.children.map(
+            (e) =>
+                new paper.Group(
+                    e.children.map((e) => {
+                        const points = e.segments.map((e) => e.point);
+                        const border = new paper.Group(e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: "black" } })));
+                        border.style.strokeWidth = PARAMS.line_size;
+                        return new paper.Group([e.clone(), border]);
+                    })
+                )
+        )
     );
-    return g;
+    G.style.strokeCap = "round";
+    G.style.strokeJoin = "round";
+    g.remove();
+
+    return G;
 }
 
 function draw_capsid(PARAMS) {
@@ -1147,8 +1158,27 @@ function draw_capsid(PARAMS) {
     // clean-up
     facets.forEach((e) => e.remove());
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
+    const G = new paper.Group(
+        g.children.map((e) => {
+            if (Object.hasOwn(e.data, "type") && e.data.type === "facet") {
+                return new paper.Group(
+                    e.children.map((e) => {
+                        const points = e.segments.map((e) => e.point);
+                        const border = new paper.Group(e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: "black" } })));
+                        border.style.strokeWidth = PARAMS.line_size;
+                        return new paper.Group([e.clone(), border]);
+                    })
+                );
+            } else {
+                return e;
+            }
+        })
+    );
+    G.style.strokeCap = "round";
+    G.style.strokeJoin = "round";
+    g.remove();
 
-    return g;
+    return G;
 }
 
 if (typeof exports !== "undefined") {

@@ -69,7 +69,6 @@ function download(e) {
     let href;
     const obj = draw(PARAMS);
     obj.remove();
-    // return;
     /****/ if (ext === "svg") {
         href =
             "data:image/svg+xml;utf8," +
