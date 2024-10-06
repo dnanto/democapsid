@@ -1014,7 +1014,7 @@ function draw_net(PARAMS) {
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
 
     if (PARAMS.facet_toggle) {
-        g.style.strokeColor = PARAMS.line_color;
+        g.style.strokeColor = PARAMS.line_color + PARAMS.line_alpha;
         g.style.strokeWidth = PARAMS.line_size;
         return g;
     }
@@ -1145,7 +1145,7 @@ function draw_capsid(PARAMS) {
     results = results.concat(fibers).concat(knobs);
 
     // painter's algorithm
-    results.sort((a, b) => a.data.centroid[2] < b.data.centroid[2]);
+    results.sort((a, b) => a.data.centroid[2] - b.data.centroid[2]);
     const g = new paper.Group({
         children: results,
         position: paper.view.center,
@@ -1169,7 +1169,7 @@ function draw_capsid(PARAMS) {
         g.children
             .filter((e) => e.data.type === "facet")
             .forEach((e) => {
-                e.style.strokeColor = PARAMS.line_color;
+                e.style.strokeColor = PARAMS.line_color + PARAMS.line_alpha;
                 e.style.strokeWidth = PARAMS.line_size;
             });
         return g;
@@ -1181,7 +1181,10 @@ function draw_capsid(PARAMS) {
                     e.children.map((e) => {
                         const points = e.segments.map((e) => e.point);
                         const border = new paper.Group(
-                            e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color, strokeWidth: PARAMS.line_size } }))
+                            e.data.strokes.map(
+                                (f) =>
+                                    new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size } })
+                            )
                         );
                         return new paper.Group([e.clone(), border]);
                     })
