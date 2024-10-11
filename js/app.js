@@ -4,6 +4,13 @@
  * Copyright (c) 2020 - 2024, Daniel Antonio Negrón (dnanto/remaindeer)
  */
 
+const DRAW_MODES = {
+    lattice: draw_lattice,
+    facets: draw_facets,
+    net: draw_net,
+    capsid: draw_capsid,
+};
+
 const PARSERS = {
     color: (e) => e.value,
     alpha: (e) => Number(e.value).toString(16).padStart(2, "0"),
@@ -30,7 +37,7 @@ const DEFAULTS = Object.assign(
         φ: (e) => parseFloat(e.value),
     },
     Object.fromEntries([
-        ...["net", "capsid"].map((e) => ["mode_" + e, PARSERS.toggle]),
+        ...Object.keys(DRAW_MODES).map((e) => ["mode_" + e, PARSERS.toggle]),
         ...["penton_fiber", "knob", "facet"].map((e) => [e + "_toggle", PARSERS.toggle]),
         ...["line", "fiber", "knob"].flatMap((e) => ["color", "alpha", "size"].map((f) => [e + "_" + f, PARSERS[f]])),
         ...["color", "alpha", "size", "length"].map((e) => ["fiber_" + e, PARSERS[e]]),
@@ -61,14 +68,15 @@ function params_to_tag(PARAMS) {
 
 function download(e) {
     const PARAMS = params();
-    const [mode, draw] = PARAMS.mode_capsid ? ["capsid", draw_capsid] : ["net", draw_net];
+    const mode = Object.keys(DRAW_MODES).find((e) => PARAMS["mode_" + e]);
+    const draw = DRAW_MODES[mode];
     let name = ["h", "k", "H", "K", "a", "R", "t", "s", "c"].map((k) => PARAMS[k]);
     name[7] = name[7].toFixed(2);
     name = mode + "[" + name.join("_") + "]";
     const ext = e.target.id.split("_")[1];
+    // only care about facet outline for SVG...
+    const g = draw(Object.assign({}, PARAMS, { facet_toggle: ext === "svg" ? PARAMS.facet_toggle : true }));
     let href;
-    const obj = draw(PARAMS);
-    obj.remove();
     /****/ if (ext === "svg") {
         href =
             "data:image/svg+xml;utf8," +
@@ -82,32 +90,27 @@ function download(e) {
     } else if (ext === "csv" || ext === "tsv") {
         const sep = ext === "csv" ? "," : "\t";
         const mime = ext === "csv" ? "csv" : "tab-separated-values";
-        const g = draw(PARAMS);
         const coordinates = PARAMS.mode_capsid
             ? g.children.filter((e) => e.data.type === "facet").flatMap((e, i) => e.children.flatMap((f, j) => f.data.segments_3D.map((g, k) => [...g, i + 1, j + 1, k + 1].join(sep))))
             : g.children.flatMap((e, i) => e.children.flatMap((f, j) => f.segments.map((g, k) => [g.point.x, g.point.y, 1, i + 1, j + 1, k + 1].join(sep))));
         href = `data:text/${mime};charset=utf-8,` + encodeURIComponent([["x", "y", "z", "facet", "polygon", "segment"].join(sep)].concat(coordinates).join("\r\n"));
-        g.remove();
     } else if (ext === "json") {
-        const g = draw(PARAMS);
         href =
             "data:application/json;charset=utf-8," +
             encodeURIComponent(
                 JSON.stringify(
                     g.children
-                        .filter((e) => e.data.type === "facet" || PARAMS.mode_net)
-                        .map((e, i) => e.children.map((f, j) => (PARAMS.mode_net ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
+                        .filter((e) => e.data.type === "facet" || !PARAMS.mode_capsid)
+                        .map((e) => e.children.map((f) => (!PARAMS.mode_capsid ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
                     null,
                     4
                 )
             );
-        g.remove();
     } else if (ext === "py") {
-        const g = draw(PARAMS);
         const data = JSON.stringify(
             g.children
-                .filter((e) => e.data.type === "facet" || PARAMS.mode_net)
-                .map((e, i) => e.children.map((f, j) => (PARAMS.mode_net ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
+                .filter((e) => e.data.type === "facet" || !PARAMS.mode_capsid)
+                .map((e) => e.children.map((f) => (!PARAMS.mode_capsid ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
             null,
             4
         );
@@ -130,8 +133,8 @@ function download(e) {
                     ["        n += 1"],
                 ].join("\r\n")
             );
-        g.remove();
     }
+    g.remove();
 
     var link = document.createElement("a");
     link.download = name + "." + ext;
@@ -143,18 +146,19 @@ function update(e) {
     paper.clear();
     paper.setup("model");
     const PARAMS = params();
-    const draw = PARAMS.mode_capsid ? draw_capsid : draw_net;
     const msg = document.getElementById("msg");
+    const mode = Object.keys(DRAW_MODES).find((e) => PARAMS["mode_" + e]);
     try {
-        draw(PARAMS);
+        const g = DRAW_MODES[mode](PARAMS);
+        console.log(g);
         const [h, k, H, K] = ["h", "k", "H", "K"].map((e) => PARAMS[e]);
         msg.children[1].innerText = [
-            ["net", "capsid"][PARAMS.mode_capsid * 1] + "[" + params_to_tag(PARAMS) + "]",
-            "model_sa_error=" + model_sa_error(PARAMS) * 100 + "%",
-            `T-Number=(${h})²+(${h})(${k})+(${k})²=` + (h * h + h * k + k * k),
-            `Q-Number=(${H})²+(${H})(${K})+(${K})²=` + (H * H + H * K + K * K),
+            `${mode}[${params_to_tag(PARAMS)}]`,
+            `model_sa_error=${model_sa_error(PARAMS) * 100}%`,
+            `T-Number=(${h})²+(${h})(${k})+(${k})²=${h * h + h * k + k * k}`,
+            `Q-Number=(${H})²+(${H})(${K})+(${K})²=${H * H + H * K + K * K}`,
         ].join("\n");
-        if (PARAMS.c === "dextro") paper.view.scale(1, -1);
+        if (PARAMS.c === "levo") paper.view.scale(1, -1);
     } catch (e) {
         console.log(e);
         paper.clear();

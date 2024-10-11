@@ -879,10 +879,6 @@ function lattice_config(h, k, H, K, R, t) {
     return { tile: tile, ck: ck, lattice: lattice };
 }
 
-function path_curves_to_points(c) {
-    return c.curves.map((e) => [e.segment1.point, e.segment2.point]);
-}
-
 function calc_facets(lat_cfg, PARAMS) {
     const triangles = [
         [3, 0],
@@ -898,12 +894,13 @@ function calc_facets(lat_cfg, PARAMS) {
                 children: lat_cfg.lattice
                     .flatMap((tile) =>
                         tile.map((subtile) => {
-                            const border = path_curves_to_points(subtile);
+                            const border = subtile.curves.map((e) => [e.segment1.point, e.segment2.point]);
                             const x = subtile.intersect(tri, { insert: false });
                             x.data.has_centroid = tri.contains(x.data.centroid);
                             x.data.centroid_on_vertex = x.segments.findIndex((e) => e.point.getDistance(x.data.centroid) < 1e-5) > -1;
                             x.style.fillColor = PARAMS["mer_color_" + x.data.offset] + PARAMS["mer_alpha_" + x.data.offset];
-                            x.data.strokes = path_curves_to_points(x)
+                            x.data.strokes = x.curves
+                                .map((e) => [e.segment1.point, e.segment2.point])
                                 .map((e, i) => {
                                     // TODO: simplify...
                                     return border.some((f) => [0, 1].every((i) => f[0].subtract(e[i]).cross(f[1].subtract(e[i])) < 1e-5) && f[0].subtract(f[1]).isCollinear(e[0].subtract(e[1])))
@@ -918,12 +915,71 @@ function calc_facets(lat_cfg, PARAMS) {
                             return x;
                         })
                     )
+                    .sort((a, b) => a.data.offset - b.data.offset)
                     .filter((e) => e.segments.length > 0),
                 data: tri.data,
             })
     );
     triangles.forEach((e) => e.remove());
     return facets;
+}
+
+function draw_lattice(PARAMS) {
+    // unpack
+    const [h, k, H, K, R, t] = ["h", "k", "H", "K", "R", "t"].map((e) => PARAMS[e]);
+    // lattice
+    const lat_cfg = lattice_config(h, k, H, K, R, t);
+    lat_cfg.lattice.flat().forEach((e) => (e.style.fillColor = PARAMS["mer_color_" + e.data.offset] + PARAMS["mer_alpha_" + e.data.offset]));
+    return new paper.Group(
+        new paper.Group({
+            children: lat_cfg.lattice.flat(),
+            position: paper.view.center,
+            style: {
+                strokeColor: PARAMS.line_color + PARAMS.line_alpha,
+                strokeWidth: PARAMS.line_size,
+                strokeCap: "round",
+                strokeJoin: "round",
+            },
+        })
+    );
+}
+
+function draw_facets(PARAMS) {
+    // unpack
+    const [h, k, H, K, R, t] = ["h", "k", "H", "K", "R", "t"].map((e) => PARAMS[e]);
+
+    // lattice
+    const lat_cfg = lattice_config(h, k, H, K, R, t);
+    const g = new paper.Group({ children: calc_facets(lat_cfg, PARAMS), position: paper.view.center });
+
+    lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
+
+    if (PARAMS.facet_toggle) {
+        g.style.strokeColor = PARAMS.line_color + PARAMS.line_alpha;
+        g.style.strokeWidth = PARAMS.line_size;
+        g.style.strokeCap = "round";
+        g.style.strokeJoin = "round";
+        return g;
+    }
+    g.remove();
+    return new paper.Group({
+        children: g.children.map(
+            (e) =>
+                new paper.Group(
+                    e.children.map((e) => {
+                        const points = e.segments.map((e) => e.point);
+                        const border = new paper.Group(
+                            e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color, strokeWidth: PARAMS.line_size } }))
+                        );
+                        return new paper.Group([e.clone(), border]);
+                    })
+                )
+        ),
+        style: {
+            strokeCap: "round",
+            strokeJoin: "round",
+        },
+    });
 }
 
 function draw_net(PARAMS) {
@@ -1008,6 +1064,7 @@ function draw_net(PARAMS) {
     } else {
         throw new Error("invalid symmetry mode!");
     }
+    g.scale(-1, 1);
 
     // clean-up
     facets.forEach((e) => e.remove());
@@ -1016,10 +1073,13 @@ function draw_net(PARAMS) {
     if (PARAMS.facet_toggle) {
         g.style.strokeColor = PARAMS.line_color + PARAMS.line_alpha;
         g.style.strokeWidth = PARAMS.line_size;
+        g.style.strokeCap = "round";
+        g.style.strokeJoin = "round";
         return g;
     }
-    const G = new paper.Group(
-        g.children.map(
+    g.remove();
+    return new paper.Group({
+        children: g.children.map(
             (e) =>
                 new paper.Group(
                     e.children.map((e) => {
@@ -1030,13 +1090,12 @@ function draw_net(PARAMS) {
                         return new paper.Group([e.clone(), border]);
                     })
                 )
-        )
-    );
-    G.style.strokeCap = "round";
-    G.style.strokeJoin = "round";
-    g.remove();
-
-    return G;
+        ),
+        style: {
+            strokeCap: "round",
+            strokeJoin: "round",
+        },
+    });
 }
 
 function draw_capsid(PARAMS) {
@@ -1172,10 +1231,13 @@ function draw_capsid(PARAMS) {
                 e.style.strokeColor = PARAMS.line_color + PARAMS.line_alpha;
                 e.style.strokeWidth = PARAMS.line_size;
             });
+        g.style.strokeCap = "round";
+        g.style.strokeJoin = "round";
         return g;
     }
-    const G = new paper.Group(
-        g.children.map((e) => {
+    g.remove();
+    return new paper.Group({
+        children: g.children.map((e) => {
             if (Object.hasOwn(e.data, "type") && e.data.type === "facet") {
                 return new paper.Group(
                     e.children.map((e) => {
@@ -1192,13 +1254,12 @@ function draw_capsid(PARAMS) {
             } else {
                 return e;
             }
-        })
-    );
-    G.style.strokeCap = "round";
-    G.style.strokeJoin = "round";
-    g.remove();
-
-    return G;
+        }),
+        style: {
+            strokeCap: "round",
+            strokeJoin: "round",
+        },
+    });
 }
 
 if (typeof exports !== "undefined") {
