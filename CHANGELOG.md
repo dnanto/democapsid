@@ -1,3 +1,9 @@
+# v2.2.0
+
+-   make facet outline optional
+-   add lattice generation
+-   add facet generation
+
 # v2.1.3
 
 -   revert levo/dextro bug-fix, it was correct before...
