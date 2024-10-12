@@ -75,9 +75,9 @@ function download(e) {
     name = mode + "[" + name.join("_") + "]";
     const ext = e.target.id.split("_")[1];
     // only care about facet outline for SVG...
-    const g = draw(Object.assign({}, PARAMS, { facet_toggle: ext === "svg" ? PARAMS.facet_toggle : true }));
+
     let href;
-    /****/ if (ext === "svg") {
+    if (ext === "svg") {
         href =
             "data:image/svg+xml;utf8," +
             encodeURIComponent(
@@ -87,54 +87,57 @@ function download(e) {
                     "options.matchShapes": true,
                 })
             );
-    } else if (ext === "csv" || ext === "tsv") {
-        const sep = ext === "csv" ? "," : "\t";
-        const mime = ext === "csv" ? "csv" : "tab-separated-values";
-        const coordinates = PARAMS.mode_capsid
-            ? g.children.filter((e) => e.data.type === "facet").flatMap((e, i) => e.children.flatMap((f, j) => f.data.segments_3D.map((g, k) => [...g, i + 1, j + 1, k + 1].join(sep))))
-            : g.children.flatMap((e, i) => e.children.flatMap((f, j) => f.segments.map((g, k) => [g.point.x, g.point.y, 1, i + 1, j + 1, k + 1].join(sep))));
-        href = `data:text/${mime};charset=utf-8,` + encodeURIComponent([["x", "y", "z", "facet", "polygon", "segment"].join(sep)].concat(coordinates).join("\r\n"));
-    } else if (ext === "json") {
-        href =
-            "data:application/json;charset=utf-8," +
-            encodeURIComponent(
-                JSON.stringify(
-                    g.children
-                        .filter((e) => e.data.type === "facet" || !PARAMS.mode_capsid)
-                        .map((e) => e.children.map((f) => (!PARAMS.mode_capsid ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
-                    null,
-                    4
-                )
+    } else {
+        const g = draw(Object.assign({}, PARAMS, { facet_toggle: ext === "svg" ? PARAMS.facet_toggle : true }));
+        /****/ if (ext === "csv" || ext === "tsv") {
+            const sep = ext === "csv" ? "," : "\t";
+            const mime = ext === "csv" ? "csv" : "tab-separated-values";
+            const coordinates = PARAMS.mode_capsid
+                ? g.children.filter((e) => e.data.type === "facet").flatMap((e, i) => e.children.flatMap((f, j) => f.data.segments_3D.map((g, k) => [...g, i + 1, j + 1, k + 1].join(sep))))
+                : g.children.flatMap((e, i) => e.children.flatMap((f, j) => f.segments.map((g, k) => [g.point.x, g.point.y, 1, i + 1, j + 1, k + 1].join(sep))));
+            href = `data:text/${mime};charset=utf-8,` + encodeURIComponent([["x", "y", "z", "facet", "polygon", "segment"].join(sep)].concat(coordinates).join("\r\n"));
+        } else if (ext === "json") {
+            href =
+                "data:application/json;charset=utf-8," +
+                encodeURIComponent(
+                    JSON.stringify(
+                        g.children
+                            .filter((e) => e.data.type === "facet" || !PARAMS.mode_capsid)
+                            .map((e) => e.children.map((f) => (!PARAMS.mode_capsid ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
+                        null,
+                        4
+                    )
+                );
+        } else if (ext === "py") {
+            const data = JSON.stringify(
+                g.children
+                    .filter((e) => e.data.type === "facet" || !PARAMS.mode_capsid)
+                    .map((e) => e.children.map((f) => (!PARAMS.mode_capsid ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
+                null,
+                4
             );
-    } else if (ext === "py") {
-        const data = JSON.stringify(
-            g.children
-                .filter((e) => e.data.type === "facet" || !PARAMS.mode_capsid)
-                .map((e) => e.children.map((f) => (!PARAMS.mode_capsid ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
-            null,
-            4
-        );
-        href =
-            "data:text/x-python;charset=utf-8," +
-            encodeURIComponent(
-                [
-                    ["import bpy"],
-                    ["facets = " + data],
-                    ["n = 1"],
-                    ["for i, facet in enumerate(facets, start = 1):"],
-                    ['    collection = bpy.data.collections.new(f"facet-{i}")'],
-                    ["    bpy.context.scene.collection.children.link(collection)"],
-                    ["    for j, polygon in enumerate(facet, start = 1):"],
-                    ['        mesh = bpy.data.meshes.new(name=f"polygon_msh-{n}")'],
-                    ["        mesh.from_pydata(polygon, [], [list(range(len(polygon)))])"],
-                    ["        mesh.validate(verbose=True)"],
-                    ['        obj = bpy.data.objects.new(f"polygon_obj-{n}", mesh)'],
-                    ["        collection.objects.link(obj)"],
-                    ["        n += 1"],
-                ].join("\r\n")
-            );
+            href =
+                "data:text/x-python;charset=utf-8," +
+                encodeURIComponent(
+                    [
+                        ["import bpy"],
+                        ["facets = " + data],
+                        ["n = 1"],
+                        ["for i, facet in enumerate(facets, start = 1):"],
+                        ['    collection = bpy.data.collections.new(f"facet-{i}")'],
+                        ["    bpy.context.scene.collection.children.link(collection)"],
+                        ["    for j, polygon in enumerate(facet, start = 1):"],
+                        ['        mesh = bpy.data.meshes.new(name=f"polygon_msh-{n}")'],
+                        ["        mesh.from_pydata(polygon, [], [list(range(len(polygon)))])"],
+                        ["        mesh.validate(verbose=True)"],
+                        ['        obj = bpy.data.objects.new(f"polygon_obj-{n}", mesh)'],
+                        ["        collection.objects.link(obj)"],
+                        ["        n += 1"],
+                    ].join("\r\n")
+                );
+        }
+        g.remove();
     }
-    g.remove();
 
     var link = document.createElement("a");
     link.download = name + "." + ext;
@@ -149,7 +152,7 @@ function update(e) {
     const msg = document.getElementById("msg");
     const mode = Object.keys(DRAW_MODES).find((e) => PARAMS["mode_" + e]);
     try {
-        const g = DRAW_MODES[mode](PARAMS);
+        DRAW_MODES[mode](PARAMS);
         const [h, k, H, K] = ["h", "k", "H", "K"].map((e) => PARAMS[e]);
         msg.children[1].innerText = [
             `${mode}[${params_to_tag(PARAMS)}]`,
