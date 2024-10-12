@@ -1,5 +1,5 @@
 /*!
- * democapsid v2.1.3 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.2.0 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 - 2024, Daniel Antonio Negrón (dnanto/remaindeer)
  */
@@ -150,7 +150,6 @@ function update(e) {
     const mode = Object.keys(DRAW_MODES).find((e) => PARAMS["mode_" + e]);
     try {
         const g = DRAW_MODES[mode](PARAMS);
-        console.log(g);
         const [h, k, H, K] = ["h", "k", "H", "K"].map((e) => PARAMS[e]);
         msg.children[1].innerText = [
             `${mode}[${params_to_tag(PARAMS)}]`,
