@@ -1,3 +1,7 @@
+# v2.2.1
+
+-   only re-render for non-svg export
+
 # v2.2.0
 
 -   make facet outline optional
