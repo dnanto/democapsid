@@ -47,7 +47,7 @@ const DEFAULTS = Object.assign(
 
 function params() {
     const PARAMS = Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k))]));
-    PARAMS.c = PARAMS.l ? "levo" : "dextro";
+    PARAMS.c = PARAMS.l;
     return PARAMS;
 }
 
@@ -61,7 +61,7 @@ function params_to_tag(PARAMS) {
         "R=" + PARAMS.R,
         "t=" + PARAMS.t,
         `s=${(PARAMS.s * 100).toFixed(2)}%`,
-        "c=" + PARAMS.c,
+        "c=" + (PARAMS.c ? "levo" : "dextro"),
         "@(" + [PARAMS.θ, PARAMS.ψ, PARAMS.φ].map((e) => e + "°").join(",") + ")",
     ].join(",");
 }
@@ -160,7 +160,6 @@ function update(e) {
             `T-Number=(${h})²+(${h})(${k})+(${k})²=${h * h + h * k + k * k}`,
             `Q-Number=(${H})²+(${H})(${K})+(${K})²=${H * H + H * K + K * K}`,
         ].join("\n");
-        if (PARAMS.c === "levo") paper.view.scale(1, -1);
     } catch (e) {
         console.log(e);
         paper.clear();
