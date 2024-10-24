@@ -927,7 +927,7 @@ function lattice_config(h, k, H, K, c, R, t) {
         .concat([[0, 0]]);
     //// metadata
     lattice.flat().forEach((e) => {
-        e.data.offset = e.data.mer + (vertex_coordinates.some((v) => [e.position.x, e.position.y].sub(v).norm() <= tile.radius) ? 0 : 3);
+        e.data.offset = e.data.mer + (vertex_coordinates.some((v) => [e.position.x, e.position.y].sub(v).norm() - tile.radius < TOL) ? 0 : 3);
         e.data.centroid = e.segments
             .map((e) => e.point)
             .reduce((a, b) => a.add(b))
