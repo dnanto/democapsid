@@ -1,6 +1,6 @@
--   [ ] update paper
--   [ ] tests
--   [ ] comments/documentation javascript
+-   [~] update paper
+-   [~] comments/documentation javascript
+-   [?] tests
 -   [?] R package
 -   [x] comments/documentation python
 -   [x] python package

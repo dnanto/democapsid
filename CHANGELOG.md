@@ -1,3 +1,8 @@
+# v2.2.2
+
+-   correct levo/dextro for variable-body length capsids
+-   add pinwheel tiles
+
 # v2.2.1
 
 -   only re-render for non-svg export
