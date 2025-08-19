@@ -173,11 +173,12 @@ window.onload = function (opt) {
     // register events
     Object.keys(DEFAULTS).forEach((e) => document.getElementById(e).addEventListener("change", update));
     ["svg", "csv", "tsv", "json", "py"].forEach((e) => document.getElementById("download_" + e).addEventListener("click", download));
+    const greek = ["θ", "ψ", "φ"];
+    const latin = ["theta", "psi", "phi"];
     document.getElementById("show_link").addEventListener("click", () => {
         const obj = params();
-        const keys = ["theta", "psi", "phi"];
-        ["θ", "ψ", "φ"].forEach((e, i) => {
-            obj[keys[i]] = obj[e];
+        greek.forEach((e, i) => {
+            obj[latin[i]] = obj[e];
             delete obj[e];
         });
         link_value.innerText = "https://github.com/dnanto/democapsid?data=" + btoa(JSON.stringify(obj));
@@ -193,12 +194,10 @@ window.onload = function (opt) {
     }
     query.forEach((v, k) => {
         let [K, V] = Array.isArray(v) ? v : [k, v];
-        if (K === "theta") K = "θ";
-        else if (K === "psi") K = "ψ";
-        else if (K === "phi") K = "φ";
+        const i = latin.indexOf(K);
+        K = i > -1 ? greek[i] : K;
         if (K in DEFAULTS) {
-            console.log(K, V);
-            /**/ if (K.includes("color")) document.getElementById(K).value = "#" + V;
+            /**/ if (K.includes("color")) document.getElementById(K).value = (V.startsWith("#") ? "" : "#") + V;
             else if (K.includes("alpha")) document.getElementById(K).value = parseInt(V, 16);
             else if (K.includes("toggle")) document.getElementById(K).checked = V === true;
             else if (K.includes("mode")) document.getElementById(K).checked = V === true;
