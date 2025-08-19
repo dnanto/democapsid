@@ -20,6 +20,7 @@
         "terser": "^5.31.6"
     },
     "scripts": {
+        "bump": "sed -i '' -E -e 's/([v\"])[0-9]+\\.[0-9]+\\.[0-9]+([ <\")])?/\\1'$npm_package_version'\\2/' README.md app.html js/app.js js/democapsid.js",
         "clean": "rm -f democapsid.tar.gz democapsid.zip js/democapsid.min.js",
         "minify": "terser --ecma 5 --comments --compress ecma=5 --ie8 --safari10 --timings js/democapsid.js --mangle toplevel --keep-fnames -o js/$npm_package_name.min.js",
         "update": "cp node_modules/paper/dist/paper-core.min.js js/lib/paperjs/paper-core.min.js",
