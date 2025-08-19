@@ -1,3 +1,11 @@
+# v2.2.3
+
+-   add query parameters
+-   add base64 encoded data paramter
+-   refactor parameter names
+-   refactor download file name
+-   lattice dual sizes are now match-up with their non-dual counterparts
+
 # v2.2.2
 
 -   correct levo/dextro for variable-body length capsids
