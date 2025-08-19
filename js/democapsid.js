@@ -1,10 +1,10 @@
 /*!
- * democapsid v2.2.2 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.2.3 - Render viral capsids in the browser and export SVG.
  * MIT License
- * Copyright (c) 2020 - 2024, Daniel Antonio Negrón (dnanto/remaindeer)
+ * Copyright (c) 2020 <=, Daniel Antonio Negrón (dnanto/remaindeer)
  */
 
-const VERSION = "2.2.2";
+const VERSION = "2.2.3";
 
 const SQRT3 = Math.sqrt(3);
 const SQRT5 = Math.sqrt(5);
@@ -239,10 +239,10 @@ function radians(v) {
     return (v * Math.PI) / 180;
 }
 
-function calc_tile(t, R) {
+function calc_tile(L, R) {
     const r = R * (SQRT3 / 2);
     let tile;
-    /****/ if (t === "hex") {
+    /****/ if (L === "hex") {
         tile = {
             basis: [
                 [2 * r, 0],
@@ -258,7 +258,7 @@ function calc_tile(t, R) {
             ],
             radius: R,
         };
-    } else if (t === "trihex") {
+    } else if (L === "trihex") {
         tile = {
             basis: [
                 [2 * R, 0],
@@ -284,7 +284,7 @@ function calc_tile(t, R) {
             ],
             radius: 2 * r,
         };
-    } else if (t === "snubhex") {
+    } else if (L === "snubhex") {
         tile = {
             basis: [
                 [2.5 * R, r],
@@ -320,7 +320,7 @@ function calc_tile(t, R) {
             ],
             radius: 2 * r,
         };
-    } else if (t === "rhombitrihex") {
+    } else if (L === "rhombitrihex") {
         tile = {
             basis: [
                 [R + r + 0.5 * R, 0.5 * R + r],
@@ -352,37 +352,41 @@ function calc_tile(t, R) {
             ],
             radius: Math.sqrt(Math.pow(r + R, 2) + Math.pow(R / 2, 2)),
         };
-    } else if (t === "dualhex") {
+    } else if (L === "dualhex") {
+        const dR = 2 * r;
+        const dr = dR * (SQRT3 / 2);
         tile = {
             basis: [
-                [(3 / 2) * R, r],
-                [0, 2 * r],
+                [(3 / 2) * dR, dr],
+                [0, 2 * dr],
             ],
             tile: (e) =>
                 Array.from({ length: 6 }, (_, i) =>
                     new paper.Path.RegularPolygon({
-                        center: e.coor.add([0, r - (R * SQRT3) / 6]),
+                        center: e.coor.add([0, dr - (dR * SQRT3) / 6]),
                         sides: 3,
-                        radius: R / SQRT3,
+                        radius: dR / SQRT3,
                         data: { mer: 1 },
                     }).rotate(i * 60, e.coor)
                 ),
-            radius: R,
+            radius: dR,
         };
-    } else if (t === "dualtrihex") {
+    } else if (L === "dualtrihex") {
+        const dR = 3 * r - R / (2 * SQRT3);
+        const dr = dR * (SQRT3 / 2);
         tile = {
             basis: [
-                [2 * r, 0],
-                [r, SQRT3 * r],
+                [2 * dr, 0],
+                [dr, SQRT3 * dr],
             ],
             tile: (e) => [
                 ...Array.from({ length: 6 }, (_, i) =>
                     new paper.Path({
                         segments: [
                             [0, 0],
-                            [0.5 * r, -(0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
-                            [r, 0],
-                            [0.5 * r, (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                            [0.5 * dr, -(0.25 * dR * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                            [dr, 0],
+                            [0.5 * dr, (0.25 * dR * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
                         ].map((f) => e.coor.add(f)),
                         closed: true,
                         data: { mer: 1 },
@@ -391,19 +395,19 @@ function calc_tile(t, R) {
                 ...Array.from({ length: 6 }, (_, i) =>
                     new paper.Path({
                         segments: [
-                            [-0.5 * r, 0.5 * R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
-                            [0, 0.5 * R],
-                            [r - 0.5 * r, 0.5 * R + (0.25 * R * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
-                            [0, 0.5 * R + (2 * (0.25 * R * Math.sin(Math.PI / 6))) / Math.cos(Math.PI / 3)],
+                            [-0.5 * dr, 0.5 * dR + (0.25 * dR * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                            [0, 0.5 * dR],
+                            [dr - 0.5 * dr, 0.5 * dR + (0.25 * dR * Math.sin(Math.PI / 6)) / Math.cos(Math.PI / 3)],
+                            [0, 0.5 * dR + (2 * (0.25 * dR * Math.sin(Math.PI / 6))) / Math.cos(Math.PI / 3)],
                         ].map((f) => e.coor.add(f)),
                         closed: true,
                         data: { mer: 2 },
                     }).rotate(i * 60, e.coor)
                 ),
             ],
-            radius: R,
+            radius: dR,
         };
-    } else if (t === "dualsnubhex") {
+    } else if (L === "dualsnubhex") {
         tile = {
             basis: [
                 [2.5 * R, r],
@@ -425,28 +429,30 @@ function calc_tile(t, R) {
                 ),
             radius: r + (R * SQRT3) / 3,
         };
-    } else if (t === "dualrhombitrihex") {
+    } else if (L === "dualrhombitrihex") {
+        const dR = R + R / SQRT3;
+        const dr = dR * (SQRT3 / 2);
         tile = {
             basis: [
-                [(3 / 2) * R, r],
-                [0, 2 * r],
+                [(3 / 2) * dR, dr],
+                [0, 2 * dr],
             ],
             tile: (e) =>
                 Array.from({ length: 6 }, (_, i) =>
                     new paper.Path({
                         segments: [
                             [0, 0],
-                            [0, r],
-                            [0.5 * R, r],
-                            [(SQRT3 / 2) * r, 0.5 * r],
+                            [0, dr],
+                            [0.5 * dR, dr],
+                            [(SQRT3 / 2) * dr, 0.5 * dr],
                         ].map((f) => e.coor.add(f)),
                         closed: true,
                         data: { mer: 1 },
                     }).rotate(i * 60, e.coor)
                 ),
-            radius: R,
+            radius: dR,
         };
-    } else if (t === "pinwheel-1") {
+    } else if (L === "pinwheel-1") {
         tile = {
             basis: [
                 [1.5 * r, 0.75 * R],
@@ -467,7 +473,7 @@ function calc_tile(t, R) {
                 ),
             radius: r,
         };
-    } else if (t === "pinwheel-2") {
+    } else if (L === "pinwheel-2") {
         tile = {
             basis: [
                 [1.5 * r, 0.75 * R],
@@ -508,16 +514,16 @@ function* tile_grid(ck, basis) {
     }
 }
 
-function ck_vectors(basis, h, k, H, K, c) {
+function ck_vectors(basis, h, k, H, K, t) {
     const [v1, v2] = basis;
     const v3 = v2.rot(Math.PI / 3);
-    if (c) {
+    if (t) {
         return [
             // levo
             v1.mul(h).add(v2.mul(k)),
             v2.mul(H).add(v3.mul(K)),
             v3.mul(h).add(v1.mul(-k)),
-            v1.mul(k).add(v3.mul(-h)),
+            v3.mul(-h).add(v1.mul(k)),
         ];
     } else {
         return [
@@ -741,7 +747,7 @@ function ico_axis_5(ck) {
 
     const t = ck[0].angle(ck[1]);
     const q = pC.add([b, 0, 0].roro([0, 1, 0], -Math.PI - t));
-    const p = pB.add(q.sub(pB).proj(pC.sub(pB)));
+    const p = [q[0], q[1], 0];
     const d = [p[0], (-Math.abs(p[1]) * Math.sqrt(R5 * R5 * p[1] * p[1] - (p[0] * p[1]) ** 2)) / (p[1] * p[1]), 0];
 
     if (Number.isNaN(d[1])) throw new Error("impossible construction!");
@@ -885,7 +891,7 @@ function ico_axis_2(ck, iter = ITER, tol = TOL) {
 
 function model_sa_error(PARAMS) {
     try {
-        const tile = calc_tile(PARAMS.t, PARAMS.R);
+        const tile = calc_tile(PARAMS.L, 1);
         const ck = ck_vectors(tile.basis, PARAMS.h, PARAMS.k, PARAMS.H, PARAMS.K, PARAMS.c);
         const triangles = [
             [ck[3], ck[0]],
@@ -894,28 +900,28 @@ function model_sa_error(PARAMS) {
         ];
         // coordinates
         const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][PARAMS.a](ck, ITER, TOL);
-        const config = ico_config(PARAMS.a);
+        const ico_cfg = ico_config(PARAMS.a);
 
-        const n_tris = config.t_id.map((e) => parseInt(e[1])).reduce((a, b) => (a < b ? b : a));
+        const n_tris = ico_cfg.t_id.map((e) => parseInt(e[1])).reduce((a, b) => (a < b ? b : a));
         const n_per_tri = Array.from({ length: n_tris }).fill(0);
-        config.t_id.forEach((e, i) => (n_per_tri[e[1] - 1] += config.t_rep[i]));
+        ico_cfg.t_id.forEach((e, i) => (n_per_tri[e[1] - 1] += ico_cfg.t_rep[i]));
         const sa_net = triangles
             .slice(0, n_tris)
             .map((e, i) => ([...e[0], 0].cross([...e[1], 0]).norm() / 2) * n_per_tri[i])
             .sum();
-        const sa_capsid = config.v_idx
+        const sa_capsid = ico_cfg.v_idx
             .map((e) => e.map((i) => ico_coors[i]))
-            .map((e, i) => (e[1].sub(e[0]).cross(e[2].sub(e[0])).norm() / 2) * config.t_rep[i])
+            .map((e, i) => (e[1].sub(e[0]).cross(e[2].sub(e[0])).norm() / 2) * ico_cfg.t_rep[i])
             .sum();
         return (sa_net - sa_capsid) / sa_net;
-    } catch (_) {
+    } catch (e) {
         return NaN;
     }
 }
 
-function lattice_config(h, k, H, K, c, R, t) {
-    const tile = calc_tile(t, R);
-    const ck = ck_vectors(tile.basis, h, k, H, K, c);
+function lattice_config(h, k, H, K, t, R, L) {
+    const tile = calc_tile(L, R);
+    const ck = ck_vectors(tile.basis, h, k, H, K, t);
 
     // grid
     //// calculate
@@ -984,9 +990,9 @@ function calc_facets(lat_cfg, PARAMS) {
 
 function draw_lattice(PARAMS) {
     // unpack
-    const [h, k, H, K, c, R, t] = ["h", "k", "H", "K", "c", "R", "t"].map((e) => PARAMS[e]);
+    const [h, k, H, K, t, R, L] = ["h", "k", "H", "K", "t", "R", "L"].map((e) => PARAMS[e]);
     // lattice
-    const lat_cfg = lattice_config(h, k, H, K, c, R, t);
+    const lat_cfg = lattice_config(h, k, H, K, t, R, L);
     lat_cfg.lattice.flat().forEach((e) => (e.style.fillColor = PARAMS["mer_color_" + e.data.offset] + PARAMS["mer_alpha_" + e.data.offset]));
     return new paper.Group(
         new paper.Group({
@@ -1004,10 +1010,10 @@ function draw_lattice(PARAMS) {
 
 function draw_facets(PARAMS) {
     // unpack
-    const [h, k, H, K, c, R, t] = ["h", "k", "H", "K", "c", "R", "t"].map((e) => PARAMS[e]);
+    const [h, k, H, K, t, R, L] = ["h", "k", "H", "K", "t", "R", "L"].map((e) => PARAMS[e]);
 
     // lattice
-    const lat_cfg = lattice_config(h, k, H, K, c, R, t);
+    const lat_cfg = lattice_config(h, k, H, K, t, R, L);
     const g = new paper.Group({ children: calc_facets(lat_cfg, PARAMS), position: paper.view.center }).scale(1, -1);
 
     lat_cfg.lattice.forEach((e) => e.forEach((f) => f.remove()));
@@ -1042,10 +1048,10 @@ function draw_facets(PARAMS) {
 
 function draw_net(PARAMS) {
     // unpack
-    const [h, k, H, K, c, R, t] = ["h", "k", "H", "K", "c", "R", "t"].map((e) => PARAMS[e]);
+    const [h, k, H, K, t, R, L] = ["h", "k", "H", "K", "t", "R", "L"].map((e) => PARAMS[e]);
 
     // lattice
-    const lat_cfg = lattice_config(h, k, H, K, c, R, t);
+    const lat_cfg = lattice_config(h, k, H, K, t, R, L);
     const ck = lat_cfg.ck;
     const facets = calc_facets(lat_cfg, PARAMS);
 
@@ -1117,10 +1123,10 @@ function draw_net(PARAMS) {
 
 function draw_capsid(PARAMS) {
     // unpack
-    const [h, k, H, K, c, R, t] = ["h", "k", "H", "K", "c", "R", "t"].map((e) => PARAMS[e]);
+    const [h, k, H, K, t, R, L] = ["h", "k", "H", "K", "t", "R", "L"].map((e) => PARAMS[e]);
 
     // lattice
-    const lat_cfg = lattice_config(h, k, H, K, c, R, t);
+    const lat_cfg = lattice_config(h, k, H, K, t, R, L);
     const facets = calc_facets(lat_cfg, PARAMS);
 
     // coordinates
@@ -1275,6 +1281,11 @@ function draw_capsid(PARAMS) {
         style: {
             strokeCap: "round",
             strokeJoin: "round",
+        },
+        data: {
+            lat_cfg: lat_cfg,
+            ico_cfg: ico_cfg,
+            ico_coors: ico_coors,
         },
     }).scale(-1, 1);
 }
