@@ -28,7 +28,7 @@ const DEFAULTS = Object.assign(
         K: (e) => parseInt(e.value),
         a: (e) => parseInt(e.value),
         R: (e) => parseFloat(e.value),
-        t: (e) => e.value,
+        L: (e) => e.value,
         s: (e) => parseInt(e.value) / 1000,
         l: PARSERS.toggle,
         d: PARSERS.toggle,
@@ -47,7 +47,7 @@ const DEFAULTS = Object.assign(
 
 function params() {
     const PARAMS = Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, DEFAULTS[k](document.getElementById(k))]));
-    PARAMS.c = PARAMS.l;
+    PARAMS.t = PARAMS.l;
     return PARAMS;
 }
 
@@ -58,10 +58,9 @@ function params_to_tag(PARAMS) {
         PARAMS.H,
         PARAMS.K,
         "a=" + PARAMS.a,
-        "R=" + PARAMS.R,
-        "t=" + PARAMS.t,
+        "L=" + PARAMS.L,
         `s=${(PARAMS.s * 100).toFixed(2)}%`,
-        "c=" + (PARAMS.c ? "levo" : "dextro"),
+        "t=" + (PARAMS.t ? "levo" : "dextro"),
         "@(" + [PARAMS.θ, PARAMS.ψ, PARAMS.φ].map((e) => e + "°").join(",") + ")",
     ].join(",");
 }
@@ -70,8 +69,8 @@ function download(e) {
     const PARAMS = params();
     const mode = Object.keys(DRAW_MODES).find((e) => PARAMS["mode_" + e]);
     const draw = DRAW_MODES[mode];
-    let name = ["h", "k", "H", "K", "a", "R", "t", "s", "c"].map((k) => PARAMS[k]);
-    name[7] = name[7].toFixed(2);
+    let name = ["h", "k", "H", "K", "a", "L", "s", "t"].map((k) => PARAMS[k]);
+    name[6] = name[6].toFixed(2);
     name = mode + "[" + name.join("_") + "]";
     const ext = e.target.id.split("_")[1];
     // only care about facet outline for SVG...
@@ -145,13 +144,14 @@ function download(e) {
     link.click();
 }
 
-function update(e) {
+function update() {
     paper.clear();
-    paper.setup("model");
+    paper.setup("view");
     const PARAMS = params();
     const msg = document.getElementById("msg");
     const mode = Object.keys(DRAW_MODES).find((e) => PARAMS["mode_" + e]);
     try {
+        document.getElementById("view_title").innerText = mode;
         DRAW_MODES[mode](PARAMS);
         const [h, k, H, K] = ["h", "k", "H", "K"].map((e) => PARAMS[e]);
         msg.children[1].innerText = [
@@ -163,16 +163,48 @@ function update(e) {
     } catch (e) {
         console.log(e);
         paper.clear();
-        const canvas = document.getElementById("model");
+        const canvas = document.getElementById("view");
         canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
         msg.children[1].innerText = e;
     }
 }
 
 window.onload = function (opt) {
+    // register events
     Object.keys(DEFAULTS).forEach((e) => document.getElementById(e).addEventListener("change", update));
     ["svg", "csv", "tsv", "json", "py"].forEach((e) => document.getElementById("download_" + e).addEventListener("click", download));
+    document.getElementById("show_link").addEventListener("click", () => {
+        const obj = params();
+        const keys = ["theta", "psi", "phi"];
+        ["θ", "ψ", "φ"].forEach((e, i) => {
+            obj[keys[i]] = obj[e];
+            delete obj[e];
+        });
+        link_value.innerText = "https://github.com/dnanto/democapsid?data=" + btoa(JSON.stringify(obj));
+        document.getElementById("link_dialog").showModal();
+    });
+    document.getElementById("link_close").addEventListener("click", () => document.getElementById("link_dialog").close());
     document.getElementById("show_citation").addEventListener("click", () => document.getElementById("citation").showModal());
     document.getElementById("close_citation").addEventListener("click", () => document.getElementById("citation").close());
+    // read query parameters
+    let query = new URLSearchParams(document.location.search);
+    if (query.has("data")) {
+        query = Object.entries(JSON.parse(atob(query.get("data"))));
+    }
+    query.forEach((v, k) => {
+        let [K, V] = Array.isArray(v) ? v : [k, v];
+        if (K === "theta") K = "θ";
+        else if (K === "psi") K = "ψ";
+        else if (K === "phi") K = "φ";
+        if (K in DEFAULTS) {
+            console.log(K, V);
+            /**/ if (K.includes("color")) document.getElementById(K).value = "#" + V;
+            else if (K.includes("alpha")) document.getElementById(K).value = parseInt(V, 16);
+            else if (K.includes("toggle")) document.getElementById(K).checked = V === true;
+            else if (K.includes("mode")) document.getElementById(K).checked = V === true;
+            else if (K === "s") document.getElementById(K).value = 1000 * V;
+            else document.getElementById(K).value = V;
+        }
+    });
     update();
 };

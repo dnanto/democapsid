@@ -35,8 +35,8 @@
                         </select>
                         <label for="R">R=</label>
                         <input type="number" id="R" step="1" value="25" min="1" />
-                        <label for="t">t=</label>
-                        <select id="t">
+                        <label for="L">L=</label>
+                        <select id="L">
                             <option value="hex">hex</option>
                             <option value="trihex">trihex</option>
                             <option value="snubhex">snubhex</option>
@@ -54,7 +54,7 @@
                         <input type="range" min="-1000" max="1000" value="0" id="s" />
                     </div>
                     <div>
-                        c=[
+                        t=[
                         <label for="mode_levo">levo&nbsp;&nbsp;&nbsp;</label>
                         <input type="radio" id="l" name="mode_mirror" value="levo" checked />
                         <label for="mode_dextro">dextro</label>
@@ -191,6 +191,12 @@
                         </tbody>
                     </table>
                 </fieldset>
+                <dialog id="link_dialog">
+                    <div>
+                        <textarea id="link_value" rows="25" cols="80">close</textarea>
+                    </div>
+                    <button id="link_close">close</button>
+                </dialog>
                 <dialog id="citation">
                     <div>
                         Please comment on or cite the preprint at <a href="https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1">bioRxiv</a> or Chapter 2 of the
@@ -202,8 +208,8 @@
             </div>
             <div id="body">
                 <fieldset>
-                    <legend>model</legend>
-                    <canvas id="model" resize> Your browser does not support the HTML canvas tag. </canvas>
+                    <legend id="view_title">capsid</legend>
+                    <canvas id="view" resize> Your browser does not support the HTML canvas tag. </canvas>
                 </fieldset>
                 <fieldset id="msg">
                     <legend>message</legend>
@@ -211,6 +217,7 @@
                 </fieldset>
                 <fieldset>
                     <legend>export</legend>
+                    <button id="show_link">Share</button>
                     <button id="download_svg">SVG</button>
                     <button id="download_csv">CSV</button>
                     <button id="download_tsv">TSV</button>

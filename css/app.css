@@ -14,7 +14,7 @@
   
 .grow { flex-grow: 1; }
 body {
-    font-family: "Lucida Console", "Courier New", monospace;
+    font-family: monospace;
 }
 fieldset{
     margin: 0 auto;
