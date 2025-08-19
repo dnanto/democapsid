@@ -181,7 +181,7 @@ window.onload = function (opt) {
             obj[latin[i]] = obj[e];
             delete obj[e];
         });
-        link_value.innerText = "https://github.com/dnanto/democapsid?data=" + btoa(JSON.stringify(obj));
+        link_value.innerText = location.protocol + "//" + location.host + location.pathname + "?data=" + btoa(JSON.stringify(obj));
         document.getElementById("link_dialog").showModal();
     });
     document.getElementById("link_close").addEventListener("click", () => document.getElementById("link_dialog").close());
