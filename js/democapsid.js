@@ -1,10 +1,10 @@
 /*!
- * democapsid v2.2.3 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.2.4 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 <=, Daniel Antonio Negrón (dnanto/remaindeer)
  */
 
-const VERSION = "2.2.3";
+const VERSION = "2.2.4";
 
 const SQRT3 = Math.sqrt(3);
 const SQRT5 = Math.sqrt(5);
@@ -53,7 +53,7 @@ Array.prototype.rot = function (t) {
             [cos, -sin],
             [sin, cos],
         ],
-        this.T()
+        this.T(),
     ).flat();
 };
 
@@ -100,7 +100,7 @@ Array.prototype.split = function (sep) {
             else arr[arr.length - 1].push(val);
             return arr;
         },
-        [[]]
+        [[]],
     ).filter((e) => e.length);
 };
 
@@ -279,7 +279,7 @@ function calc_tile(L, R) {
                         data: { mer: 2 },
                     })
                         .rotate(180)
-                        .rotate(i * 60, e.coor)
+                        .rotate(i * 60, e.coor),
                 ),
             ],
             radius: 2 * r,
@@ -303,7 +303,7 @@ function calc_tile(L, R) {
                         sides: 3,
                         radius: (2 / 3) * r,
                         data: { mer: 2 },
-                    }).rotate(i * 60, e.coor)
+                    }).rotate(i * 60, e.coor),
                 ),
                 new paper.Path.RegularPolygon({
                     center: e.coor.add([1.5 * R, -(1 / 3) * r]),
@@ -339,7 +339,7 @@ function calc_tile(L, R) {
                         sides: 3,
                         radius: R / SQRT3,
                         data: { mer: 2 },
-                    }).rotate(-30 + i * -60, e.coor)
+                    }).rotate(-30 + i * -60, e.coor),
                 ),
                 ...Array.from({ length: 3 }, (_, i) =>
                     new paper.Path.RegularPolygon({
@@ -347,7 +347,7 @@ function calc_tile(L, R) {
                         sides: 4,
                         radius: Math.sqrt(2 * R * R) / 2,
                         data: { mer: 3 },
-                    }).rotate(i * 60, e.coor)
+                    }).rotate(i * 60, e.coor),
                 ),
             ],
             radius: Math.sqrt(Math.pow(r + R, 2) + Math.pow(R / 2, 2)),
@@ -367,7 +367,7 @@ function calc_tile(L, R) {
                         sides: 3,
                         radius: dR / SQRT3,
                         data: { mer: 1 },
-                    }).rotate(i * 60, e.coor)
+                    }).rotate(i * 60, e.coor),
                 ),
             radius: dR,
         };
@@ -390,7 +390,7 @@ function calc_tile(L, R) {
                         ].map((f) => e.coor.add(f)),
                         closed: true,
                         data: { mer: 1 },
-                    }).rotate(i * 60, e.coor)
+                    }).rotate(i * 60, e.coor),
                 ),
                 ...Array.from({ length: 6 }, (_, i) =>
                     new paper.Path({
@@ -402,7 +402,7 @@ function calc_tile(L, R) {
                         ].map((f) => e.coor.add(f)),
                         closed: true,
                         data: { mer: 2 },
-                    }).rotate(i * 60, e.coor)
+                    }).rotate(i * 60, e.coor),
                 ),
             ],
             radius: dR,
@@ -425,7 +425,7 @@ function calc_tile(L, R) {
                         ].map((f) => e.coor.add(f)),
                         closed: true,
                         data: { mer: 1 },
-                    }).rotate(i * 60, e.coor)
+                    }).rotate(i * 60, e.coor),
                 ),
             radius: r + (R * SQRT3) / 3,
         };
@@ -448,7 +448,7 @@ function calc_tile(L, R) {
                         ].map((f) => e.coor.add(f)),
                         closed: true,
                         data: { mer: 1 },
-                    }).rotate(i * 60, e.coor)
+                    }).rotate(i * 60, e.coor),
                 ),
             radius: dR,
         };
@@ -469,7 +469,7 @@ function calc_tile(L, R) {
                         ].map((f) => e.coor.add(f)),
                         closed: true,
                         data: { mer: 1 },
-                    }).rotate(i * 60, e.coor)
+                    }).rotate(i * 60, e.coor),
                 ),
             radius: r,
         };
@@ -490,7 +490,7 @@ function calc_tile(L, R) {
                         ].map((f) => e.coor.add(f)),
                         closed: true,
                         data: { mer: 1 },
-                    }).rotate(i * 60, e.coor)
+                    }).rotate(i * 60, e.coor),
                 ),
             radius: r,
         };
@@ -564,7 +564,7 @@ function tetrahedron_circumsphere_center(v0, v1, v2, v3) {
             .mul(e3.norm() ** 2)
             .add(e3.cross(e1).mul(e2.norm() ** 2))
             .add(e2.cross(e3).mul(e1.norm() ** 2))
-            .div(2 * det3([e1, e2, e3]))
+            .div(2 * det3([e1, e2, e3])),
     );
 }
 
@@ -977,12 +977,12 @@ function calc_facets(lat_cfg, PARAMS) {
                                     return e;
                                 });
                             return x;
-                        })
+                        }),
                     )
                     .sort((a, b) => a.data.offset - b.data.offset)
                     .filter((e) => e.segments.length > 0),
                 data: tri.data,
-            })
+            }),
     );
     triangles.forEach((e) => e.remove());
     return facets;
@@ -1004,7 +1004,7 @@ function draw_lattice(PARAMS) {
                 strokeCap: "round",
                 strokeJoin: "round",
             },
-        })
+        }),
     ).scale(1, -1);
 }
 
@@ -1033,11 +1033,11 @@ function draw_facets(PARAMS) {
                     e.children.map((e) => {
                         const points = e.segments.map((e) => e.point);
                         const border = new paper.Group(
-                            e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color, strokeWidth: PARAMS.line_size } }))
+                            e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color, strokeWidth: PARAMS.line_size } })),
                         );
                         return new paper.Group([e.clone(), border]);
-                    })
-                )
+                    }),
+                ),
         ),
         style: {
             strokeCap: "round",
@@ -1108,11 +1108,11 @@ function draw_net(PARAMS) {
                     e.children.map((e) => {
                         const points = e.segments.map((e) => e.point);
                         const border = new paper.Group(
-                            e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color, strokeWidth: PARAMS.line_size } }))
+                            e.data.strokes.map((f) => new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color, strokeWidth: PARAMS.line_size } })),
                         );
                         return new paper.Group([e.clone(), border]);
-                    })
-                )
+                    }),
+                ),
         ),
         style: {
             strokeCap: "round",
@@ -1156,7 +1156,7 @@ function draw_capsid(PARAMS) {
                     CAMERA,
                     inflater(mmul(M, [e.data.centroid.x, e.data.centroid.y, 1].T()).flat())
                         .concat(1)
-                        .T()
+                        .T(),
                 ).flat();
                 return new paper.Path({
                     segments: segments.map((f) => f.slice(0, 2)),
@@ -1183,7 +1183,7 @@ function draw_capsid(PARAMS) {
                   e
                       .map((f) => ico_coors_rot[f])
                       .reduce((a, b) => a.add(b), [0, 0, 0])
-                      .uvec()
+                      .uvec(),
               )
               .map((e, i) => [ico_coors_rot[i], ico_coors_rot[i].add(e.mul(PARAMS.fiber_length))])
         : [];
@@ -1195,7 +1195,7 @@ function draw_capsid(PARAMS) {
             .map((e) => {
                 const centroid = e.data.centroid;
                 return [centroid, centroid.add(e.data.normal.mul(PARAMS.fiber_length))];
-            })
+            }),
     );
     //// group
     let fiber_groups = [];
@@ -1219,7 +1219,7 @@ function draw_capsid(PARAMS) {
                     from: e[0],
                     to: e[1],
                     data: { centroid: e[1].mul(2) },
-                })
+                }),
         );
 
     // knobs
@@ -1268,11 +1268,11 @@ function draw_capsid(PARAMS) {
                         const border = new paper.Group(
                             e.data.strokes.map(
                                 (f) =>
-                                    new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size } })
-                            )
+                                    new paper.Path({ segments: f.map((i) => points[i]), closed: false, style: { strokeColor: PARAMS.line_color + PARAMS.line_alpha, strokeWidth: PARAMS.line_size } }),
+                            ),
                         );
                         return new paper.Group([e.clone(), border]);
-                    })
+                    }),
                 );
             } else {
                 return e;

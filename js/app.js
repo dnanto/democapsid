@@ -1,5 +1,5 @@
 /*!
- * democapsid v2.2.3 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.2.4 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 <=, Daniel Antonio Negrón (dnanto/remaindeer)
  */
@@ -42,7 +42,7 @@ const DEFAULTS = Object.assign(
         ...["line", "fiber", "knob"].flatMap((e) => ["color", "alpha", "size"].map((f) => [e + "_" + f, PARSERS[f]])),
         ...["color", "alpha", "size", "length"].map((e) => ["fiber_" + e, PARSERS[e]]),
         ...["color", "alpha", "toggle"].flatMap((e) => Array.from({ length: 6 }, (_, i) => ["mer_" + e + "_" + (i + 1), PARSERS[e]])),
-    ])
+    ]),
 );
 
 function params() {
@@ -84,7 +84,7 @@ function download(e) {
                     "options.bounds": "content",
                     asString: true,
                     "options.matchShapes": true,
-                })
+                }),
             );
     } else {
         const g = draw(Object.assign({}, PARAMS, { facet_toggle: ext === "svg" ? PARAMS.facet_toggle : true }));
@@ -104,8 +104,8 @@ function download(e) {
                             .filter((e) => e.data.type === "facet" || !PARAMS.mode_capsid)
                             .map((e) => e.children.map((f) => (!PARAMS.mode_capsid ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
                         null,
-                        4
-                    )
+                        4,
+                    ),
                 );
         } else if (ext === "py") {
             const data = JSON.stringify(
@@ -113,7 +113,7 @@ function download(e) {
                     .filter((e) => e.data.type === "facet" || !PARAMS.mode_capsid)
                     .map((e) => e.children.map((f) => (!PARAMS.mode_capsid ? f.segments.map((e) => [e.point.x, e.point.y, 1]) : f.data.segments_3D))),
                 null,
-                4
+                4,
             );
             href =
                 "data:text/x-python;charset=utf-8," +
@@ -132,7 +132,7 @@ function download(e) {
                         ['        obj = bpy.data.objects.new(f"polygon_obj-{n}", mesh)'],
                         ["        collection.objects.link(obj)"],
                         ["        n += 1"],
-                    ].join("\r\n")
+                    ].join("\r\n"),
                 );
         }
         g.remove();
@@ -172,7 +172,16 @@ function update() {
 window.onload = function (opt) {
     // register events
     Object.keys(DEFAULTS).forEach((e) => document.getElementById(e).addEventListener("change", update));
-    ["svg", "csv", "tsv", "json", "py"].forEach((e) => document.getElementById("download_" + e).addEventListener("click", download));
+    document.getElementById("normalize").addEventListener("click", () => {
+        const L = this.document.getElementById("L2").value;
+        const R = this.document.getElementById("R2").value;
+        const obj = params();
+        const ratio = ck_vectors(calc_tile(obj.L, obj.R).basis, 1, 0, 0, 0)[0].norm() / ck_vectors(calc_tile(L, R).basis, 1, 0, 0, 0)[0].norm();
+        const ele = document.getElementById("R");
+        ele.value = obj.R / ratio;
+        ele.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    [("svg", "csv", "tsv", "json", "py")].forEach((e) => document.getElementById("download_" + e).addEventListener("click", download));
     const greek = ["θ", "ψ", "φ"];
     const latin = ["theta", "psi", "phi"];
     document.getElementById("show_link").addEventListener("click", () => {
