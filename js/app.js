@@ -1,5 +1,5 @@
 /*!
- * democapsid v2.2.4 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.2.5 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 <=, Daniel Antonio Negrón (dnanto/remaindeer)
  */
@@ -174,7 +174,7 @@ window.onload = function (opt) {
     Object.keys(DEFAULTS).forEach((e) => document.getElementById(e).addEventListener("change", update));
     document.getElementById("normalize").addEventListener("click", () => {
         const L = this.document.getElementById("L2").value;
-        const R = this.document.getElementById("R2").value;
+        const R = parseFloat(this.document.getElementById("R2").value);
         const obj = params();
         const ratio = ck_vectors(calc_tile(obj.L, obj.R).basis, 1, 0, 0, 0)[0].norm() / ck_vectors(calc_tile(L, R).basis, 1, 0, 0, 0)[0].norm();
         const ele = document.getElementById("R");

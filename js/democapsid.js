@@ -1,10 +1,10 @@
 /*!
- * democapsid v2.2.4 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.2.5 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 <=, Daniel Antonio Negrón (dnanto/remaindeer)
  */
 
-const VERSION = "2.2.4";
+const VERSION = "2.2.5";
 
 const SQRT3 = Math.sqrt(3);
 const SQRT5 = Math.sqrt(5);

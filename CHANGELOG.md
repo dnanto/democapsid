@@ -1,3 +1,8 @@
+# v2.2.5
+
+- app is now standalone with all dependencies minified and in the same document
+- fix capsid normalization bug
+
 # v2.2.4
 
 - add feature to normalize capsid size for a given tiling and circumradius target
