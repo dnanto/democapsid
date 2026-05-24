@@ -74,7 +74,6 @@ function download(e) {
     name = mode + "[" + name.join("_") + "]";
     const ext = e.target.id.split("_")[1];
     // only care about facet outline for SVG...
-
     let href;
     if (ext === "svg") {
         href =
@@ -161,7 +160,6 @@ function update() {
             `Q-Number=(${H})²+(${H})(${K})+(${K})²=${H * H + H * K + K * K}`,
         ].join("\n");
     } catch (e) {
-        console.log(e);
         paper.clear();
         const canvas = document.getElementById("view");
         canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
@@ -181,7 +179,7 @@ window.onload = function (opt) {
         ele.value = obj.R / ratio;
         ele.dispatchEvent(new Event("change", { bubbles: true }));
     });
-    [("svg", "csv", "tsv", "json", "py")].forEach((e) => document.getElementById("download_" + e).addEventListener("click", download));
+    document.querySelectorAll("[id^=download_]").forEach((e) => e.addEventListener("click", download));
     const greek = ["θ", "ψ", "φ"];
     const latin = ["theta", "psi", "phi"];
     document.getElementById("show_link").addEventListener("click", () => {
