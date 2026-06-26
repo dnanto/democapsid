@@ -1,19 +1,15 @@
 .layout {
-    display: grid;
-    grid:
-      "sidebar body" 1fr
-      / auto 1fr 4fr;
+    display: flex;
+    height: 100vh;
     gap: 8px;
+    flex-shrink: 0;
   }  
 .sidebar { 
-    grid-area: sidebar; 
+    width: 500px;
 }
-.body { 
-    grid-area: body; 
-}
-.grow { flex-grow: 1; }
 body {
     font-family: monospace;
+    flex-grow: 1;
 }
 fieldset{
     margin: 0 auto;
@@ -23,8 +19,8 @@ legend{
     font-weight: bold;
 }
 canvas {
-    height: 550px;
-    width: 1000px;
+    height: 650px;
+    width: 100%;
     margin: 0 auto;
     display: block;
 }
@@ -36,7 +32,7 @@ select {
     box-sizing: border-box;
     vertical-align: middle;
     height: 25px;
-    width: 85px;
+    width: 80px;
 }
 input[type="range"] {
     width: 375px;

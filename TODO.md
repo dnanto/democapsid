@@ -1,7 +1,0 @@
--   [~] update paper
--   [~] comments/documentation javascript
--   [?] tests
--   [?] R package
--   [x] comments/documentation python
--   [x] python package
--   [x] Blender add-on

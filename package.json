@@ -1,6 +1,6 @@
 {
     "name": "democapsid",
-    "version": "2.2.5",
+    "version": "2.2.6",
     "author": "Daniel Antonio Negrón",
     "license": "MIT",
     "description": "Render viral capsids in the browser and export SVG.",

@@ -1,10 +1,10 @@
 /*!
- * democapsid v2.2.5 - Render viral capsids in the browser and export SVG.
+ * democapsid v2.2.6 - Render viral capsids in the browser and export SVG.
  * MIT License
  * Copyright (c) 2020 <=, Daniel Antonio Negrón (dnanto/remaindeer)
  */
 
-const VERSION = "2.2.5";
+const VERSION = "2.2.6";
 
 const SQRT3 = Math.sqrt(3);
 const SQRT5 = Math.sqrt(5);
@@ -357,8 +357,8 @@ function calc_tile(L, R) {
         const dr = dR * (SQRT3 / 2);
         tile = {
             basis: [
-                [(3 / 2) * dR, dr],
-                [0, 2 * dr],
+                [2 * r, 0],
+                [r, SQRT3 * r],
             ],
             tile: (e) =>
                 Array.from({ length: 6 }, (_, i) =>

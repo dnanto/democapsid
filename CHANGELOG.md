@@ -1,3 +1,8 @@
+# v2.2.6
+
+- window resizing
+- fixed dual hex tiling
+
 # v2.2.5
 
 - app is now standalone with all dependencies minified and in the same document
