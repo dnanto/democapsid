@@ -3,12 +3,38 @@
 <html lang="en">
     <head>
         <title>democapsid</title>
-        <link rel="stylesheet" href="css/app.css" />
+        <style>
+            .layout {
+                width: 100%;
+
+                display: flex;
+                gap: 25px;
+            }
+            .layout > div {
+                border: 2px dotted black;
+            }
+            .layout > div:nth-of-type(1) > * {
+                width: 250px;
+                height: 500px;
+            }
+            .layout > div:nth-of-type(2) > * {
+                width: 1000px;
+                height: 500px;
+            }
+        </style>
         <script type="text/javascript" src="js/lib/paperjs/paper-core.min.js"></script>
         <script type="text/javascript" src="js/democapsid.js"></script>
         <script type="text/javascript" src="js/sketch.js"></script>
     </head>
     <body>
-        <canvas id="view" resize> Your browser does not support the HTML canvas tag. </canvas>
+        <section class="layout">
+            <div>
+                <canvas id="view1"> Your browser does not support the HTML canvas tag. </canvas>
+            </div>
+            <div>
+                <canvas id="view2"> Your browser does not support the HTML canvas tag. </canvas>
+            </div>
+        </div>
+    </section>
     </body>
 </html>
