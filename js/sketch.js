@@ -73,6 +73,11 @@ function hash_point(point, digits = 5) {
 }
 
 const COS30 = Math.cos((Math.PI / 180) * 30);
+const v = [
+    [0, 0],
+    [0, COS30],
+    [0.5, COS30],
+];
 
 function draw(paper, s, R = 50) {
     paper.activate();
@@ -141,7 +146,7 @@ function draw(paper, s, R = 50) {
 }
 
 function pointify(o) {
-    return [o._x, o._y];
+    return [o.x, o.y];
 }
 
 function path_coors(path) {
@@ -152,64 +157,52 @@ function path_centroid(path) {
     return path_coors(path).centroid();
 }
 
-function control(paper1, paper2) {
+function schwartz_triangle_control(paper1, paper2, scale = 300) {
     paper1.activate();
-    const v = [
-        [0, 0],
-        [0, COS30],
-        [0.5, COS30],
-    ];
 
-    const pc = v.centroid();
     const pg = [0.175, COS30 / 1.25];
-    const w = [
+    const h = new paper1.Path.Line({ from: v[2], to: v[0], strokeColor: "black" });
+
+    const tri_lines = [
+        [pg, [v[0][0], pg[1]]], // <-
+        [pg, [pg[0], v[1][1]]], // v
+        [pg, h.getNearestPoint(pg)], // /
+        [v[0], v[1]], // |
+        [v[1], v[2]], // _
+        [v[2], v[0]], // \
+    ].map(
+        (e) =>
+            new paper1.Path.Line({
+                //
+                from: e[0],
+                to: e[1],
+                strokeWidth: 6,
+                strokeColor: "black",
+                strokeCap: "round",
+                strokeJoin: "round",
+                data: { selected: true },
+            }),
+    );
+
+    const cg = new paper1.Path.Circle({
         //
-        new paper1.Path.Line({ from: v[0], to: v[1], strokeColor: "black" }), // |
-        new paper1.Path.Line({ from: v[1], to: v[2], strokeColor: "black" }), // _
-        new paper1.Path.Line({ from: v[2], to: v[0], strokeColor: "black" }), // \
-    ];
-    const m = w.map((e) => new paper1.Path.Line({ from: pg, to: e.getNearestPoint(pg), strokeColor: "blue" }));
-    const xw = w.map((e) => e.segments[0].point);
-    const xm = m.map((e) => e.segments[1].point);
-    const tri_points = [
-        [pg, xm[0]], // left
-        [pg, xm[1]], // down
-        [pg, xm[2]], // upright
-        [xw[0], xw[1]], // |
-        [xw[1], xw[2]], // _
-        [xw[2], xw[0]], // \
-    ];
-    const tri_lines = tri_points.map((e) => new paper1.Path.Line({ from: e[0], to: e[1], strokeWidth: 6, strokeColor: "black", strokeCap: "round", strokeJoin: "round", data: { selected: true } }));
-    tri_lines.forEach((e) => {
-        e.onClick = function (event) {
-            this.data.selected = !this.data.selected;
-            this.strokeColor = this.data.selected ? "black" : "red";
-        };
+        center: pg,
+        radius: 0.025,
+        fillColor: "blue",
+        data: { selected: true },
     });
-    const g = new paper1.Path.Circle({ center: pg, radius: 0.025, fillColor: "blue", data: { selected: true } });
-    const scale = 300;
     const tri = new paper1.Group({
-        children: [...tri_lines, g],
+        children: [...tri_lines, cg],
         position: paper1.view.center,
         closed: true,
     }).scale(scale);
 
-    g.onMouseDrag = function (event) {
-        this.position = event.point;
-        tri_lines.slice(0, 3).forEach((e, i) => (e.segments[0].point = event.point));
-        tri_lines[0].segments[1].point.y = event.point.y;
-        tri_lines[1].segments[1].point.x = event.point.x;
-        tri_lines[2].segments[1].point = tri_lines[5].getNearestPoint(event.point);
-
+    // events
+    update = function (position) {
         const [width, height, topleft] = [...[0.5, COS30].mul(scale), tri_lines[3].segments[0].point];
-        const [sx, sy] = [(this.position.x - topleft._x) / (0.5 * scale), (this.position.y - topleft._y) / (COS30 * scale)];
+        const [sx, sy] = [(position.x - topleft._x) / (0.5 * scale), (position.y - topleft._y) / (COS30 * scale)];
         const p = [sx * 0.5, sy * COS30];
-        const z = w[2].getNearestPoint(p);
-        const x = [
-            [0, p[1]],
-            [p[0], COS30],
-            [z.x, z.y],
-        ];
+        const x = [[0, p[1]], [p[0], COS30], pointify(h.getNearestPoint(p))];
         draw(
             paper2,
             [
@@ -231,6 +224,23 @@ function control(paper1, paper2) {
             ].filter((e) => e.length),
         );
     };
+    tri_lines.forEach((e) => {
+        e.onClick = function (event) {
+            this.data.selected = !this.data.selected;
+            this.strokeColor = this.data.selected ? "black" : "red";
+            update(cg.position);
+        };
+    });
+    cg.onMouseDrag = function (event) {
+        this.position = event.point;
+        tri_lines.slice(0, 3).forEach((e, i) => (e.segments[0].point = event.point));
+        tri_lines[0].segments[1].point.y = event.point.y;
+        tri_lines[1].segments[1].point.x = event.point.x;
+        tri_lines[2].segments[1].point = tri_lines[5].getNearestPoint(event.point);
+        update(event.point);
+    };
+
+    update(cg.position);
 }
 
 window.onload = function (opt) {
@@ -244,5 +254,5 @@ window.onload = function (opt) {
     paper2.setup(canvas2);
     // draw(scope2);
 
-    control(paper1, paper2);
+    schwartz_triangle_control(paper1, paper2);
 };
