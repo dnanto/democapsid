@@ -34,7 +34,7 @@ npm install
 
 # Citation
 
-- Please comment on or [cite](https://github.com/dnanto/democapsid/blob/master/CITATION.cff) the preprint at [bioRxiv](https://www.biorxiv.org/content/10.1101/2020.12.02.408252v1), which is Chapter 2 of the [dissertation](http://www.proquest.com/docview/2572612100/abstract/9972F7D348C34013PQ/1).
+- Please comment on or [cite](https://github.com/dnanto/democapsid/blob/master/CITATION.cff) the preprint at [arXiv](https://arxiv.org/abs/2606.28969v1).
 - This work previously went by the name "capsid.js" and is now "democapsid".
 
 # Cited by

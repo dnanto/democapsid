@@ -2,112 +2,72 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: >-
-    democapsid
-message: "If you use this software, please cite it as below."
+title: Democapsid
+message: >-
+    If you use this software, please cite it using the
+    metadata from this file.
 type: software
 authors:
-    - given-names: Daniel
+    - orcid: "https://orcid.org/0000-0002-6123-2441"
+      given-names: Daniel Antonio
       family-names: Negrón
       email: dnegron2@gmu.edu
       affiliation: George Mason University
-      orcid: "https://orcid.org/0000-0002-6123-2441"
+    - given-names: Antoni
+      family-names: Luque
+      email: antoni.luque@miami.edu
+      affiliation: University of Miami
+      orcid: "https://orcid.org/0000-0002-5817-4914"
 identifiers:
     - type: doi
-      value: 10.1101/2020.12.02.408252
-      description: The bioRxiv preprint of the paper.
+      value: 10.48550/arXiv.2606.28969
+      description: The arXiv preprint.
 repository-code: "https://github.com/dnanto/democapsid"
-url: "https://github.com/dnanto/democapsid/capsid.html"
+url: "https://dnanto.github.io/democapsid/app.html"
 abstract: >-
-    This work implements Caspar-Klug Theory to
-    generate high-quality, vectorized capsid cartoons 
-    in the browser and is the first online tool that 
-    provides comprehensive style customization,
-     geometry, and SVG export of icosahedra and nets
-    with different lattice structures.
+    Capsids are the protein shells that protect the genetic
+    material of viruses. The precise structural description of
+    capsids informs how viruses assemble and evolve and is key
+    to the development of antiviral targets. Most viruses form
+    icosahedral capsids; among these, most adopt
+    quasi-spherical shapes, and some form elongated
+    architectures. However, elongated capsids have been
+    understudied, despite their decoupling of width and length
+    providing greater control over their packaging capacity, a
+    feature of particular interest in capsid evolution and in
+    virus-based biotechnological platforms. A key bottleneck
+    is the lack of tools for the analysis and design of
+    elongated viral capsids. To that end, this article
+    introduces Democapsid as a versatile tool for generating
+    coordinates of both quasi-spherical and elongated (and
+    shrunk) icosahedral capsids, as well as for producing
+    customizable graphical models and publication-quality
+    figures. The underlying algorithm builds on the
+    generalized geometrical theory of viral capsids and
+    employs numerical methods to assemble capsid elements
+    based on folding constraints. It includes parameters
+    controlling protein tiling associated with the eight
+    regular icosahedral lattices, elongation axes (5-fold,
+    3-fold, and 2-fold), sphericity, and discrete body length
+    for prolate (extended) and oblate (shrunk) shapes. It is
+    available as a JavaScript browser application, a Python
+    package powering plugins for UCSF ChimeraX and Blender,
+    and an R package for generating reproducible documents
+    with embedded models. The code (MIT License) is available
+    on GitHub. Democapsid will benefit both researchers and
+    graphic designers by enabling the investigation and
+    communication of research on viral capsids and other
+    icosahedral compartments.
 keywords:
     - virus
     - capsid
-    - caspar-klug
-    - moody
-    - icosahedron
+    - icosahedral
+    - elongated
     - prolate
     - oblate
-    - elongated
-    - lattice
-    - 2D
-    - 3D
-    - svg
-    - biology
-    - graphics
-    - render
-    - projection
-    - perspective
-    - publication
-    - figure
-    - demoscene
+    - ChimeraX
+    - Blender
+    - python
+    - R
+    - JavaScript
 license: MIT
-preferred-citation:
-    type: article
-    authors:
-        - given-names: Daniel
-          family-names: Negrón
-          email: dnegron2@gmu.edu
-          affiliation: George Mason University
-          orcid: "https://orcid.org/0000-0002-6123-2441"
-    doi: 10.1101/2020.12.02.408252
-    journal: bioRxiv
-    abstract: >-
-        This work implements Caspar-Klug Theory to
-        generate high-quality, vectorized capsid cartoons 
-        in the browser and is the first online tool that 
-        provides comprehensive style customization,
-         geometry, and SVG export of icosahedra and nets
-        with different lattice structures.
-        Motivation Few online services exist for rendering
-        high-quality viral capsid figures compatible with
-        common productivity software to develop effective
-        infographics in the field of virology.
-
-
-        Results The capsid.js library renders class I viral
-        capsids within an online application that
-        parameterizes style options, perspectives, and
-        lattice patterns with SVG export.
-
-
-        Availability This project is actively developed on
-        GitHub (https://github.com/dnanto/capsid),
-        distributed under the MIT License, hosted on GitHub
-        Pages, and runs on modern browsers
-        (https://dnanto.github.io/capsid/capsid.html).
-
-
-        Supplementary information Supplementary data are
-        available on GitHub.
-    month: 12
-    title: >-
-        Vectorized Capsid Rendering in the Browser with
-        Capsid.js
-    year: 2021
-    keywords:
-        - 2D
-        - 3D
-        - biology
-        - capsid
-        - caspar-klug
-        - demoscene
-        - elongated
-        - figure
-        - graphics
-        - icosahedron
-        - lattice
-        - oblate
-        - perspective
-        - projection
-        - prolate
-        - publication
-        - render
-        - svg
-        - virology
-        - virus
