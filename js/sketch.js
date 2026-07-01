@@ -41,17 +41,28 @@ class Graph {
         return this.neigh.get(key) ?? [];
     }
 
-    polygonize(src, tar, path = new Set()) {
+    polygonize(src, tar, dir = 0, path = new Set()) {
         // check cycle
         const [src_key, tar_key] = [src, tar].map((e) => this.hasher(e));
-        if (path.values().next().value == src_key) {
-            return [Array.from(path).map((e) => this.nodes.get(e)), true];
+        if (path.has(src_key)) {
+            return [
+                //
+                Array.from(path).map((e) => this.nodes.get(e)),
+                path.values().next().value == src_key,
+            ];
         }
         // build path
         path.add(src_key);
-        // get neighbors, excluding source node
+        // check source node only has no neighbors or is a sink
+        if (this.neighbors(src_key).length <= 1) {
+            return [Array.from(path).map((e) => this.nodes.get(e)), false];
+        }
+        // get neighbors
+        // exclude source node
+        // exclude those with exactly one neighbor
         const tar_neighbors = this.neighbors(tar_key)
             .filter((e) => e !== src_key)
+            .filter((e) => this.neighbors(e).length > 1)
             .map((e) => this.nodes.get(e));
         // check if neighbors exist
         if (!tar_neighbors.length) {
@@ -59,19 +70,20 @@ class Graph {
         }
         // get next node with minumum angle: src - tar - next
         const tar_to_src = src.subtract(tar);
+        const cmp = dir ? (a, b) => a < b : (a, b) => a > b;
         const idx = tar_neighbors
             .map((e) => tar_to_src.getDirectedAngle(e.subtract(tar)))
             .reduce((acc, val, idx, arr) => {
-                /****/ if (arr[acc] < 0 && 0 < val) {
+                /****/ if (cmp(arr[acc], 0) && cmp(0, val)) {
                     return idx;
-                } else if (val < 0 && 0 < arr[acc]) {
+                } else if (cmp(val, 0) && cmp(0, arr[acc])) {
                     return acc;
                 } else {
-                    return arr[acc] < val ? acc : idx;
+                    return cmp(arr[acc], val) ? acc : idx;
                 }
             }, 0);
         // recurse
-        return this.polygonize(tar, tar_neighbors[idx], path);
+        return this.polygonize(tar, tar_neighbors[idx], dir, path);
     }
 }
 
@@ -86,7 +98,7 @@ const v = [
     [0.5, COS30],
 ];
 
-function draw(paper, s, R = 50) {
+async function draw(paper, s, R = 50) {
     paper.activate();
     paper.project.clear();
 
@@ -110,7 +122,7 @@ function draw(paper, s, R = 50) {
         [2 * r, 0],
         [r, SQRT3 * r],
     ];
-    const ck = ck_vectors(basis, 2, 1, 2, 1, "levo");
+    const ck = ck_vectors(basis, 1, 0, 0, 0, "levo");
     const grid = Array.from(tile_grid(ck, basis));
     const lattice = new paper.Group({
         children: grid.map((e) => {
@@ -127,6 +139,10 @@ function draw(paper, s, R = 50) {
     let last = -1;
     while (edges.size > 0) {
         let [key, val] = edges.entries().next().value;
+        // new paper.Group({
+        //     children: [new paper.Path.Circle({ center: val[0], radius: 6, fillColor: "green" }), new paper.Path.Circle({ center: val[1], radius: 6, fillColor: "red" })],
+        // });
+        // await new Promise((r) => setTimeout(r, 2000));
         let path = G.polygonize(val[0], val[1]);
         if (path[0].length > 1) {
             path[0].map((e, i, a) => G.edgeify(e, a[(i + 1) % a.length])[0].join("-")).map((e) => [e, edges.delete(e)]);
@@ -140,15 +156,19 @@ function draw(paper, s, R = 50) {
             last = edges.size;
         }
         if (path[1]) {
-            new paper.Group({
-                children: [
-                    new paper.Path.Circle({ center: val[0], radius: 2, fillColor: "green" }),
-                    new paper.Path.Circle({ center: val[1], radius: 2, fillColor: "red" }),
-                    new paper.Path({ segments: path[0], strokeColor: path[1] ? "blue" : "orange", strokeWidth: 2, closed: path[1] }),
-                ],
+            new paper.Path({
+                //
+                segments: path[0],
+                strokeWidth: 2,
+                strokeCap: "round",
+                strokeJoin: "round",
+                strokeColor: path[1] ? "blue" : "orange",
+                closed: path[1],
             });
+            // await new Promise((r) => setTimeout(r, 2000));
         }
     }
+    console.log(edges.size);
 }
 
 function pointify(o) {
@@ -189,6 +209,10 @@ function schwartz_triangle_control(paper1, paper2, scale = 300) {
                 data: { selected: true },
             }),
     );
+    tri_lines[0].data.selected = false;
+    tri_lines[1].data.selected = false;
+    tri_lines[0].strokeColor = "red";
+    tri_lines[1].strokeColor = "red";
 
     const cg = new paper1.Path.Circle({
         //
