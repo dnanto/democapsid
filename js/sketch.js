@@ -123,16 +123,32 @@ function draw(paper, s, R = 50) {
     [g, g1, g2, g3].forEach((e) => e.remove());
 
     const G = new Graph((hasher = hash_point)).add_edges(lattice.children.flatMap((e) => e.children).map((e) => [e.segments[0].point, e.segments[1].point]));
-    const edges = Array.from(G.edges);
-    const edge = edges[Math.floor(Math.random() * edges.length)][1];
-    const path = G.polygonize(edge[0], edge[1]);
-    new paper.Group({
-        children: [
-            new paper.Path.Circle({ center: edge[0], radius: 2, fillColor: "green" }),
-            new paper.Path.Circle({ center: edge[1], radius: 2, fillColor: "red" }),
-            new paper.Path({ segments: path[0], strokeColor: path[1] ? "blue" : "orange", strokeWidth: 2, closed: path[1] }),
-        ],
-    });
+    const edges = new Map(G.edges);
+    let last = -1;
+    while (edges.size > 0) {
+        let [key, val] = edges.entries().next().value;
+        let path = G.polygonize(val[0], val[1]);
+        if (path[0].length > 1) {
+            path[0].map((e, i, a) => G.edgeify(e, a[(i + 1) % a.length])[0].join("-")).map((e) => [e, edges.delete(e)]);
+        } else {
+            edges.delete(key);
+        }
+        if (edges.size === last) {
+            console.log("what", last);
+            return;
+        } else {
+            last = edges.size;
+        }
+        if (path[1]) {
+            new paper.Group({
+                children: [
+                    new paper.Path.Circle({ center: val[0], radius: 2, fillColor: "green" }),
+                    new paper.Path.Circle({ center: val[1], radius: 2, fillColor: "red" }),
+                    new paper.Path({ segments: path[0], strokeColor: path[1] ? "blue" : "orange", strokeWidth: 2, closed: path[1] }),
+                ],
+            });
+        }
+    }
 }
 
 function pointify(o) {
