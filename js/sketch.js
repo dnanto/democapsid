@@ -41,7 +41,7 @@ class Graph {
         return this.neigh.get(key) ?? [];
     }
 
-    polygonize(src, tar, dir = 0, path = new Set()) {
+    loopback(src, tar, dir = 0, path = new Set()) {
         // check cycle
         const [src_key, tar_key] = [src, tar].map((e) => this.hasher(e));
         if (path.has(src_key)) {
@@ -83,7 +83,7 @@ class Graph {
                 }
             }, 0);
         // recurse
-        return this.polygonize(tar, tar_neighbors[idx], dir, path);
+        return this.loopback(tar, tar_neighbors[idx], dir, path);
     }
 }
 
@@ -98,7 +98,7 @@ const v = [
     [0.5, COS30],
 ];
 
-async function draw(paper, s, R = 50) {
+function draw(paper, s, R = 100) {
     paper.activate();
     paper.project.clear();
 
@@ -122,7 +122,7 @@ async function draw(paper, s, R = 50) {
         [2 * r, 0],
         [r, SQRT3 * r],
     ];
-    const ck = ck_vectors(basis, 1, 0, 0, 0, "levo");
+    const ck = ck_vectors(basis, 1, 0, 1, 0, "levo");
     const grid = Array.from(tile_grid(ck, basis));
     const lattice = new paper.Group({
         children: grid.map((e) => {
@@ -135,40 +135,38 @@ async function draw(paper, s, R = 50) {
     [g, g1, g2, g3].forEach((e) => e.remove());
 
     const G = new Graph((hasher = hash_point)).add_edges(lattice.children.flatMap((e) => e.children).map((e) => [e.segments[0].point, e.segments[1].point]));
-    const edges = new Map(G.edges);
-    let last = -1;
-    while (edges.size > 0) {
-        let [key, val] = edges.entries().next().value;
-        // new paper.Group({
-        //     children: [new paper.Path.Circle({ center: val[0], radius: 6, fillColor: "green" }), new paper.Path.Circle({ center: val[1], radius: 6, fillColor: "red" })],
-        // });
-        // await new Promise((r) => setTimeout(r, 2000));
-        let path = G.polygonize(val[0], val[1]);
-        if (path[0].length > 1) {
-            path[0].map((e, i, a) => G.edgeify(e, a[(i + 1) % a.length])[0].join("-")).map((e) => [e, edges.delete(e)]);
-        } else {
-            edges.delete(key);
-        }
-        if (edges.size === last) {
-            console.log("what", last);
-            return;
-        } else {
-            last = edges.size;
-        }
+    // lattice.remove();
+    const centroids = new Set();
+    let paths = [];
+    for (const [key, val] of G.edges) {
+        const path = G.loopback(val[0], val[1]);
         if (path[1]) {
-            new paper.Path({
-                //
-                segments: path[0],
-                strokeWidth: 2,
-                strokeCap: "round",
-                strokeJoin: "round",
-                strokeColor: path[1] ? "blue" : "orange",
-                closed: path[1],
-            });
-            // await new Promise((r) => setTimeout(r, 2000));
+            const centroid = path[0]
+                .map(pointify)
+                .centroid()
+                .map((e) => e.toFixed(5))
+                .join(", ");
+            if (path[1] && !centroids.has(centroid)) {
+                centroids.add(centroid);
+                paths.push(path[0]);
+            }
         }
     }
-    console.log(edges.size);
+    paths = paths.map((e) => {
+        return new paper.Path({
+            //
+            segments: e,
+            strokeWidth: 4,
+            strokeCap: "round",
+            strokeJoin: "round",
+            strokeColor: "blue",
+            fillColor: "#cccccc79",
+            closed: true,
+        });
+    });
+    paths.forEach((e) => {
+        if (e.area <= 0) e.remove();
+    });
 }
 
 function pointify(o) {
@@ -209,10 +207,6 @@ function schwartz_triangle_control(paper1, paper2, scale = 300) {
                 data: { selected: true },
             }),
     );
-    tri_lines[0].data.selected = false;
-    tri_lines[1].data.selected = false;
-    tri_lines[0].strokeColor = "red";
-    tri_lines[1].strokeColor = "red";
 
     const cg = new paper1.Path.Circle({
         //
@@ -223,6 +217,11 @@ function schwartz_triangle_control(paper1, paper2, scale = 300) {
     });
     const tri = new paper1.Group({
         children: [...tri_lines, cg],
+        position: paper1.view.center,
+        closed: true,
+    }).scale(scale);
+    const actual_tri = new paper1.Path({
+        segments: [v[0], v[1], v[2]],
         position: paper1.view.center,
         closed: true,
     }).scale(scale);
@@ -262,14 +261,17 @@ function schwartz_triangle_control(paper1, paper2, scale = 300) {
         };
     });
     cg.onMouseDrag = function (event) {
-        this.position = event.point;
-        tri_lines.slice(0, 3).forEach((e, i) => (e.segments[0].point = event.point));
-        tri_lines[0].segments[1].point.y = event.point.y;
-        tri_lines[1].segments[1].point.x = event.point.x;
-        tri_lines[2].segments[1].point = tri_lines[5].getNearestPoint(event.point);
-        update(event.point);
+        if (actual_tri.contains(event.point)) {
+            this.position = event.point;
+        } else {
+            this.position = actual_tri.getNearestPoint(event.point);
+        }
+        tri_lines.slice(0, 3).forEach((e, i) => (e.segments[0].point = this.position));
+        tri_lines[0].segments[1].point.y = this.position.y;
+        tri_lines[1].segments[1].point.x = this.position.x;
+        tri_lines[2].segments[1].point = tri_lines[5].getNearestPoint(this.position);
+        update(this.position);
     };
-
     update(cg.position);
 }
 
@@ -285,4 +287,19 @@ window.onload = function (opt) {
     // draw(scope2);
 
     schwartz_triangle_control(paper1, paper2);
+    document.getElementById("download-btn").addEventListener("click", function () {
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(
+            new Blob(
+                //
+                [paper2.project.exportSVG({ asString: true })],
+                { type: "image/svg+xml;charset=utf-8" },
+            ),
+        );
+        link.download = "my-paperjs-project.svg";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    });
 };
