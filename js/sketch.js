@@ -164,6 +164,39 @@ function draw(paper, s, R = 100) {
             closed: true,
         });
     });
+
+    const ctr = [paper.view.center.x, paper.view.center.y];
+    console.log(ctr);
+    console.log(
+        [
+            [3, 0],
+            [0, 1],
+            [1, 2],
+        ].map((e) => [ck[e[0]], ck[e[1]]]),
+    );
+    console.log(
+        [
+            [3, 0],
+            [0, 1],
+            [1, 2],
+        ].map((e) => [ck[e[0]].add(ctr), ck[e[1]].add(ctr)]),
+    );
+    const triangles = [
+        [3, 0],
+        [0, 1],
+        [1, 2],
+    ]
+        // .map((e) => [ck[e[0]], ck[e[1]]])
+        .map((e) => [ck[e[0]], ck[e[1]]].map((e) => e.add(ctr)))
+        .map((e) => new paper.Path([ctr, ...e]));
+    const facets = new paper.Group(
+        //
+        triangles.map((e) => new paper.Group(paths.map((f) => f.intersect(e)))),
+    );
+    facets.strokeColor = "black";
+    // facets.position = paper.view.center;
+    paths.forEach((e) => e.remove());
+    lattice.remove();
 }
 
 function pointify(o) {
