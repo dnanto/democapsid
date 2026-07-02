@@ -104,6 +104,10 @@ Array.prototype.split = function (sep) {
     ).filter((e) => e.length);
 };
 
+Array.prototype.shoelace = function () {
+    return this.map((e, i, a) => [e[0] * a[(i + 1) % a.length][1]] - [a[(i + 1) % a.length][0] * e[1]]).sum() / 2;
+};
+
 function mmul(A, B) {
     const [m, n, p] = [A.length, A[0].length, B[0].length];
     var C = new Array(m);

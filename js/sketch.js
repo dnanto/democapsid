@@ -139,16 +139,16 @@ function draw(paper, s, R = 100) {
     const centroids = new Set();
     let paths = [];
     for (const [key, val] of G.edges) {
-        const path = G.loopback(val[0], val[1]);
-        if (path[1]) {
-            const centroid = path[0]
-                .map(pointify)
+        let [path, closed] = G.loopback(val[0], val[1]);
+        path = path.map(pointify);
+        if (closed) {
+            const centroid = path
                 .centroid()
                 .map((e) => e.toFixed(5))
                 .join(", ");
-            if (path[1] && !centroids.has(centroid)) {
+            if (!centroids.has(centroid) && path.shoelace() > 0) {
                 centroids.add(centroid);
-                paths.push(path[0]);
+                paths.push(path);
             }
         }
     }
@@ -163,9 +163,6 @@ function draw(paper, s, R = 100) {
             fillColor: "#cccccc79",
             closed: true,
         });
-    });
-    paths.forEach((e) => {
-        if (e.area <= 0) e.remove();
     });
 }
 
