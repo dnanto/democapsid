@@ -38,7 +38,7 @@ Array.prototype.sum = function (initial_value = 0) {
 };
 
 Array.prototype.centroid = function () {
-    return this.reduce((a, b) => a.add(b)).div(this.length);
+    return this.reduce((a, b) => a.add(b), Array((this[0] ?? []).length).fill(0)).div(this.length);
 };
 
 Array.prototype.cross = function (v) {
