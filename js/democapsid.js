@@ -108,6 +108,10 @@ Array.prototype.shoelace = function () {
     return this.map((e, i, a) => [e[0] * a[(i + 1) % a.length][1]] - [a[(i + 1) % a.length][0] * e[1]]).sum() / 2;
 };
 
+Array.prototype.cycle = function () {
+    return this.map((e, i, a) => [a[i ? i - 1 : a.length - 1], e, a[(i + 1) % a.length]]);
+};
+
 function mmul(A, B) {
     const [m, n, p] = [A.length, A[0].length, B[0].length];
     var C = new Array(m);

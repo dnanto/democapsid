@@ -4,38 +4,85 @@
     <head>
         <title>democapsid</title>
         <style>
-            .layout {
+            .columns {
                 width: 100%;
-
                 display: flex;
                 gap: 25px;
             }
-            .layout > div {
+            .columns > div:last-of-type() {
+                flex: 1;
+            }
+            .controls {
                 border: 2px dotted black;
             }
-            .layout > div:nth-of-type(1) > * {
+            #view0 {
                 width: 250px;
                 height: 500px;
             }
-            .layout > div:nth-of-type(2) > * {
+            #view1 {
+                width: 250px;
+                height: 500px;
+            }
+            #view2 {
                 width: 1000px;
                 height: 500px;
             }
         </style>
         <script type="text/javascript" src="js/lib/paperjs/paper-core.min.js"></script>
         <script type="text/javascript" src="js/democapsid.js"></script>
+        <script type="text/javascript" src="js/graph.js"></script>
         <script type="text/javascript" src="js/sketch.js"></script>
+        <script type="text/javascript" src="js/main.js"></script>
     </head>
     <body>
-        <section class="layout">
-            <div>
-                <canvas id="view1"> Your browser does not support the HTML canvas tag. </canvas>
+        <section class="columns">
+            <div class="controls">
+                <div>
+                    <div>
+                        <label for="h">h=</label>
+                        <input type="number" id="h" step="1" value="3" min="0" />
+                    </div>
+                    <div>
+                        <label for="k">k=</label>
+                        <input type="number" id="k" step="1" value="1" min="0" />
+                    </div>
+                    <div>
+                        <label for="H">H=</label>
+                        <input type="number" id="H" step="1" value="4" min="0" />
+                    </div>
+                    <div>
+                        <label for="K">K=</label>
+                        <input type="number" id="K" step="1" value="2" min="0" />
+                    </div>
+                    <div>
+                        <label for="L">L=</label>
+                        <select id="L">
+                            <option value="hex">hex</option>
+                            <option value="trihex">trihex</option>
+                            <option value="snubhex">snubhex</option>
+                            <option value="rhombitrihex">rhombitrihex</option>
+                            <option value="dualhex">dualhex</option>
+                            <option value="dualtrihex">dualtrihex</option>
+                            <option value="dualsnubhex">dualsnubhex</option>
+                            <option value="dualrhombitrihex">dualrhombitrihex</option>
+                            <option value="pinwheel-1">pinwheel-1</option>
+                            <option value="pinwheel-2">pinwheel-2</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <div>
-                <canvas id="view2"> Your browser does not support the HTML canvas tag. </canvas>
+            <div class="controls">
+                <canvas id="view0">Your browser does not support the HTML canvas tag.</canvas>
             </div>
+            <div class="controls">
+                <canvas id="view1">Your browser does not support the HTML canvas tag.</canvas>
+            </div>
+            <div class="controls">
+                <canvas id="view2">Your browser does not support the HTML canvas tag.</canvas>
+            </div>
+        </section>
+        <div>
+            <button id="download-btn">Download as SVG</button>
         </div>
-        <button id="download-btn">Download as SVG</button>
-    </section>
     </body>
 </html>
