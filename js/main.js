@@ -4,7 +4,7 @@ window.onload = function (opt) {
         scope.setup(document.getElementById(`view${e}`));
         return scope;
     });
-    ft_input(papers[0], papers[1]);
+    ft_input(papers[0], papers[2]);
     document.getElementById("download-btn").addEventListener("click", function () {
         var link = document.createElement("a");
         link.href = URL.createObjectURL(

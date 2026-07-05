@@ -19,16 +19,26 @@ function congruent_polygon_id(path, digits = 5) {
             .map((e) => new paper.Point(e))
             .cycle()
             .map((e) => e[0].subtract(e[1]).getAngle(e[2].subtract(e[1])))
+            .sort((a, b) => a - b)
+            .filter((e) => Math.abs(e - 180) > 0.0001)
             .map((e) => e.toFixed(5))
-            .sort()
             .join(","),
-        path.shoelace().toFixed(digits),
+        path.shoelace().toFixed(5),
     ].join("_");
 }
 
 function calc_tile(paper, ft, R = 1) {
     paper.activate();
     paper.project.clear();
+
+    const r = (R * SQRT3) / 2;
+    const basis = [
+        [2 * r, 0],
+        [r, SQRT3 * r],
+    ];
+    const ck = ck_vectors(basis, 1, 0, 1, 0);
+    const grid = Array.from(tile_grid(ck, basis));
+
     // calculate the tile based on the fundamental triangle
     const tile = new paper.Group({
         children: [
@@ -37,34 +47,51 @@ function calc_tile(paper, ft, R = 1) {
             // rotate fundamental triangle within hexagon, then flip
             ...new paper.Group(Array.from({ length: 6 }, (_, i) => ft.clone().rotate(i * 60, [0, 0]))).scale(1, -1).children,
         ].flatMap((e) => e.children),
-        position: paper.view.center,
     })
         .scale(R)
         .rotate(30);
-    // polygonize the tile
 
-    const polygons = new Graph((hasher = hash_point))
-        .add_edges(tile.children.map((e) => [e.segments[0].point, e.segments[1].point]))
+    // const lattice_tile = new paper.Group(polygons);
+    const lattice = new paper.Group({
+        children: grid.map((e) => {
+            const x = tile.clone();
+            x.position = e.coor;
+            return x;
+        }),
+        strokeCap: "round",
+        strokeJoin: "round",
+        strokeWidth: 4,
+        strokeColor: "black",
+        position: paper.view.center,
+    });
+
+    const pieces = new Graph((hasher = hash_point))
+        .add_edges(lattice.children.flatMap((e) => e.children).map((e) => [e.segments[0].point, e.segments[1].point]))
         .polygonize()
-        .map((e) =>
-            new paper.Path({
-                segments: e,
-                strokeWidth: 4,
-                strokeCap: "round",
-                strokeJoin: "round",
-                strokeColor: "black",
-                closed: true,
-                data: {
-                    key: congruent_polygon_id(e, 5),
-                },
-            }).reduce(),
+        .map(
+            (e) =>
+                new paper.Path({
+                    segments: e,
+                    strokeWidth: 4,
+                    strokeCap: "round",
+                    strokeJoin: "round",
+                    strokeColor: "black",
+                    closed: true,
+                    data: {
+                        key: congruent_polygon_id(e, 5),
+                    },
+                }),
         );
-    const colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"];
-    const key_to_color = new Map();
-    // for (let i = 0; i < polygons.length; i++) key_to_color.getOrInsert(polygons[i].data.key, colors[key_to_color.size]);
-    polygons.sort((e) => e.data.key).forEach((e) => (e.fillColor = key_to_color.getOrInsert(e.data.key, colors[key_to_color.size])));
-    console.log(key_to_color);
-    // console.log(polygons);
+    const keys = [...new Set(pieces.map((e) => e.data.key))];
+    const vals = chroma.scale("viridis").colors(keys.length).reverse();
+    const colors = new Map(keys.map((e, i) => [e, vals[i]]));
+    console.log(Array.from(colors.keys()).join("\n"));
+    pieces.forEach((e) => (e.fillColor = colors.get(e.data.key)));
+
+    // lattice.remove();
+    lattice.bringToFront();
+    tile.remove();
+    // return;
 }
 
 function planarize_ft(ft, g) {
