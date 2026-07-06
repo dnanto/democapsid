@@ -60,14 +60,15 @@ function calc_tile(paper, ft, R = 1) {
         }),
         strokeCap: "round",
         strokeJoin: "round",
-        strokeWidth: 4,
         strokeColor: "black",
+        strokeWidth: 4,
         position: paper.view.center,
     });
 
     const pieces = new Graph((hasher = hash_point))
         .add_edges(lattice.children.flatMap((e) => e.children).map((e) => [e.segments[0].point, e.segments[1].point]))
         .polygonize()
+        .sort((a, b) => b.shoelace() - a.shoelace())
         .map(
             (e) =>
                 new paper.Path({
@@ -94,6 +95,11 @@ function calc_tile(paper, ft, R = 1) {
     // return;
 }
 
+function is_collinear(l1, l2) {
+    const [v1, v2] = [l1, l2].map((e) => e.segments[1].point.subtract(l1.segments[0].point));
+    return v1.isCollinear(v2);
+}
+
 function planarize_ft(ft, g) {
     const [width, height, topleft] = [ft.bounds.width, ft.bounds.height, ft.bounds.topLeft];
     const p = [((g.x - topleft.x) / width) * 0.5, ((g.y - topleft.y) / height) * COS30];
@@ -102,14 +108,15 @@ function planarize_ft(ft, g) {
         [
             ...ft.children.slice(0, 3).map((e, i) => (e.data.selected ? [p, x[i]] : [])),
             ...ft.children.slice(3, 6).flatMap((e, i) => {
+                const j = (i + 1) % 3;
                 if (e.data.selected) {
                     if (ft.children[i].data.selected) {
                         return [
                             [ft_vectors[i], x[i]],
-                            [x[i], ft_vectors[(i + 1) % 3]],
+                            [x[i], ft_vectors[j]],
                         ];
                     } else {
-                        return [[ft_vectors[i], ft_vectors[(i + 1) % 3]]];
+                        return [[ft_vectors[i], ft_vectors[j]]];
                     }
                 } else {
                     return [];
@@ -124,7 +131,8 @@ function planarize_ft(ft, g) {
 function ft_input(paper1, paper2, scale = 300) {
     paper1.activate();
 
-    const pg = [0.175, COS30 / 1.25];
+    // const pg = [0.175, COS30 / 1.25];
+    const pg = [0, 0];
     const tri_lines = [
         [pg, [ft_vectors[0][0], pg[1]]], // <-
         [pg, [pg[0], ft_vectors[1][1]]], // v
@@ -160,6 +168,7 @@ function ft_input(paper1, paper2, scale = 300) {
     }).scale(scale);
 
     // events
+    console.log(ft_group);
     ft_group.children.slice(0, -1).forEach((e) => {
         e.onClick = function (event) {
             this.data.selected = !this.data.selected;
@@ -173,6 +182,9 @@ function ft_input(paper1, paper2, scale = 300) {
         } else {
             this.position = ft_tri.getNearestPoint(event.point);
         }
+
+        // ![0, 1, 2].some((_, i) => e.segments[1].point.subtract(e.segments[0].point).isCollinear(ft_vectors[i]));
+
         tri_lines.slice(0, 3).forEach((e, i) => (e.segments[0].point = this.position));
         tri_lines[0].segments[1].point.y = this.position.y;
         tri_lines[1].segments[1].point.x = this.position.x;
