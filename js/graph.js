@@ -91,19 +91,17 @@ class Graph {
         let paths = [];
         for (const [key, val] of this.edges) {
             let [path, closed] = this.loopback(val[0], val[1]);
-            path = path.map(pointify); // TODO: generalize
+            path = path.map((e) => [e.x, e.y]); // TODO: generalize
             if (closed) {
                 const centroid_value = path.centroid();
                 const area_value = path.shoelace();
-                const key = `[${centroid_value.map((e) => e.toFixed(5)).join(",")}]_${area_value.toFixed(5)}`;
+                const key = `[${centroid_value.map((e) => formatter.format(e)).join(",")}]_${formatter.format(area_value)}`;
                 if (!keys.has(key) && area_value > 0) {
-                    console.log(">", key);
                     keys.add(key);
                     paths.push(path);
                 }
             }
         }
-        console.log(keys);
         return paths;
     }
 }
