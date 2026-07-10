@@ -41,7 +41,7 @@ class Graph {
         return this.neigh.get(key) ?? [];
     }
 
-    loopback(src, tar, dir = 0, path = new Set()) {
+    loopback(src, tar, path = new Set()) {
         // check cycle
         const [src_key, tar_key] = [src, tar].map((e) => this.hasher(e));
         if (path.has(src_key)) {
@@ -70,20 +70,14 @@ class Graph {
         }
         // get next node with minumum angle: src - tar - next
         const tar_to_src = src.subtract(tar); // TODO: generalize
-        const cmp = dir ? (a, b) => a < b : (a, b) => a > b;
         const idx = tar_neighbors
             .map((e) => tar_to_src.getDirectedAngle(e.subtract(tar))) // TODO: generalize
-            .reduce((acc, val, idx, arr) => {
-                /****/ if (cmp(arr[acc], 0) && cmp(0, val)) {
-                    return idx;
-                } else if (cmp(val, 0) && cmp(0, arr[acc])) {
-                    return acc;
-                } else {
-                    return cmp(arr[acc], val) ? acc : idx;
-                }
-            }, 0);
+            .map((e, i) => [e, i])
+            .toSorted((a, b) => b[0] < a[0])
+            .toSorted((a, b) => (a[0] < 0) - (b[0] < 0))
+            .slice(-1)[0][1];
         // recurse
-        return this.loopback(tar, tar_neighbors[idx], dir, path);
+        return this.loopback(tar, tar_neighbors[idx], path);
     }
 
     polygonize() {
