@@ -4,27 +4,78 @@
     <head>
         <title>democapsid</title>
         <style>
-            .columns {
+            * {
+                font-family: monospace;
+            }
+
+            .container {
+                display: grid;
+                grid-template-columns: 2fr 2fr 2fr 6fr;
+                grid-template-rows: 1.7fr 0.3fr;
+                gap: 10px 10px;
+                grid-auto-flow: row;
+                grid-template-areas:
+                    "params triangle kaleidoscope model"
+                    "download aesthetics aesthetics console";
+            }
+
+            .params {
+                grid-area: params;
+            }
+
+            .download {
+                grid-area: download;
+            }
+
+            .triangle {
+                grid-area: triangle;
+            }
+
+            .kaleidoscope {
+                grid-area: kaleidoscope;
+            }
+
+            .console {
+                grid-area: console;
+            }
+
+            .model {
+                grid-area: model;
+            }
+
+            .aesthetics {
+                grid-area: aesthetics;
+            }
+
+            .model {
+                grid-area: model;
+            }
+
+            .console {
+                grid-area: console;
+            }
+
+            fieldset {
+                margin: 0 auto;
+                display: block;
+            }
+            legend {
+                font-weight: bold;
+            }
+            button {
                 width: 100%;
-                display: flex;
-                gap: 25px;
             }
-            .columns > div:last-of-type() {
-                flex: 1;
-            }
-            .controls {
-                border: 2px dotted black;
-            }
+
             #view0 {
-                width: 250px;
+                width: 100%;
                 height: 500px;
             }
             #view1 {
-                width: 250px;
+                width: 100%;
                 height: 500px;
             }
             #view2 {
-                width: 1000px;
+                width: 100%;
                 height: 500px;
             }
         </style>
@@ -36,28 +87,41 @@
         <script type="text/javascript" src="js/main.js"></script>
     </head>
     <body>
-        <section class="columns">
-            <div class="controls">
-                <div>
+        <div class="container">
+            <div class="params">
+                <fieldset>
+                    <legend>lattice</legend>
                     <div>
-                        <label for="h">h=</label>
-                        <input type="number" id="h" step="1" value="3" min="0" />
+                        <label for="param_h">h=</label>
+                        <input type="number" id="param_h" step="1" value="1" min="0" />
                     </div>
                     <div>
-                        <label for="k">k=</label>
-                        <input type="number" id="k" step="1" value="1" min="0" />
+                        <label for="param_k">k=</label>
+                        <input type="number" id="param_k" step="1" value="1" min="0" />
                     </div>
                     <div>
-                        <label for="H">H=</label>
-                        <input type="number" id="H" step="1" value="4" min="0" />
+                        <label for="param_H">H=</label>
+                        <input type="number" id="param_H" step="1" value="1" min="0" />
                     </div>
                     <div>
-                        <label for="K">K=</label>
-                        <input type="number" id="K" step="1" value="2" min="0" />
+                        <label for="param_K">K=</label>
+                        <input type="number" id="param_K" step="1" value="2" min="0" />
                     </div>
                     <div>
-                        <label for="L">L=</label>
-                        <select id="L">
+                        <label for="param_t">t=</label>
+                        <select id="param_t">
+                            <option value="levo">levo</option>
+                            <option value="dextro">dextro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="param_R">R=</label>
+                        <input type="number" id="param_R" step="1" value="25" min="1" />
+                    </div>
+                    <div>
+                        <label for="param_L">L=</label>
+                        <select id="param_L">
+                            <option value="custom">custom</option>
                             <option value="hex">hex</option>
                             <option value="trihex">trihex</option>
                             <option value="snubhex">snubhex</option>
@@ -66,25 +130,59 @@
                             <option value="dualtrihex">dualtrihex</option>
                             <option value="dualsnubhex">dualsnubhex</option>
                             <option value="dualrhombitrihex">dualrhombitrihex</option>
-                            <option value="pinwheel-1">pinwheel-1</option>
-                            <option value="pinwheel-2">pinwheel-2</option>
                         </select>
                     </div>
-                    <div id="colors"></div>
+                </fieldset>
+                <fieldset>
+                    <legend>icosahedron</legend>
+                    <div>
+                        <label for="param_a">a=</label>
+                        <select id="param_a">
+                            <option value="5">5</option>
+                            <option value="3">3</option>
+                            <option value="2">2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="param_s">s=</label>
+                        <input type="range" min="-1" max="1" step="0.001" , value="0" id="param_s" />
+                    </div>
+                    <div>
+                        <label for="θ">θ=</label>
+                        <input type="number" id="param_θ" step="10" value="0" />
+                    </div>
+                    <div>
+                        <label for="ψ">ψ=</label>
+                        <input type="number" id="param_ψ" step="10" value="0" />
+                    </div>
+                    <div>
+                        <label for="φ">φ=</label>
+                        <input type="number" id="param_φ" step="10" value="-90" />
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>aesthetics</legend>
+                    <label for="param_c">c=</label>
+                    <select id="param_c"></select>
+                    <div id="pallete"></div>
+                </fieldset>
+            </div>
+            <div class="download">
+                <div>
+                    <button id="download-btn">Download SVG</button>
                 </div>
             </div>
-            <div class="controls">
+            <div class="triangle">
                 <canvas id="view0">Your browser does not support the HTML canvas tag.</canvas>
             </div>
-            <div class="controls">
+            <div class="kaleidoscope">
                 <canvas id="view1">Your browser does not support the HTML canvas tag.</canvas>
             </div>
-            <div class="controls">
+            <div class="aesthetics"></div>
+            <div class="model">
                 <canvas id="view2">Your browser does not support the HTML canvas tag.</canvas>
             </div>
-        </section>
-        <div>
-            <button id="download-btn">Download as SVG</button>
+            <div class="console"></div>
         </div>
     </body>
 </html>
