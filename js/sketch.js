@@ -162,7 +162,7 @@ function render_capsid(paper, model) {
     ].map((e) => e.mul((R * SQRT3) / 2));
     const tile = model.calc_tile().scale(R).rotate(30);
 
-    const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t);
+    const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
     const grid = Array.from(tile_grid(ck, basis));
 
     const lattice = new paper.Group({
