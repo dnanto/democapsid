@@ -9,7 +9,7 @@ class Model {
         [0.5, COS30],
     ];
 
-    constructor(ctr, scale) {
+    constructor(ctr, scale, insert = true) {
         this.mir = new paper.Group({
             children: this.#vec.cycle().map((e) => new paper.Path.Line({ from: e[1], to: e[2] })),
             position: ctr,
@@ -18,6 +18,7 @@ class Model {
             strokeCap: "round",
             strokeJoin: "round",
             closed: true,
+            insert: insert,
         }).scale(scale);
         this.gen = new paper.Path.Circle({
             position: this.mir.children
@@ -26,6 +27,7 @@ class Model {
                 .divide(3),
             radius: 8,
             fillColor: "blue",
+            insert: insert,
         });
         this.ref = new paper.Group({
             children: this.mir.children.map((e) => new paper.Path.Line({ from: this.gen.position, to: e.getNearestPoint(this.gen.position) })),
@@ -33,6 +35,7 @@ class Model {
             strokeColor: "black",
             strokeCap: "round",
             strokeJoin: "round",
+            insert: insert,
         });
         this.mir.bringToFront();
         this.gen.bringToFront();
@@ -110,11 +113,11 @@ function render_lattice(paper, model) {
     const basis = [
         [2, 0],
         [1, SQRT3],
-    ].map((e) => e.mul((R * SQRT3) / 2));
+    ].map((e) => e.mul(R * (SQRT3 / 2)));
     const tile = model.calc_tile().scale(R).rotate(30);
 
     // ck
-    const ck = ck_vectors(basis, 1, 0, 1, 0, "levo");
+    const ck = ck_vectors(basis, 1, 0, 1, 0, true);
     const grid = Array.from(tile_grid(ck, basis)).slice(1, -1);
     const lattice = new paper.Group({
         children: grid.map((e) => {
@@ -151,15 +154,14 @@ function render_lattice(paper, model) {
     lattice.bringToFront();
 }
 
-function render_capsid(paper, model) {
-    const P = get_params();
+function render_capsid(paper, model, P = get_params()) {
     const ctr = [paper.view.center.x, paper.view.center.y];
 
     const R = P.R;
     const basis = [
         [2, 0],
         [1, SQRT3],
-    ].map((e) => e.mul((R * SQRT3) / 2));
+    ].map((e) => e.mul(R * (SQRT3 / 2)));
     const tile = model.calc_tile().scale(R).rotate(30);
 
     const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
@@ -191,10 +193,12 @@ function render_capsid(paper, model) {
                     },
                 }),
         );
-    const keys = [...new Set(paths.map((e) => e.data.key))];
-    const vals = chroma.scale(P.c).colors(keys.length);
-    const colors = new Map(keys.map((e, i) => [e, vals[i]]));
-    paths.forEach((e) => (e.fillColor = colors.get(e.data.key) + "DD"));
+    if (P.c) {
+        const keys = [...new Set(paths.map((e) => e.data.key))];
+        const vals = chroma.scale(P.c).colors(keys.length);
+        const colors = new Map(keys.map((e, i) => [e, vals[i]]));
+        paths.forEach((e) => (e.fillColor = colors.get(e.data.key) + "DD"));
+    }
 
     const triangles = [
         [3, 0],
