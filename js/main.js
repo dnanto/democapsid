@@ -3,7 +3,7 @@ const construction = {
     dualhex: [0, 1, 1, 0, 0, 0, null],
     trihex: [0, 0, 0, 0, 1, 1, [0, COS30]],
     dualtrihex: [0, 0, 1, 0, 0, 0, null],
-    rhombitrihex: [0, 0, 0, 1, 1, 0, [(3.0 - SQRT3) / 4.0, Math.tan(Math.PI / 3) * ((3.0 - SQRT3) / 4.0)]],
+    rhombitrihex: [0, 0, 0, 1, 1, 0, [1, Math.tan(Math.PI / 3)].mul((3.0 - SQRT3) / 4.0)],
     dualrhombitrihex: [1, 1, 0, 0, 0, 0, null],
     truncatedhex: [0, 1, 0, 0, 0, 1, [0.25, COS30]],
     triakistri: [1, 0, 1, 0, 0, 0, null],
@@ -47,7 +47,7 @@ function debounce(func, delay) {
     };
 }
 
-function oninput(papers, model) {
+function dooninputthing(papers, model) {
     [render_lattice, render_capsid].forEach((e, i) => {
         papers[i + 1].activate();
         papers[i + 1].project.clear();
@@ -59,10 +59,15 @@ function oninput(papers, model) {
 }
 
 window.onload = function (opt) {
-    // init color scales
+    // init color scale options
     Object.keys(chroma.brewer)
         .sort()
         .forEach((e) => document.getElementById("param_c").add(new Option(e, e, e === "Viridis", e === "Viridis")));
+    // init lattice options
+    ["custom", ...Object.keys(construction).sort()].forEach((e) =>
+        //
+        document.getElementById("param_L").add(new Option(e, e, e === "hex", e === "hex")),
+    );
 
     // init canvas papers
     const papers = [0, 1, 2, 3].map((e) => new paper.PaperScope().setup(document.getElementById(`canvas${e}`)));
@@ -70,18 +75,17 @@ window.onload = function (opt) {
     // init model
     papers[0].activate();
     papers[0].project.clear();
-    const model = new Model(papers[0].view.center, 225);
-
+    const model = new Wythoff(papers[0].view.center, 225).construct(...construction["hex"]);
     [...model.mir.children, ...model.ref.children].forEach((e) => {
-        e.data.selected = true;
         e.onClick = function (event) {
             this.data.selected = !this.data.selected;
-            this.strokeColor = this.data.selected ? "#000000FF" : "#00000055";
+            this.strokeColor = this.data.selected ? model.color_on : model.color_off;
             [render_lattice, render_capsid].forEach((e, i) => {
                 papers[i + 1].activate();
                 papers[i + 1].project.clear();
                 e(papers[i + 1], model);
             });
+            document.getElementById("param_L").value = "custom";
         };
     });
     model.gen.onMouseDrag = function (event) {
@@ -91,33 +95,32 @@ window.onload = function (opt) {
         papers[1].activate();
         papers[1].project.clear();
         render_lattice(papers[1], model);
+        document.getElementById("param_L").value = "custom";
     };
     model.gen.onMouseUp = function (event) {
         papers[2].activate();
         papers[2].project.clear();
         render_capsid(papers[2], model);
     };
-
-    const doninput = debounce(oninput, 100);
-    [...document.querySelectorAll('[id^="param_"]')]
-        .filter((e) => !e.id.endsWith("_L"))
-        .forEach((e) =>
-            e.addEventListener("input", (event) => {
-                console.log(event.target);
-                doninput(papers, model);
-            }),
-        );
-
     this.document.getElementById("param_L").addEventListener("input", (event) => {
-        console.log(construction, event.target.value);
-        model.toggle(...construction[event.target.value]);
-        papers[1].activate();
-        papers[1].project.clear();
-        render_lattice(papers[1], model);
-        papers[2].activate();
-        papers[2].project.clear();
-        render_capsid(papers[2], model);
+        if (construction.hasOwnProperty(event.target.value)) {
+            model.construct(...construction[event.target.value]);
+            papers[1].activate();
+            papers[1].project.clear();
+            render_lattice(papers[1], model);
+            papers[2].activate();
+            papers[2].project.clear();
+            render_capsid(papers[2], model);
+        }
     });
+
+    // init param events
+    const doninput = debounce(dooninputthing, 100);
+    document.querySelectorAll('[id^="param_"]').forEach((e) =>
+        e.addEventListener("input", (event) => {
+            doninput(papers, model);
+        }),
+    );
 
     // ico preview controller
 
@@ -159,5 +162,5 @@ window.onload = function (opt) {
     });
 
     // init each canvas
-    oninput(papers, model);
+    dooninputthing(papers, model);
 };

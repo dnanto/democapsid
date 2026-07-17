@@ -1,6 +1,6 @@
 const COS30 = Math.cos((Math.PI / 180) * 30);
 
-class Model {
+class Wythoff {
     // TODO: add styling options/functions
 
     #vec = [
@@ -44,15 +44,25 @@ class Model {
         this.gen.bringToFront();
     }
 
+    get_state() {
+        return [
+            //
+            ...this.mir.children.map((e) => e.data.selected),
+            ...this.ref.children.map((e) => e.data.selected),
+            [this.gen.position.x, this.gen.position.y],
+        ];
+    }
+
     set_generator(position) {
         this.gen.position = position;
         this.ref.children.forEach((e, i) => {
             e.segments[0].point = this.gen.position;
             e.segments[1].point = this.mir.children[i].getNearestPoint(this.gen.position);
         });
+        return this;
     }
 
-    toggle(m1 = 0, m2 = 0, m3 = 0, b1 = 0, b2 = 0, b3 = 0, generator = null) {
+    construct(m1 = 0, m2 = 0, m3 = 0, b1 = 0, b2 = 0, b3 = 0, generator = null) {
         // mirrors
         [m1, m2, m3].forEach((e, i) => {
             this.mir.children[i].data.selected = e;
@@ -66,6 +76,7 @@ class Model {
         if (generator) {
             this.set_generator(this.mir.bounds.topLeft.add(generator.mul(this.scale)));
         }
+        return this;
     }
 
     calc_fundamental_triangle() {
@@ -125,9 +136,7 @@ function congruent_polygon_id(path) {
     ].join("_");
 }
 
-function render_lattice(paper, model) {
-    const P = get_params();
-
+function render_lattice(paper, model, P = get_params()) {
     const R = model.mir.bounds.width / SQRT3 / 2;
     const basis = [
         [2, 0],
