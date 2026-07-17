@@ -8,13 +8,16 @@ class Model {
         [0, COS30],
         [0.5, COS30],
     ];
+    color_on = "#000000FF";
+    color_off = "#00000055";
 
     constructor(ctr, scale, insert = true) {
+        this.scale = scale;
         this.mir = new paper.Group({
             children: this.#vec.cycle().map((e) => new paper.Path.Line({ from: e[1], to: e[2] })),
             position: ctr,
             strokeWidth: 8,
-            strokeColor: "black",
+            strokeColor: this.color_on,
             strokeCap: "round",
             strokeJoin: "round",
             closed: true,
@@ -47,6 +50,22 @@ class Model {
             e.segments[0].point = this.gen.position;
             e.segments[1].point = this.mir.children[i].getNearestPoint(this.gen.position);
         });
+    }
+
+    toggle(m1 = 0, m2 = 0, m3 = 0, b1 = 0, b2 = 0, b3 = 0, generator = null) {
+        // mirrors
+        [m1, m2, m3].forEach((e, i) => {
+            this.mir.children[i].data.selected = e;
+            this.mir.children[i].strokeColor = e ? this.color_on : this.color_off;
+        });
+        // beams
+        [b1, b2, b3].forEach((e, i) => {
+            this.ref.children[i].data.selected = e;
+            this.ref.children[i].strokeColor = e ? this.color_on : this.color_off;
+        });
+        if (generator) {
+            this.set_generator(this.mir.bounds.topLeft.add(generator.mul(this.scale)));
+        }
     }
 
     calc_fundamental_triangle() {

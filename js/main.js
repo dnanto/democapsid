@@ -1,6 +1,18 @@
+const construction = {
+    hex: [0, 1, 0, 0, 0, 0, null],
+    dualhex: [0, 1, 1, 0, 0, 0, null],
+    trihex: [0, 0, 0, 0, 1, 1, [0, COS30]],
+    dualtrihex: [0, 0, 1, 0, 0, 0, null],
+    rhombitrihex: [0, 0, 0, 1, 1, 0, [(3.0 - SQRT3) / 4.0, Math.tan(Math.PI / 3) * ((3.0 - SQRT3) / 4.0)]],
+    dualrhombitrihex: [1, 1, 0, 0, 0, 0, null],
+    truncatedhex: [0, 1, 0, 0, 0, 1, [0.25, COS30]],
+    triakistri: [1, 0, 1, 0, 0, 0, null],
+    truncatedtrihex: [...[1, 0, 1, 0, 0, 0], [0, COS30].add([0.5, COS30].mul(COS30)).div(0.5 + COS30 + 1.0)],
+    kisrhombille: [1, 1, 1, 0, 0, 0, null],
+};
+
 function parse_number(value) {
-    const result = parseFloat(value);
-    return Number.isNaN(result) ? value : result;
+    return Number.isNaN((result = parseFloat(value))) ? value : result;
 }
 
 function get_params() {
@@ -10,7 +22,7 @@ function get_params() {
     );
 }
 
-function icontrol(paper) {
+function ico_preview(paper) {
     const P = get_params();
     const basis = [
         [2, 0],
@@ -19,9 +31,10 @@ function icontrol(paper) {
     const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
     const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][P.a](ck);
     const CAMERA = camera(...[P.θ, P.ψ, P.φ].map(radians));
+    const scale = 50 / Math.max(...ico_coors.flat());
     new paper.Group({
         //
-        children: ico_coors.map((e) => new paper.Path.Circle({ center: mmul(CAMERA, e.concat(1).T()), radius: 5, fillColor: "black" })),
+        children: ico_coors.map((e) => new paper.Path.Circle({ center: mmul(CAMERA, e.mul(scale).concat(1).T()), radius: 4, fillColor: "black" })),
         position: paper.view.center,
     });
 }
@@ -30,9 +43,7 @@ function debounce(func, delay) {
     let timeout;
     return function (...args) {
         clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            func.apply(this, args);
-        }, delay);
+        timeout = setTimeout(() => func.apply(this, args), delay);
     };
 }
 
@@ -44,18 +55,19 @@ function oninput(papers, model) {
     });
     papers[3].activate();
     papers[3].project.clear();
-    icontrol(papers[3]);
+    ico_preview(papers[3]);
 }
 
 window.onload = function (opt) {
+    // init color scales
     Object.keys(chroma.brewer)
         .sort()
         .forEach((e) => document.getElementById("param_c").add(new Option(e, e, e === "Viridis", e === "Viridis")));
 
+    // init canvas papers
     const papers = [0, 1, 2, 3].map((e) => new paper.PaperScope().setup(document.getElementById(`canvas${e}`)));
 
-    // move to init function vvvvv
-
+    // init model
     papers[0].activate();
     papers[0].project.clear();
     const model = new Model(papers[0].view.center, 225);
@@ -64,7 +76,7 @@ window.onload = function (opt) {
         e.data.selected = true;
         e.onClick = function (event) {
             this.data.selected = !this.data.selected;
-            this.strokeColor = this.data.selected ? "black" : "red";
+            this.strokeColor = this.data.selected ? "#000000FF" : "#00000055";
             [render_lattice, render_capsid].forEach((e, i) => {
                 papers[i + 1].activate();
                 papers[i + 1].project.clear();
@@ -85,27 +97,32 @@ window.onload = function (opt) {
         papers[2].project.clear();
         render_capsid(papers[2], model);
     };
-    //                       ^^^^^
 
     const doninput = debounce(oninput, 100);
-    document.querySelectorAll('[id^="param_"]').forEach((e) =>
-        e.addEventListener("input", (event) => {
-            doninput(papers, model);
-        }),
-    );
+    [...document.querySelectorAll('[id^="param_"]')]
+        .filter((e) => !e.id.endsWith("_L"))
+        .forEach((e) =>
+            e.addEventListener("input", (event) => {
+                console.log(event.target);
+                doninput(papers, model);
+            }),
+        );
 
-    papers[3].activate();
-    icontrol(papers[3]);
-
-    this.document.getElementById("param_θ").addEventListener("input", (event) => {
-        papers[3].activate();
-        papers[3].project.clear();
-        icontrol(papers[3]);
+    this.document.getElementById("param_L").addEventListener("input", (event) => {
+        console.log(construction, event.target.value);
+        model.toggle(...construction[event.target.value]);
+        papers[1].activate();
+        papers[1].project.clear();
+        render_lattice(papers[1], model);
+        papers[2].activate();
+        papers[2].project.clear();
+        render_capsid(papers[2], model);
     });
 
-    // 2. Create the tool
+    // ico preview controller
+
+    papers[3].activate();
     const tool = new paper.Tool();
-    // 3. Define interactions for this specific project
     let drag = null;
     tool.onMouseDrag = function (event) {
         if (drag) {
@@ -114,7 +131,7 @@ window.onload = function (opt) {
             document.getElementById("param_φ").value = (parse_number(document.getElementById("param_φ").value) + delta.y) % 360;
             papers[3].activate();
             papers[3].project.clear();
-            icontrol(papers[3]);
+            ico_preview(papers[3]);
         }
         drag = event.point;
     };
@@ -124,6 +141,7 @@ window.onload = function (opt) {
     };
     tool.activate();
 
+    // download
     document.getElementById("download-btn").addEventListener("click", function () {
         var link = document.createElement("a");
         link.href = URL.createObjectURL(
@@ -140,9 +158,6 @@ window.onload = function (opt) {
         URL.revokeObjectURL(link.href);
     });
 
-    [render_lattice, render_capsid].forEach((e, i) => {
-        papers[i + 1].activate();
-        papers[i + 1].project.clear();
-        e(papers[i + 1], model);
-    });
+    // init each canvas
+    oninput(papers, model);
 };
