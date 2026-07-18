@@ -14,10 +14,17 @@ class Wythoff {
     constructor(ctr, scale, insert = true) {
         this.scale = scale;
         this.mir = new paper.Group({
-            children: this.#vec.cycle().map((e) => new paper.Path.Line({ from: e[1], to: e[2] })),
+            children: this.#vec.cycle().map(
+                (e) =>
+                    new paper.Path.Line({
+                        //
+                        from: e[1],
+                        to: e[2],
+                    }),
+            ),
             position: ctr,
             strokeWidth: 8,
-            strokeColor: this.color_on,
+            strokeColor: this.color_off,
             strokeCap: "round",
             strokeJoin: "round",
             closed: true,
@@ -33,15 +40,60 @@ class Wythoff {
             insert: insert,
         });
         this.ref = new paper.Group({
-            children: this.mir.children.map((e) => new paper.Path.Line({ from: this.gen.position, to: e.getNearestPoint(this.gen.position) })),
+            children: [
+                // ...this.mir.children.map(
+                //     (e) =>
+                //         new paper.Path.Line({
+                //             from: this.gen.position,
+                //             to: e.getNearestPoint(this.gen.position),
+                //         }),
+                // ),
+                ...this.snubs().map(
+                    (e) =>
+                        new paper.Path.Line({
+                            from: this.mir.bounds.topLeft.add(this.snub632().mul(this.scale)),
+                            to: this.mir.bounds.topLeft.add(e.mul(this.scale)),
+                        }),
+                ),
+            ],
             strokeWidth: 8,
-            strokeColor: "black",
+            strokeColor: this.color_off,
             strokeCap: "round",
             strokeJoin: "round",
             insert: insert,
         });
         this.mir.bringToFront();
         this.gen.bringToFront();
+    }
+
+    snub632() {
+        // https://www.shadertoy.com/view/dlsGRH
+        // fermat point
+        const pf = intersection([-0.75, COS30 / 2.0], [0.5, COS30], [1, 0], [0, COS30]);
+        // reflect over side (y-axis)
+        const q1 = [-pf[0], pf[1]];
+        // project to hypotenuse then double to obtain reflection
+        const q3 = pf.add(pf.proj([0.5, COS30]).sub(pf).mul(2.0));
+        // snub point is at half the hypotenuse of the new right triangle (Thales's theorem)
+        return q1.add(q3.sub(q1).div(2.0));
+    }
+
+    snubs() {
+        const p = this.snub632();
+        const q = [
+            //
+            p.add([0, COS30].sub(p).rot(Math.PI / 3)),
+            [0, COS30],
+            ...[1, 2, 3].map((e) => p.add([0, COS30].sub(p).rot((-e * Math.PI) / 3))),
+        ];
+        return [
+            //
+            intersection(p, q[0], [0, 0], [0, COS30]),
+            q[1],
+            intersection(p, q[2], [0, COS30], [0.5, COS30]),
+            intersection(p, q[3], [0, 0], [0.5, COS30]),
+            intersection(p, q[4], [0, 0], [0.5, COS30]),
+        ];
     }
 
     get_state() {
@@ -62,14 +114,14 @@ class Wythoff {
         return this;
     }
 
-    construct(m1 = 0, m2 = 0, m3 = 0, b1 = 0, b2 = 0, b3 = 0, generator = null) {
+    construct(mirrors, reflections, generator = null) {
         // mirrors
-        [m1, m2, m3].forEach((e, i) => {
+        mirrors.forEach((e, i) => {
             this.mir.children[i].data.selected = e;
             this.mir.children[i].strokeColor = e ? this.color_on : this.color_off;
         });
-        // beams
-        [b1, b2, b3].forEach((e, i) => {
+        // walls
+        reflections.forEach((e, i) => {
             this.ref.children[i].data.selected = e;
             this.ref.children[i].strokeColor = e ? this.color_on : this.color_off;
         });
@@ -180,6 +232,8 @@ function render_lattice(paper, model, P = get_params()) {
     // console.log(colors);
     paths.forEach((e) => (e.fillColor = colors.get(e.data.key)));
     lattice.bringToFront();
+
+    return lattice;
 }
 
 function render_capsid(paper, model, P = get_params()) {
@@ -311,5 +365,5 @@ function render_capsid(paper, model, P = get_params()) {
     // painter's algorithm
     results.sort((a, b) => a.data.centroid[2] - b.data.centroid[2]);
 
-    new paper.Group({ children: results, position: paper.view.center, strokeColor: "black" });
+    return new paper.Group({ children: results, position: paper.view.center, strokeColor: "black" });
 }

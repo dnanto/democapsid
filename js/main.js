@@ -1,14 +1,22 @@
 const construction = {
-    hex: [0, 1, 0, 0, 0, 0, null],
-    dualhex: [0, 1, 1, 0, 0, 0, null],
-    trihex: [0, 0, 0, 0, 1, 1, [0, COS30]],
-    dualtrihex: [0, 0, 1, 0, 0, 0, null],
-    rhombitrihex: [0, 0, 0, 1, 1, 0, [1, Math.tan(Math.PI / 3)].mul((3.0 - SQRT3) / 4.0)],
-    dualrhombitrihex: [1, 1, 0, 0, 0, 0, null],
-    truncatedhex: [0, 1, 0, 0, 0, 1, [0.25, COS30]],
-    triakistri: [1, 0, 1, 0, 0, 0, null],
-    truncatedtrihex: [...[1, 0, 1, 0, 0, 0], [0, COS30].add([0.5, COS30].mul(COS30)).div(0.5 + COS30 + 1.0)],
-    kisrhombille: [1, 1, 1, 0, 0, 0, null],
+    hex: [[0, 1, 0], [0, 0, 0], null],
+    dualhex: [[0, 1, 1], [0, 0, 0], null],
+    trihex: [
+        [0, 0, 0],
+        [0, 1, 1],
+        [0, COS30],
+    ],
+    dualtrihex: [[0, 0, 1], [0, 0, 0], null],
+    rhombitrihex: [[0, 0, 0], [1, 1, 0], [1, Math.tan(Math.PI / 3)].mul((3.0 - SQRT3) / 4.0)],
+    dualrhombitrihex: [[1, 1, 0], [0, 0, 0], null],
+    truncatedhex: [
+        [0, 1, 0],
+        [0, 0, 1],
+        [0.25, COS30],
+    ],
+    triakistri: [[1, 0, 1], [0, 0, 0], null],
+    truncatedtrihex: [[1, 0, 1], [0, 0, 0], [0, COS30].add([0.5, COS30].mul(COS30)).div(0.5 + COS30 + 1.0)],
+    kisrhombille: [[1, 1, 1], [0, 0, 0], null],
 };
 
 function parse_number(value) {
@@ -115,7 +123,7 @@ window.onload = function (opt) {
     });
 
     // init param events
-    const doninput = debounce(dooninputthing, 100);
+    const doninput = debounce(dooninputthing, 250);
     document.querySelectorAll('[id^="param_"]').forEach((e) =>
         e.addEventListener("input", (event) => {
             doninput(papers, model);
@@ -124,25 +132,27 @@ window.onload = function (opt) {
 
     // ico preview controller
 
-    papers[3].activate();
-    const tool = new paper.Tool();
-    let drag = null;
-    tool.onMouseDrag = function (event) {
-        if (drag) {
-            const delta = event.point.subtract(drag);
-            document.getElementById("param_ψ").value = (parse_number(document.getElementById("param_ψ").value) + delta.x) % 360;
-            document.getElementById("param_φ").value = (parse_number(document.getElementById("param_φ").value) + delta.y) % 360;
-            papers[3].activate();
-            papers[3].project.clear();
-            ico_preview(papers[3]);
-        }
-        drag = event.point;
-    };
-    tool.onMouseUp = function (event) {
-        drag = null;
-        document.getElementById("param_θ").dispatchEvent(new Event("input", { bubbles: true }));
-    };
-    tool.activate();
+    [2, 3].forEach((e) => {
+        papers[e].activate();
+        const tool = new paper.Tool();
+        let drag = null;
+        tool.onMouseDrag = function (event) {
+            if (drag) {
+                const delta = event.point.subtract(drag);
+                document.getElementById("param_ψ").value = (parse_number(document.getElementById("param_ψ").value) + delta.x) % 360;
+                document.getElementById("param_φ").value = (parse_number(document.getElementById("param_φ").value) + delta.y) % 360;
+                papers[e].activate();
+                papers[e].project.clear();
+                ico_preview(papers[e]);
+            }
+            drag = event.point;
+        };
+        tool.onMouseUp = function (event) {
+            drag = null;
+            document.getElementById("param_θ").dispatchEvent(new Event("input", { bubbles: true }));
+        };
+        tool.activate();
+    });
 
     // download
     document.getElementById("download-btn").addEventListener("click", function () {

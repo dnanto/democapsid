@@ -115,6 +115,30 @@ Array.prototype.cycle = function () {
     return this.map((e, i, a) => [a[i ? i - 1 : a.length - 1], e, a[(i + 1) % a.length]]);
 };
 
+function intersection(p1, q1, p2, q2) {
+    //  http://paulbourke.net/geometry/pointlineplane/edge_intersection.py
+
+    const [x1, y1, x2, y2, x3, y3, x4, y4] = [...p1, ...q1, ...p2, ...q2];
+
+    d = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+
+    if (Math.abs(d) < Number.EPSILON) {
+        return [];
+    }
+
+    const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / d;
+    if (ua < 0 || ua > 1) {
+        return [];
+    }
+
+    const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / d;
+    if (ub < 0 || ub > 1) {
+        return [];
+    }
+
+    return [x1 + ua * (x2 - x1), y1 + ua * (y2 - y1)];
+}
+
 function mmul(A, B) {
     const [m, n, p] = [A.length, A[0].length, B[0].length];
     var C = new Array(m);
