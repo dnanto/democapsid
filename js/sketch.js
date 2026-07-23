@@ -1,8 +1,27 @@
 const COS30 = Math.cos((Math.PI / 180) * 30);
 
-class Wythoff {
-    // TODO: add styling options/functions
+const constructions = {
+    hex: [[0, 1, 0], [0, 0, 0], null],
+    dualhex: [[0, 1, 1], [0, 0, 0], null],
+    trihex: [
+        [0, 0, 0],
+        [0, 1, 1],
+        [0, COS30],
+    ],
+    dualtrihex: [[0, 0, 1], [0, 0, 0], null],
+    rhombitrihex: [[0, 0, 0], [1, 1, 0], [1, Math.tan(Math.PI / 3)].mul((3.0 - SQRT3) / 4.0)],
+    dualrhombitrihex: [[1, 1, 0], [0, 0, 0], null],
+    truncatedhex: [
+        [0, 1, 0],
+        [0, 0, 1],
+        [0.25, COS30],
+    ],
+    triakistri: [[1, 0, 1], [0, 0, 0], null],
+    truncatedtrihex: [[1, 0, 1], [0, 0, 0], [0, COS30].add([0.5, COS30].mul(COS30)).div(0.5 + COS30 + 1.0)],
+    kisrhombille: [[1, 1, 1], [0, 0, 0], null],
+};
 
+class Wythoff {
     #vec = [
         [0, 0],
         [0, COS30],
@@ -11,7 +30,7 @@ class Wythoff {
     color_on = "#000000FF";
     color_off = "#00000055";
 
-    constructor(ctr, scale, insert = true) {
+    constructor(ctr, scale) {
         this.scale = scale;
         this.mir = new paper.Group({
             children: this.#vec.cycle().map(
@@ -28,7 +47,6 @@ class Wythoff {
             strokeCap: "round",
             strokeJoin: "round",
             closed: true,
-            insert: insert,
         }).scale(scale);
         this.gen = new paper.Path.Circle({
             position: this.mir.children
@@ -37,22 +55,14 @@ class Wythoff {
                 .divide(3),
             radius: 8,
             fillColor: "blue",
-            insert: insert,
         });
         this.ref = new paper.Group({
             children: [
-                // ...this.mir.children.map(
-                //     (e) =>
-                //         new paper.Path.Line({
-                //             from: this.gen.position,
-                //             to: e.getNearestPoint(this.gen.position),
-                //         }),
-                // ),
-                ...this.snubs().map(
+                ...this.mir.children.map(
                     (e) =>
                         new paper.Path.Line({
-                            from: this.mir.bounds.topLeft.add(this.snub632().mul(this.scale)),
-                            to: this.mir.bounds.topLeft.add(e.mul(this.scale)),
+                            from: this.gen.position,
+                            to: e.getNearestPoint(this.gen.position),
                         }),
                 ),
             ],
@@ -60,40 +70,9 @@ class Wythoff {
             strokeColor: this.color_off,
             strokeCap: "round",
             strokeJoin: "round",
-            insert: insert,
         });
         this.mir.bringToFront();
         this.gen.bringToFront();
-    }
-
-    snub632() {
-        // https://www.shadertoy.com/view/dlsGRH
-        // fermat point
-        const pf = intersection([-0.75, COS30 / 2.0], [0.5, COS30], [1, 0], [0, COS30]);
-        // reflect over side (y-axis)
-        const q1 = [-pf[0], pf[1]];
-        // project to hypotenuse then double to obtain reflection
-        const q3 = pf.add(pf.proj([0.5, COS30]).sub(pf).mul(2.0));
-        // snub point is at half the hypotenuse of the new right triangle (Thales's theorem)
-        return q1.add(q3.sub(q1).div(2.0));
-    }
-
-    snubs() {
-        const p = this.snub632();
-        const q = [
-            //
-            p.add([0, COS30].sub(p).rot(Math.PI / 3)),
-            [0, COS30],
-            ...[1, 2, 3].map((e) => p.add([0, COS30].sub(p).rot((-e * Math.PI) / 3))),
-        ];
-        return [
-            //
-            intersection(p, q[0], [0, 0], [0, COS30]),
-            q[1],
-            intersection(p, q[2], [0, COS30], [0.5, COS30]),
-            intersection(p, q[3], [0, 0], [0.5, COS30]),
-            intersection(p, q[4], [0, 0], [0.5, COS30]),
-        ];
     }
 
     get_state() {
@@ -131,7 +110,7 @@ class Wythoff {
         return this;
     }
 
-    calc_fundamental_triangle() {
+    calc_lines() {
         // bounds
         const [width, height, topleft] = [this.mir.bounds.width, this.mir.bounds.height, this.mir.bounds.topLeft];
         // generator point (project to fundamental triangle with #vec coordinates)
@@ -153,7 +132,7 @@ class Wythoff {
     }
 
     calc_tile() {
-        const ft = this.calc_fundamental_triangle();
+        const ft = this.calc_lines();
         return new paper.Group({
             children: [
                 // rotate fundamental triangle within hexagon
@@ -164,6 +143,84 @@ class Wythoff {
             insert: false,
         });
     }
+}
+
+function snub632() {
+    // https://www.shadertoy.com/view/dlsGRH
+    // fermat point
+    const pf = intersection([-0.75, COS30 / 2.0], [0.5, COS30], [1, 0], [0, COS30]);
+    // reflect over side (y-axis)
+    const q1 = [-pf[0], pf[1]];
+    // project to hypotenuse then double to obtain reflection
+    const q3 = pf.add(pf.proj([0.5, COS30]).sub(pf).mul(2.0));
+    // snub point is at half the hypotenuse of the new right triangle (Thales's theorem)
+    return q1.add(q3.sub(q1).div(2.0));
+}
+
+function calc_snub_tile() {
+    const p = this.snub632();
+    const q = [
+        //
+        p.add([0, COS30].sub(p).rot(Math.PI / 3)),
+        [0, COS30],
+        ...[1, 2, 3].map((e) =>
+            p.add(
+                [0, COS30]
+                    .sub(p)
+                    .rot(e * -(Math.PI / 3))
+                    .mul(2), // to reach the other edge and calculate the intersection...
+            ),
+        ),
+    ];
+    const lines = new paper.Group({
+        children: [
+            //
+            intersection(p, q[0], [0, 0], [0, COS30]),
+            q[1],
+            intersection(p, q[2], [0, COS30], [0.5, COS30]),
+            intersection(p, q[3], [0.5, COS30], [0, COS30].rot(-Math.PI / 3)),
+            intersection(p, q[4], [0, 0], [0, COS30].rot(-Math.PI / 3)),
+        ].map((e) => new paper.Path.Line({ from: e, to: p, insert: false })),
+    });
+    return new paper.Group({
+        children: Array.from({ length: 6 }, (_, i) => lines.clone().rotate(i * 60, [0, 0])).flatMap((e) => e.children),
+        insert: false,
+    });
+}
+
+function calc_flor_tile() {
+    const snub = this.snub632();
+    const flor = [
+        snub,
+        ...[2, 3].map((e) =>
+            snub.add(
+                [0, COS30]
+                    .sub(snub)
+                    .mul(2)
+                    .rot(e * -(Math.PI / 3)),
+            ),
+        ),
+    ].centroid();
+    const lines = new paper.Group({
+        children: [[0, 0], [0.5, COS30], [0, COS30].rot(-Math.PI / 3)].map((e) => new paper.Path.Line({ from: flor, to: e, insert: false })),
+    });
+    return new paper.Group({
+        children: Array.from({ length: 6 }, (_, i) => lines.clone().rotate(i * 60, [0, 0])).flatMap((e) => e.children),
+        insert: false,
+    });
+}
+
+function calc_tile_snubhex() {
+    const ft = this.calc_lines();
+    return new paper.Group({
+        children: [
+            // rotate fundamental triangle within hexagon
+            ...Array.from({ length: 6 }, (_, i) => ft.clone().rotate(i * 60, [0, 0])),
+            // rotate fundamental triangle within hexagon, then flip
+            ...new paper.Group(Array.from({ length: 6 }, (_, i) => ft.clone().rotate(i * 60, [0, 0]))).scale(1, -1).children,
+        ].flatMap((e) => e.children),
+        insert: false,
+    });
 }
 
 const formatter = new Intl.NumberFormat("en-US", {
@@ -188,13 +245,11 @@ function congruent_polygon_id(path) {
     ].join("_");
 }
 
-function render_lattice(paper, model, P = get_params()) {
-    const R = model.mir.bounds.width / SQRT3 / 2;
+function render_lattice(paper, tile, P = get_params()) {
     const basis = [
         [2, 0],
         [1, SQRT3],
-    ].map((e) => e.mul(R * (SQRT3 / 2)));
-    const tile = model.calc_tile().scale(R).rotate(30);
+    ].map((e) => e.mul(SQRT3 / 2));
 
     // ck
     const ck = ck_vectors(basis, 1, 0, 1, 0, true);
@@ -226,17 +281,15 @@ function render_lattice(paper, model, P = get_params()) {
                     },
                 }),
         );
-    const keys = [...new Set(paths.map((e) => e.data.key))];
-    const vals = chroma.scale(P.c).colors(keys.length);
-    const colors = new Map(keys.map((e, i) => [e, vals[i]]));
-    // console.log(colors);
-    paths.forEach((e) => (e.fillColor = colors.get(e.data.key)));
-    lattice.bringToFront();
-
-    return lattice;
+    if (P.palette) {
+        const keys = [...new Set(paths.map((e) => e.data.key))];
+        const colors = new Map(keys.map((e, i) => [e, P.palette[i] ?? "black"]));
+        paths.forEach((e) => (e.fillColor = colors.get(e.data.key)));
+    }
+    return new paper.Group([...paths, lattice]);
 }
 
-function render_capsid(paper, model, P = get_params()) {
+function render_capsid(paper, tile, P = get_params()) {
     const ctr = [paper.view.center.x, paper.view.center.y];
 
     const R = P.R;
@@ -244,11 +297,11 @@ function render_capsid(paper, model, P = get_params()) {
         [2, 0],
         [1, SQRT3],
     ].map((e) => e.mul(R * (SQRT3 / 2)));
-    const tile = model.calc_tile().scale(R).rotate(30);
+    // const tile = model.calc_tile().scale(R).rotate(30);
 
+    // ck
     const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
     const grid = Array.from(tile_grid(ck, basis));
-
     const lattice = new paper.Group({
         children: grid.map((e) => {
             const x = tile.clone();
@@ -275,11 +328,10 @@ function render_capsid(paper, model, P = get_params()) {
                     },
                 }),
         );
-    if (P.c) {
+    if (P.palette) {
         const keys = [...new Set(paths.map((e) => e.data.key))];
-        const vals = chroma.scale(P.c).colors(keys.length);
-        const colors = new Map(keys.map((e, i) => [e, vals[i]]));
-        paths.forEach((e) => (e.fillColor = colors.get(e.data.key) + "DD"));
+        const colors = new Map(keys.map((e, i) => [e, P.palette[i] ?? "black"]));
+        paths.forEach((e) => (e.fillColor = colors.get(e.data.key)));
     }
 
     const triangles = [
@@ -358,7 +410,17 @@ function render_capsid(paper, model, P = get_params()) {
                     style: e.style,
                 });
             });
-            results = results.concat(new paper.Group({ children: xfacet, data: { type: "facet", centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat() } }));
+            results = results.concat(
+                new paper.Group({
+                    //
+                    children: xfacet,
+                    data: {
+                        //
+                        type: "facet",
+                        centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat(),
+                    },
+                }),
+            );
         }
     }
     facets.forEach((e) => e.remove());

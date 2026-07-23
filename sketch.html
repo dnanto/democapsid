@@ -12,20 +12,29 @@
                 display: grid;
                 grid-template-columns: 2fr 4fr 4fr 2fr;
                 grid-template-rows: 8fr 4fr;
-                gap: 10px 10px;
+                gap: 5px 5px;
                 grid-auto-flow: row;
                 grid-template-areas:
                     ". controller model ."
                     ". console console .";
                 height: 100vh;
+                overflow: hidden;
             }
-            .subcontainer {
+            .subcontainer1 {
                 display: grid;
                 grid-template-columns: 4fr 4fr 4fr;
                 grid-template-rows: 12fr;
-                gap: 10px 10px;
+                gap: 5px 5px;
                 grid-auto-flow: row;
                 grid-template-areas: ". . .";
+            }
+            .subcontainer2 {
+                display: grid;
+                grid-template-columns: 6fr 6fr;
+                grid-template-rows: 12fr;
+                gap: 5px 5px;
+                grid-auto-flow: row;
+                grid-template-areas: ". .";
             }
             .controller {
                 grid-area: controller;
@@ -38,25 +47,39 @@
             }
 
             fieldset {
-                margin: 0 auto;
-                display: block;
+                padding: 5px 10px 5px 10px;
+                min-height: 0;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
             }
-            fieldset > * {
-                margin: 5px;
+            .form-row {
+                display: flex;
+                align-items: center;
+                margin: 5px 0px 5px 0px;
             }
+            .form-row label {
+                width: 20px;
+            }
+            .form-row input,
+            select {
+                flex-grow: 1;
+                padding: 5px;
+            }
+
             legend {
                 font-weight: bold;
             }
+            button,
             label,
+            legend,
+            fieldset,
             input,
             select {
-                display: inline-block;
+                border-radius: 5px;
                 vertical-align: middle;
-            }
-            input,
-            select {
                 box-sizing: border-box;
-                width: 75%;
             }
 
             .canvas-wrapper {
@@ -72,12 +95,17 @@
                 height: 100%;
             }
 
-            #swatch {
-                width: 100px;
+            .swatch {
+                display: grid;
+                grid-template-columns: 10fr 2fr;
+                grid-template-rows: 12fr;
+                gap: 5px 5px;
+                grid-auto-flow: row;
+                grid-template-areas: ". .";
+                margin: 5px 0px 5px 0px;
             }
-            #swatch_template {
-                width: 100px;
-                visibility: hidden;
+            .swatch > input {
+                width: 100%;
             }
         </style>
         <script type="text/javascript" src="js/lib/chroma/chroma.min.cjs"></script>
@@ -90,57 +118,64 @@
     <body>
         <div class="container">
             <div class="controller">
-                <div class="subcontainer">
+                <div class="subcontainer1">
                     <div class="params">
                         <div>
                             <fieldset>
                                 <legend>lattice</legend>
-                                <div>
+
+                                <div class="form-row">
                                     <label for="param_h">h=</label>
                                     <input type="number" id="param_h" step="1" value="1" min="0" />
                                 </div>
-                                <div>
+                                <div class="form-row">
                                     <label for="param_k">k=</label>
                                     <input type="number" id="param_k" step="1" value="1" min="0" />
                                 </div>
-                                <div>
+                                <div class="form-row">
                                     <label for="param_H">H=</label>
                                     <input type="number" id="param_H" step="1" value="1" min="0" />
                                 </div>
-                                <div>
+                                <div class="form-row">
                                     <label for="param_K">K=</label>
                                     <input type="number" id="param_K" step="1" value="2" min="0" />
                                 </div>
-                                <div>
+                                <div class="form-row">
+                                    <label for="param_R">R=</label>
+                                    <input type="number" id="param_R" step="1" value="25" min="1" />
+                                </div>
+                                <div class="form-row">
                                     <label for="param_t">t=</label>
                                     <select id="param_t">
                                         <option value="levo">levo</option>
                                         <option value="dextro">dextro</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label for="param_R">R=</label>
-                                    <input type="number" id="param_R" step="1" value="25" min="1" />
-                                </div>
-                                <div>
+                                <div class="form-row">
                                     <label for="param_L">L=</label>
                                     <select id="param_L"></select>
                                 </div>
                             </fieldset>
                         </div>
                     </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="canvas0">Your browser does not support the HTML canvas tag.</canvas>
-                    </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="canvas1">Your browser does not support the HTML canvas tag.</canvas>
-                    </div>
+                    <fieldset>
+                        <legend>fundamental-&bigtriangleup;</legend>
+                        <div class="canvas-wrapper">
+                            <canvas id="wythoff">Your browser does not support the HTML canvas tag.</canvas>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>kaleidoscope</legend>
+                        <div class="canvas-wrapper">
+                            <canvas id="kaleidoscope">Your browser does not support the HTML canvas tag.</canvas>
+                        </div>
+                    </fieldset>
                 </div>
-                <div class="subcontainer">
+                <div class="subcontainer2">
                     <div>
                         <fieldset>
                             <legend>icosahedron</legend>
-                            <div>
+                            <div class="form-row">
                                 <label for="param_a">a=</label>
                                 <select id="param_a">
                                     <option value="5">5</option>
@@ -148,7 +183,7 @@
                                     <option value="2">2</option>
                                 </select>
                             </div>
-                            <div>
+                            <div class="form-row">
                                 <label for="param_s">s=</label>
                                 <input type="range" min="-1" max="1" step="0.001" , value="0" id="param_s" />
                             </div>
@@ -157,48 +192,54 @@
                     <div>
                         <fieldset>
                             <legend>camera</legend>
-                            <div>
+                            <div class="form-row">
                                 <label for="θ">θ=</label>
                                 <input type="number" id="param_θ" step="1" value="0" />
                             </div>
-                            <div>
+                            <div class="form-row">
                                 <label for="ψ">ψ=</label>
                                 <input type="number" id="param_ψ" step="1" value="0" />
                             </div>
-                            <div>
+                            <div class="form-row">
                                 <label for="φ">φ=</label>
                                 <input type="number" id="param_φ" step="1" value="-90" />
                             </div>
                         </fieldset>
                     </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="canvas3"></canvas>
-                    </div>
                 </div>
                 <div>
                     <fieldset>
                         <legend>aesthetics</legend>
-                        <label for="param_c">c=</label>
-                        <select id="param_c"></select>
-                        <div id="pallete"></div>
-                        <div id="swatches">
-                            <div id="swatch_template">
+                        <select id="scale"></select>
+                        <div id="palette">
+                            <div class="swatch">
                                 <input type="color" />
-                                <input type="number" min="0" max="100" />
+                                <input type="number" min="0" max="255" value="200" />
+                            </div>
+                            <div class="swatch">
+                                <input type="color" />
+                                <input type="number" min="0" max="255" value="200" />
+                            </div>
+                            <div class="swatch">
+                                <input type="color" />
+                                <input type="number" min="0" max="255" value="200" />
                             </div>
                         </div>
                     </fieldset>
+                </div>
+                <div>
                     <fieldset>
                         <legend>export</legend>
-                        <div>
-                            <button id="download-btn">Download SVG</button>
-                        </div>
+                        <button id="download-btn">Download SVG</button>
                     </fieldset>
                 </div>
             </div>
             <div class="model">
                 <div class="canvas-wrapper">
-                    <canvas id="canvas2">Your browser does not support the HTML canvas tag.</canvas>
+                    <fieldset>
+                        <legend>model</legend>
+                        <canvas id="model">Your browser does not support the HTML canvas tag.</canvas>
+                    </fieldset>
                 </div>
             </div>
             <div class="console">
