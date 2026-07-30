@@ -4,7 +4,7 @@ function parse_number(value) {
 
 function set_palette(name) {
     if (name !== "custom") {
-        const inputs = [...document.querySelectorAll('.swatch > input[type="color"]')];
+        const inputs = [...document.querySelectorAll('#palette > .swatch > input[type="color"]')];
         const colors = chroma.scale(name).colors(inputs.length);
         inputs.forEach((e, i) => (e.value = colors[i] + "FF"));
     }
@@ -14,7 +14,7 @@ function get_palette() {
     return [...this.document.querySelectorAll(".swatch")].map(
         (e) =>
             //
-            e.children[0].value + parseInt(e.children[1].value).toString(16),
+            e.children[0].value + parseInt(e.children[1].value).toString(16).padStart(2, "0"),
     );
 }
 
@@ -76,33 +76,12 @@ function update_papers(papers, model) {
     render_capsid(papers.model, get_tile(model).scale(get_params().R));
 }
 
-window.onload = function (opt) {
-    // init color scale options
-    ["custom", ...Object.keys(chroma.brewer).sort()].forEach((e) =>
+function wythoff_ui_init(papers) {
+    const model = new Wythoff(
         //
-        document.getElementById("scale").add(new Option(e, e, e === "Viridis", e === "Viridis")),
-    );
-    // init lattice options
-    ["custom", ...["dualsnubhex", "snubhex", ...Object.keys(constructions)].sort()].forEach((e) =>
-        //
-        document.getElementById("param_L").add(new Option(e, e, e === "hex", e === "hex")),
-    );
-
-    // init canvas papers
-    const papers = Object.fromEntries(
-        ["wythoff", "kaleidoscope", "model"].map((e) =>
-            //
-            [e, new paper.PaperScope().setup(document.getElementById(e))],
-        ),
-    );
-
-    // init palette
-    set_palette("viridis");
-
-    // init model
-    papers.wythoff.activate();
-    papers.wythoff.project.clear();
-    const model = new Wythoff(papers.wythoff.view.center, papers.wythoff.view.bounds.width / COS30).construct(...constructions["hex"]);
+        papers.wythoff.view.center,
+        papers.wythoff.view.bounds.width / COS30,
+    ).construct(...Wythoff.constructions["hex"]);
     [...model.mir.children, ...model.ref.children].forEach((e) => {
         e.onClick = function (event) {
             this.data.selected = !this.data.selected;
@@ -125,11 +104,64 @@ window.onload = function (opt) {
         papers.model.project.clear();
         render_capsid(papers.model, get_tile(model).scale(get_params().R));
     };
+    return model;
+}
+
+window.onload = function (opt) {
+    // init color scale options
+    ["custom", ...Object.keys(chroma.brewer).sort()].forEach((e) =>
+        //
+        document.getElementById("scale").add(new Option(e, e, e === "Viridis", e === "Viridis")),
+    );
+    // init lattice options
+    ["custom", ...["dualsnubhex", "snubhex", ...Object.keys(Wythoff.constructions)].sort()].forEach((e) =>
+        //
+        document.getElementById("param_L").add(new Option(e, e, e === "hex", e === "hex")),
+    );
+
+    // init canvas papers
+    const papers = Object.fromEntries(
+        ["wythoff", "kaleidoscope", "model"].map((e) =>
+            //
+            [e, new paper.PaperScope().setup(document.getElementById(e))],
+        ),
+    );
+
+    // init palette
+    set_palette("viridis");
+
+    // init model
+    papers.wythoff.activate();
+    let model = wythoff_ui_init(papers);
     this.document.getElementById("param_L").addEventListener("input", (event) => {
-        if (constructions.hasOwnProperty(event.target.value)) {
-            model.construct(...constructions[event.target.value]);
+        if (Wythoff.constructions.hasOwnProperty(event.target.value)) {
+            papers.wythoff.activate();
+            papers.wythoff.project.clear();
+            model = wythoff_ui_init(papers);
+            model.construct(...Wythoff.constructions[event.target.value]);
             papers.model.activate();
             papers.model.project.clear();
+        } else {
+            papers.wythoff.activate();
+            papers.wythoff.project.clear();
+            let lines = null;
+            if (event.target.value === "snubhex") lines = calc_snub_lines();
+            else if (event.target.value === "dualsnubhex") lines = calc_snub_lines();
+            if (lines !== null) {
+                const tile = new paper.Group({
+                    children: [
+                        ...lines.map((e) => new paper.Path.Line({ from: e[0], to: e[1], insert: false, strokeColor: model.color_on })),
+                        ...[...Wythoff.vec.cycle((e) => e.slice(1)), [[0, 0], [0, COS30].rot(-Math.PI / 3)], [[0, COS30].rot(-Math.PI / 3), [0.5, COS30]]].map(
+                            (e) => new paper.Path.Line({ from: e[0], to: e[1], insert: false, strokeColor: model.color_off }),
+                        ),
+                    ],
+                    position: papers.wythoff.view.center,
+                    strokeWidth: 8,
+                    strokeCap: "round",
+                    strokeJoin: "round",
+                });
+                tile.scale(this.document.getElementById("wythoff").width / 2);
+            }
         }
     });
 
@@ -138,7 +170,7 @@ window.onload = function (opt) {
         set_palette(event.target.value);
         update_papers(papers, model);
     });
-    [...this.document.querySelectorAll('.swatch > input[type="color"]')].forEach((e) =>
+    [...this.document.querySelectorAll('#palette > .swatch > input[type="color"]')].forEach((e) =>
         e.addEventListener("change", (event) => {
             this.document.getElementById("scale").value = "custom";
         }),

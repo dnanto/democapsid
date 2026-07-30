@@ -1,39 +1,43 @@
 const COS30 = Math.cos((Math.PI / 180) * 30);
 
-const constructions = {
-    hex: [[0, 1, 0], [0, 0, 0], null],
-    dualhex: [[0, 1, 1], [0, 0, 0], null],
-    trihex: [
-        [0, 0, 0],
-        [0, 1, 1],
-        [0, COS30],
-    ],
-    dualtrihex: [[0, 0, 1], [0, 0, 0], null],
-    rhombitrihex: [[0, 0, 0], [1, 1, 0], [1, Math.tan(Math.PI / 3)].mul((3.0 - SQRT3) / 4.0)],
-    dualrhombitrihex: [[1, 1, 0], [0, 0, 0], null],
-    truncatedhex: [
-        [0, 1, 0],
-        [0, 0, 1],
-        [0.25, COS30],
-    ],
-    triakistri: [[1, 0, 1], [0, 0, 0], null],
-    truncatedtrihex: [[1, 0, 1], [0, 0, 0], [0, COS30].add([0.5, COS30].mul(COS30)).div(0.5 + COS30 + 1.0)],
-    kisrhombille: [[1, 1, 1], [0, 0, 0], null],
-};
+const formatter = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 5,
+    maximumFractionDigits: 5,
+});
 
 class Wythoff {
-    #vec = [
+    static vec = [
         [0, 0],
         [0, COS30],
         [0.5, COS30],
     ];
+    static constructions = {
+        hex: [[0, 1, 0], [0, 0, 0], null],
+        dualhex: [[0, 1, 1], [0, 0, 0], null],
+        trihex: [
+            [0, 0, 0],
+            [0, 1, 1],
+            [0, COS30],
+        ],
+        dualtrihex: [[0, 0, 1], [0, 0, 0], null],
+        rhombitrihex: [[0, 0, 0], [1, 1, 0], [1, Math.tan(Math.PI / 3)].mul((3.0 - SQRT3) / 4.0)],
+        dualrhombitrihex: [[1, 1, 0], [0, 0, 0], null],
+        truncatedhex: [
+            [0, 1, 0],
+            [0, 0, 1],
+            [0.25, COS30],
+        ],
+        triakistri: [[1, 0, 1], [0, 0, 0], null],
+        truncatedtrihex: [[1, 0, 1], [0, 0, 0], [0, COS30].add([0.5, COS30].mul(COS30)).div(0.5 + COS30 + 1.0)],
+        kisrhombille: [[1, 1, 1], [0, 0, 0], null],
+    };
     color_on = "#000000FF";
     color_off = "#00000055";
 
     constructor(ctr, scale) {
         this.scale = scale;
         this.mir = new paper.Group({
-            children: this.#vec.cycle().map(
+            children: Wythoff.vec.cycle().map(
                 (e) =>
                     new paper.Path.Line({
                         //
@@ -113,14 +117,14 @@ class Wythoff {
     calc_lines() {
         // bounds
         const [width, height, topleft] = [this.mir.bounds.width, this.mir.bounds.height, this.mir.bounds.topLeft];
-        // generator point (project to fundamental triangle with #vec coordinates)
+        // generator point (project to fundamental triangle with vec coordinates)
         const gen = [((this.gen.position.x - topleft.x) / width) * 0.5, ((this.gen.position.y - topleft.y) / height) * COS30];
         // reflections
-        const ref = [[0, gen[1]], [gen[0], COS30], gen.proj(this.#vec[2])];
+        const ref = [[0, gen[1]], [gen[0], COS30], gen.proj(Wythoff.vec[2])];
         // mirror segments
-        const mir = [0, 1, 2].map((e, i) => [
-            [this.#vec[i], ref[i]],
-            [ref[i], this.#vec[(i + 1) % 3]],
+        const mir = Wythoff.vec.cycle().map((e, i) => [
+            [e[1], ref[i]],
+            [ref[i], e[2]],
         ]);
         // edge array, remove 0-lengths
         const edges = [
@@ -157,6 +161,31 @@ function snub632() {
     return q1.add(q3.sub(q1).div(2.0));
 }
 
+function calc_snub_lines() {
+    const p = this.snub632();
+    const q = [
+        //
+        p.add([0, COS30].sub(p).rot(Math.PI / 3)),
+        [0, COS30],
+        ...[1, 2, 3].map((e) =>
+            p.add(
+                [0, COS30]
+                    .sub(p)
+                    .rot(e * -(Math.PI / 3))
+                    .mul(2), // to reach the other edge and calculate the intersection...
+            ),
+        ),
+    ];
+    return [
+        //
+        intersection(p, q[0], [0, 0], [0, COS30]),
+        q[1],
+        intersection(p, q[2], [0, COS30], [0.5, COS30]),
+        intersection(p, q[3], [0.5, COS30], [0, COS30].rot(-Math.PI / 3)),
+        intersection(p, q[4], [0, 0], [0, COS30].rot(-Math.PI / 3)),
+    ].map((e) => [p, e]);
+}
+
 function calc_snub_tile() {
     const p = this.snub632();
     const q = [
@@ -172,23 +201,13 @@ function calc_snub_tile() {
             ),
         ),
     ];
-    const lines = new paper.Group({
-        children: [
-            //
-            intersection(p, q[0], [0, 0], [0, COS30]),
-            q[1],
-            intersection(p, q[2], [0, COS30], [0.5, COS30]),
-            intersection(p, q[3], [0.5, COS30], [0, COS30].rot(-Math.PI / 3)),
-            intersection(p, q[4], [0, 0], [0, COS30].rot(-Math.PI / 3)),
-        ].map((e) => new paper.Path.Line({ from: e, to: p, insert: false })),
-    });
+    const lines = new paper.Group(calc_snub_lines().map((e) => new paper.Path.Line({ from: e[0], to: e[1] })));
     return new paper.Group({
         children: Array.from({ length: 6 }, (_, i) => lines.clone().rotate(i * 60, [0, 0])).flatMap((e) => e.children),
-        insert: false,
     });
 }
 
-function calc_flor_tile() {
+function calc_flor_lines() {
     const snub = this.snub632();
     const flor = [
         snub,
@@ -201,32 +220,16 @@ function calc_flor_tile() {
             ),
         ),
     ].centroid();
-    const lines = new paper.Group({
-        children: [[0, 0], [0.5, COS30], [0, COS30].rot(-Math.PI / 3)].map((e) => new paper.Path.Line({ from: flor, to: e, insert: false })),
-    });
+    return [[0, 0], [0.5, COS30], [0, COS30].rot(-Math.PI / 3)].map((e) => [flor, e]);
+}
+
+function calc_flor_tile() {
+    const lines = new paper.Group(calc_flor_lines().map((e) => new paper.Path.Line({ from: e[0], to: e[1] })));
     return new paper.Group({
         children: Array.from({ length: 6 }, (_, i) => lines.clone().rotate(i * 60, [0, 0])).flatMap((e) => e.children),
         insert: false,
     });
 }
-
-function calc_tile_snubhex() {
-    const ft = this.calc_lines();
-    return new paper.Group({
-        children: [
-            // rotate fundamental triangle within hexagon
-            ...Array.from({ length: 6 }, (_, i) => ft.clone().rotate(i * 60, [0, 0])),
-            // rotate fundamental triangle within hexagon, then flip
-            ...new paper.Group(Array.from({ length: 6 }, (_, i) => ft.clone().rotate(i * 60, [0, 0]))).scale(1, -1).children,
-        ].flatMap((e) => e.children),
-        insert: false,
-    });
-}
-
-const formatter = new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 5,
-    maximumFractionDigits: 5,
-});
 
 function hash_point(point) {
     return `[${formatter.format(point[0])}, ${formatter.format(point[1])}]`;
@@ -250,8 +253,6 @@ function render_lattice(paper, tile, P = get_params()) {
         [2, 0],
         [1, SQRT3],
     ].map((e) => e.mul(SQRT3 / 2));
-
-    // ck
     const ck = ck_vectors(basis, 1, 0, 1, 0, true);
     const grid = Array.from(tile_grid(ck, basis)).slice(1, -1);
     const lattice = new paper.Group({
@@ -271,22 +272,28 @@ function render_lattice(paper, tile, P = get_params()) {
             (e) =>
                 new paper.Path({
                     segments: e,
-                    strokeWidth: 1,
-                    strokeCap: "round",
-                    strokeJoin: "round",
-                    strokeColor: "black",
                     closed: true,
                     data: {
                         key: congruent_polygon_id(e),
                     },
                 }),
         );
-    if (P.palette) {
-        const keys = [...new Set(paths.map((e) => e.data.key))];
-        const colors = new Map(keys.map((e, i) => [e, P.palette[i] ?? "black"]));
-        paths.forEach((e) => (e.fillColor = colors.get(e.data.key)));
-    }
-    return new paper.Group([...paths, lattice]);
+    const keys = [...new Set(paths.map((e) => e.data.key))];
+    const colors = new Map(keys.map((e, i) => [e, P.palette[i] ?? "black"]));
+    paths.forEach((e) => (e.fillColor = colors.get(e.data.key)));
+    return new paper.Group({
+        children: [...paths, lattice],
+        strokeCap: "round",
+        strokeJoin: "round",
+        strokeColor: P.palette.slice(-1)[0],
+    });
+}
+
+function foo(polygon, triangle) {
+    polygon.segments.cycle().map((e, i) => {
+        for (let j = 0; j < triangle.segments.length; j++) {}
+        return;
+    });
 }
 
 function render_capsid(paper, tile, P = get_params()) {
@@ -297,9 +304,6 @@ function render_capsid(paper, tile, P = get_params()) {
         [2, 0],
         [1, SQRT3],
     ].map((e) => e.mul(R * (SQRT3 / 2)));
-    // const tile = model.calc_tile().scale(R).rotate(30);
-
-    // ck
     const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
     const grid = Array.from(tile_grid(ck, basis));
     const lattice = new paper.Group({
@@ -318,21 +322,15 @@ function render_capsid(paper, tile, P = get_params()) {
             (e) =>
                 new paper.Path({
                     segments: e,
-                    strokeWidth: 1,
-                    strokeCap: "round",
-                    strokeJoin: "round",
-                    strokeColor: "black",
                     closed: true,
                     data: {
-                        key: congruent_polygon_id(e, 5),
+                        key: congruent_polygon_id(e),
                     },
                 }),
         );
-    if (P.palette) {
-        const keys = [...new Set(paths.map((e) => e.data.key))];
-        const colors = new Map(keys.map((e, i) => [e, P.palette[i] ?? "black"]));
-        paths.forEach((e) => (e.fillColor = colors.get(e.data.key)));
-    }
+    const keys = [...new Set(paths.map((e) => e.data.key))];
+    const colors = new Map(keys.map((e, i) => [e, P.palette[i] ?? "black"]));
+    paths.forEach((e) => (e.fillColor = colors.get(e.data.key)));
 
     const triangles = [
         [3, 0],
@@ -351,16 +349,23 @@ function render_capsid(paper, tile, P = get_params()) {
                 }),
         );
 
-    const facets = triangles.map(
+    const facets = triangles.slice(0, 3).map(
         (e) =>
             new paper.Group(
                 paths
-                    .map((f) => {
-                        const x = f.intersect(e);
-                        x.data.centroid = x.segments.map((e) => [e.x, e.y]).centroid();
-                        return x;
+                    .flatMap((f) => {
+                        const result = f.intersect(e);
+                        if (result instanceof paper.CompoundPath) {
+                            result.children.forEach((e) => (e.fillColor = f.fillColor));
+                        }
+                        return result instanceof paper.CompoundPath ? result.children : [result];
                     })
-                    .filter((e) => e.segments.length),
+                    .filter((f) => f.segments !== undefined && f.segments.length > 0)
+                    .map((f) => {
+                        f.data.centroid = f.segments.map((g) => [g.x, g.y]).centroid();
+                        return f;
+                    })
+                    .flat(),
             ),
     );
     paths.forEach((e) => e.remove());
@@ -375,7 +380,6 @@ function render_capsid(paper, tile, P = get_params()) {
     const th = (2 * Math.PI) / P.a;
     const is_equilateral = P.h == P.H && P.k == P.K;
     const inflater = is_equilateral ? (e) => spherize(e, ico_coors[0].norm(), P.s) : (e) => cylinderize(e, ico_coors, P.a, P.s);
-    // const CAMERA = camera(...[PARAMS.θ, PARAMS.ψ, PARAMS.φ].map(radians));
     const CAMERA = camera(...[P.θ, P.ψ, P.φ].map(radians));
     let results = [];
     for (let idx = 0, id = 0; idx < ico_cfg.t_idx.length; idx++) {
@@ -427,5 +431,12 @@ function render_capsid(paper, tile, P = get_params()) {
     // painter's algorithm
     results.sort((a, b) => a.data.centroid[2] - b.data.centroid[2]);
 
-    return new paper.Group({ children: results, position: paper.view.center, strokeColor: "black" });
+    return new paper.Group({
+        children: results,
+        position: paper.view.center,
+        strokeWidth: P.width,
+        strokeCap: "round",
+        strokeJoin: "round",
+        strokeColor: P.palette.slice(-1)[0],
+    });
 }

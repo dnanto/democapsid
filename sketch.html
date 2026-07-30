@@ -10,30 +10,28 @@
 
             .container {
                 display: grid;
-                grid-template-columns: 2fr 4fr 4fr 2fr;
+                grid-template-columns: 3fr 3fr 3fr 3fr;
                 grid-template-rows: 8fr 4fr;
                 gap: 5px 5px;
-                grid-auto-flow: row;
                 grid-template-areas:
                     ". controller model ."
                     ". console console .";
-                height: 100vh;
-                overflow: hidden;
             }
             .subcontainer1 {
                 display: grid;
                 grid-template-columns: 4fr 4fr 4fr;
                 grid-template-rows: 12fr;
                 gap: 5px 5px;
-                grid-auto-flow: row;
                 grid-template-areas: ". . .";
+            }
+            .subcontainer1 > * {
+                min-width: 0;
             }
             .subcontainer2 {
                 display: grid;
                 grid-template-columns: 6fr 6fr;
                 grid-template-rows: 12fr;
                 gap: 5px 5px;
-                grid-auto-flow: row;
                 grid-template-areas: ". .";
             }
             .controller {
@@ -47,25 +45,18 @@
             }
 
             fieldset {
-                padding: 5px 10px 5px 10px;
-                min-height: 0;
                 height: 100%;
+            }
+            .param {
                 display: flex;
-                flex-direction: column;
-                justify-content: center;
+                width: 100%;
             }
-            .form-row {
-                display: flex;
-                align-items: center;
-                margin: 5px 0px 5px 0px;
+            .param label {
+                padding-right: 5px;
             }
-            .form-row label {
-                width: 20px;
-            }
-            .form-row input,
+            .param input,
             select {
-                flex-grow: 1;
-                padding: 5px;
+                width: 100%;
             }
 
             legend {
@@ -78,16 +69,14 @@
             input,
             select {
                 border-radius: 5px;
+                border-width: 1px;
                 vertical-align: middle;
                 box-sizing: border-box;
             }
 
             .canvas-wrapper {
-                position: relative;
                 width: 100%;
                 height: 100%;
-                min-width: 0;
-                min-height: 0;
             }
             .canvas-wrapper canvas {
                 display: block;
@@ -96,15 +85,16 @@
             }
 
             .swatch {
-                display: grid;
-                grid-template-columns: 10fr 2fr;
-                grid-template-rows: 12fr;
-                gap: 5px 5px;
-                grid-auto-flow: row;
-                grid-template-areas: ". .";
-                margin: 5px 0px 5px 0px;
+                display: flex;
+                width: 100%;
             }
-            .swatch > input {
+            .swatch input[type="color"] {
+                width: 75%;
+            }
+            .swatch input[type="number"] {
+                width: 25%;
+            }
+            #param_width {
                 width: 100%;
             }
         </style>
@@ -124,34 +114,34 @@
                             <fieldset>
                                 <legend>lattice</legend>
 
-                                <div class="form-row">
+                                <div class="param">
                                     <label for="param_h">h=</label>
                                     <input type="number" id="param_h" step="1" value="1" min="0" />
                                 </div>
-                                <div class="form-row">
+                                <div class="param">
                                     <label for="param_k">k=</label>
                                     <input type="number" id="param_k" step="1" value="1" min="0" />
                                 </div>
-                                <div class="form-row">
+                                <div class="param">
                                     <label for="param_H">H=</label>
                                     <input type="number" id="param_H" step="1" value="1" min="0" />
                                 </div>
-                                <div class="form-row">
+                                <div class="param">
                                     <label for="param_K">K=</label>
                                     <input type="number" id="param_K" step="1" value="2" min="0" />
                                 </div>
-                                <div class="form-row">
+                                <div class="param">
                                     <label for="param_R">R=</label>
                                     <input type="number" id="param_R" step="1" value="25" min="1" />
                                 </div>
-                                <div class="form-row">
+                                <div class="param">
                                     <label for="param_t">t=</label>
                                     <select id="param_t">
                                         <option value="levo">levo</option>
                                         <option value="dextro">dextro</option>
                                     </select>
                                 </div>
-                                <div class="form-row">
+                                <div class="param">
                                     <label for="param_L">L=</label>
                                     <select id="param_L"></select>
                                 </div>
@@ -175,7 +165,7 @@
                     <div>
                         <fieldset>
                             <legend>icosahedron</legend>
-                            <div class="form-row">
+                            <div class="param">
                                 <label for="param_a">a=</label>
                                 <select id="param_a">
                                     <option value="5">5</option>
@@ -183,24 +173,24 @@
                                     <option value="2">2</option>
                                 </select>
                             </div>
-                            <div class="form-row">
+                            <div class="param">
                                 <label for="param_s">s=</label>
-                                <input type="range" min="-1" max="1" step="0.001" , value="0" id="param_s" />
+                                <input type="range" min="-1" max="1" step="0.001" value="0" id="param_s" />
                             </div>
                         </fieldset>
                     </div>
                     <div>
                         <fieldset>
                             <legend>camera</legend>
-                            <div class="form-row">
+                            <div class="param">
                                 <label for="θ">θ=</label>
                                 <input type="number" id="param_θ" step="1" value="0" />
                             </div>
-                            <div class="form-row">
+                            <div class="param">
                                 <label for="ψ">ψ=</label>
                                 <input type="number" id="param_ψ" step="1" value="0" />
                             </div>
-                            <div class="form-row">
+                            <div class="param">
                                 <label for="φ">φ=</label>
                                 <input type="number" id="param_φ" step="1" value="-90" />
                             </div>
@@ -210,21 +200,34 @@
                 <div>
                     <fieldset>
                         <legend>aesthetics</legend>
-                        <select id="scale"></select>
-                        <div id="palette">
-                            <div class="swatch">
-                                <input type="color" />
-                                <input type="number" min="0" max="255" value="200" />
+                        <fieldset>
+                            <legend>polygons</legend>
+                            <select id="scale"></select>
+                            <div id="palette">
+                                <div class="swatch">
+                                    <input type="color" />
+                                    <input type="number" min="0" max="255" value="200" />
+                                </div>
+                                <div class="swatch">
+                                    <input type="color" />
+                                    <input type="number" min="0" max="255" value="200" />
+                                </div>
+                                <div class="swatch">
+                                    <input type="color" />
+                                    <input type="number" min="0" max="255" value="200" />
+                                </div>
                             </div>
-                            <div class="swatch">
-                                <input type="color" />
-                                <input type="number" min="0" max="255" value="200" />
+                        </fieldset>
+                        <fieldset>
+                            <legend>lines</legend>
+                            <div id="lines">
+                                <div class="swatch">
+                                    <input type="color" />
+                                    <input type="number" min="0" max="255" value="200" />
+                                </div>
+                                <input id="param_width" type="number" min="0" value="1" />
                             </div>
-                            <div class="swatch">
-                                <input type="color" />
-                                <input type="number" min="0" max="255" value="200" />
-                            </div>
-                        </div>
+                        </fieldset>
                     </fieldset>
                 </div>
                 <div>
