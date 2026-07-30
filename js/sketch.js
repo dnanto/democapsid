@@ -349,27 +349,29 @@ function render_capsid(paper, tile, P = get_params()) {
                 }),
         );
 
-    const facets = triangles.slice(0, 3).map(
+    const facets = triangles.map(
         (e) =>
             new paper.Group(
                 paths
                     .flatMap((f) => {
                         const result = f.intersect(e);
                         if (result instanceof paper.CompoundPath) {
-                            result.children.forEach((e) => (e.fillColor = f.fillColor));
+                            result.children.forEach((g) => (g.fillColor = f.fillColor));
                         }
                         return result instanceof paper.CompoundPath ? result.children : [result];
                     })
-                    .filter((f) => f.segments !== undefined && f.segments.length > 0)
                     .map((f) => {
-                        f.data.centroid = f.segments.map((g) => [g.x, g.y]).centroid();
+                        f.segments = f.segments.filter((g) => e.contains(g.point));
                         return f;
                     })
-                    .flat(),
+                    .filter((f) => f.segments.length > 2)
+                    .flatMap((f) => {
+                        f.data.centroid = f.segments.map((g) => [g.x, g.y]).centroid();
+                        return f;
+                    }),
             ),
     );
     paths.forEach((e) => e.remove());
-
     lattice.remove();
 
     // coordinates
