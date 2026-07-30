@@ -1,3 +1,4 @@
+const EPSILON = 1e-9;
 const COS30 = Math.cos((Math.PI / 180) * 30);
 
 const formatter = new Intl.NumberFormat("en-US", {
@@ -361,7 +362,9 @@ function render_capsid(paper, tile, P = get_params()) {
                         return result instanceof paper.CompoundPath ? result.children : [result];
                     })
                     .map((f) => {
-                        f.segments = f.segments.filter((g) => e.contains(g.point));
+                        f.segments = f.segments.filter((g, i) => {
+                            return e.contains(g.point) || e.getNearestPoint(g.point).getDistance(g.point) < EPSILON;
+                        });
                         return f;
                     })
                     .filter((f) => f.segments.length > 2)
@@ -373,7 +376,6 @@ function render_capsid(paper, tile, P = get_params()) {
     );
     paths.forEach((e) => e.remove());
     lattice.remove();
-
     // coordinates
     const ico_cfg = ico_config(P.a);
     const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][P.a](ck, ITER, TOL);
