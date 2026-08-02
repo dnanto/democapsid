@@ -1,0 +1,347 @@
+const VERSION = "2.2.6";
+
+function triangle_circumcircle_center(p, q, r) {
+    // https://en.wikipedia.org/wiki/Circumcircle#Higher_dimensions
+    // triangle_circumcircle_center([0, 1.73205081, 2.99162946], [0, -2.90587844, 1.38259261], [0, 2.90587844, 1.38259261])
+    // -> [0, 0, 0.49537554129916317]
+    const [a, b] = [p.sub(r), q.sub(r)];
+    const axb = a.cross3(b);
+    return b
+        .mul(a.norm() ** 2)
+        .sub(a.mul(b.norm() ** 2))
+        .cross3(axb)
+        .div(2 * axb.norm() ** 2)
+        .add(r);
+}
+
+function tetrahedron_circumsphere_center(v0, v1, v2, v3) {
+    // https://rodolphe-vaillant.fr/entry/127/find-a-tetrahedron-circumcenter
+    // tetrahedron_circumsphere_center([1.5, 0, 3.21404077], [-1.5, 0, 3.21404077], [-2.61069906, -1.69586289, 1.00261665], [2.61069906, 1.69586289, 1.00261665])
+    // -> [-2.22044605e-16, -1.26309544e-15, 4.25770295e-1]
+    const [e1, e2, e3] = [v1, v2, v3].map((e) => e.sub(v0));
+    return v0.add(
+        e1
+            .cross3(e2)
+            .mul(e3.norm() ** 2)
+            .add(e3.cross3(e1).mul(e2.norm() ** 2))
+            .add(e2.cross3(e3).mul(e1.norm() ** 2))
+            .div(2 * det3([e1, e2, e3])),
+    );
+}
+
+function body_radius(coors) {
+    return coors[6].sub([0, 0, coors[6][2]]).norm();
+}
+
+function body_height(coors) {
+    return coors[4][2] - coors[6][2];
+}
+
+function sd_sphere(p, r) {
+    return p.norm() - r;
+}
+
+function spherize(coor, radius, sphericity) {
+    return coor
+        .uvec()
+        .mul(Math.abs(sd_sphere(coor, radius)) * sphericity)
+        .add(coor);
+}
+
+function cylinderize(coor, coors, a, sphericity) {
+    const [r, h2] = [body_radius(coors), body_height(coors) / 2];
+    let pos, rad;
+    /****/ if (a === 5) {
+        pos = [0, 0, h2 - r / 2];
+        rad = coors[0][2] + r / 2 - h2;
+    } else if (a === 3) {
+        const [p1, p2] = [coors[0], coors[3]];
+        pos = triangle_circumcircle_center(p1, p2, [p2[0], -p2[1], p2[2]]);
+        rad = p1.sub(pos).norm();
+    } else if (a === 2) {
+        p1 = coors[0];
+        pos = tetrahedron_circumsphere_center(p1, ...[1, 4, 5].map((i) => coors[i]));
+        rad = p1.sub(pos).norm();
+    }
+    const [pos1, pos2, tmid, bmid] = [
+        [0, 0, pos[2]],
+        [0, 0, -pos[2]],
+        [0, 0, h2],
+        [0, 0, -h2],
+    ];
+    /****/ if (h2 < coor[2]) {
+        // top cap
+        const d = Math.abs(sd_sphere(coor.sub(pos1), rad));
+        return coor
+            .sub(tmid)
+            .uvec()
+            .mul(d * sphericity)
+            .add(coor);
+    } else if (coor[2] < -h2) {
+        // bottom cap
+        const d = Math.abs(sd_sphere(coor.sub(pos2), rad));
+        return coor
+            .sub(bmid)
+            .uvec()
+            .mul(d * sphericity)
+            .add(coor);
+    }
+    // body cylinder
+    return coor
+        .sub([0, 0, coor[2]])
+        .uvec()
+        .mul((r - coor.slice(0, 2).norm()) * sphericity)
+        .add(coor);
+}
+
+function ico_config(a) {
+    let values;
+    /****/ if (a === 5) {
+        values = [
+            [1, 1, 2, 2],
+            ["T1-▲", "T1-▼", "T2-▲", "T2-▼"],
+            [
+                [0, 1, 2],
+                [6, 11, 7],
+                [2, 1, 6],
+                [6, 7, 2],
+            ],
+            [5, 5, 5, 5],
+            [
+                [1, 2, 3, 4, 5],
+                [0, 2, 5, 6, 10],
+                [0, 1, 3, 6, 7],
+                [0, 2, 4, 7, 8],
+                [0, 3, 5, 8, 9],
+                [0, 1, 4, 9, 10],
+                [1, 2, 7, 10, 11],
+                [2, 3, 6, 8, 11],
+                [3, 4, 7, 9, 11],
+                [4, 5, 8, 10, 11],
+                [1, 5, 6, 9, 11],
+                [6, 7, 8, 9, 10],
+            ],
+        ];
+    } else if (a === 3) {
+        values = [
+            [1, 1, 1, 1, 2, 2, 3, 3],
+            ["T1-▔", "T1-▲", "T1-▼", "T1-▁", "T2-▼", "T2-▲", "T3-▼", "T3-▲"],
+            [
+                [0, 2, 1],
+                [1, 2, 3],
+                [6, 9, 11],
+                [9, 10, 11],
+                [1, 3, 6],
+                [9, 6, 3],
+                [1, 6, 5],
+                [11, 5, 6],
+            ],
+            [1, 3, 3, 1, 3, 3, 3, 3],
+            [
+                [1, 2, 4, 5, 8],
+                [0, 2, 3, 5, 6],
+                [0, 1, 3, 4, 7],
+                [1, 2, 6, 7, 9],
+                [0, 2, 7, 8, 10],
+                [0, 1, 6, 8, 11],
+                [1, 3, 5, 9, 11],
+                [2, 3, 4, 9, 10],
+                [0, 4, 5, 10, 11],
+                [3, 6, 7, 10, 11],
+                [4, 7, 8, 9, 11],
+                [5, 6, 8, 9, 10],
+            ],
+        ];
+    } else if (a === 2) {
+        values = [
+            [1, 1, 1, 1, 2, 2, 2, 2, 3, 3],
+            ["T1-▔", "T1-▔", "T1▁", "T1▁", "T2-▼", "T2-▲", "T2-▼", "T2-▲", "T3-▼", "T3-▲"],
+            [
+                [0, 1, 2],
+                [2, 1, 4],
+                [9, 10, 6],
+                [9, 11, 10],
+                [0, 2, 6],
+                [9, 6, 2],
+                [2, 4, 9],
+                [11, 9, 4],
+                [0, 6, 5],
+                [10, 5, 6],
+            ],
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            [
+                [1, 2, 3, 5, 6],
+                [0, 2, 3, 4, 7],
+                [0, 1, 4, 6, 9],
+                [0, 1, 5, 7, 8],
+                [1, 2, 7, 9, 11],
+                [0, 3, 6, 8, 10],
+                [0, 2, 5, 9, 10],
+                [1, 3, 4, 8, 11],
+                [3, 5, 7, 10, 11],
+                [2, 4, 6, 10, 11],
+                [5, 6, 8, 9, 11],
+                [4, 7, 8, 9, 10],
+            ],
+        ];
+    } else {
+        throw new Error("a must be 2, 3, or 5");
+    }
+    return Object.fromEntries(["t_idx", "t_id", "v_idx", "t_rep", "v_con"].map((k, i) => [k, values[i]]));
+}
+
+function ico_axis_5(ck) {
+    const [a, b] = [ck[0].norm(), ck[1].norm()];
+
+    // regular pentagon circumradius
+    const R5 = a * Math.sqrt((5 + SQRT5) / 10);
+    // regular pentagonal pyramid height
+    const h5 = ((1 + SQRT5) * a) / (2 * Math.sqrt(5 + 2 * SQRT5));
+
+    const pA = [0, 0, h5];
+    const pB = [-R5, 0, 0].roro([0, 0, 1], (3 / 10) * Math.PI); // 54°
+    const pC = pB.add([a, 0, 0]);
+
+    const t = ck[0].angle(ck[1]);
+    const q = pC.add([b, 0, 0].roro([0, 1, 0], -Math.PI - t));
+    const p = [q[0], q[1], 0];
+    const d = [p[0], (-Math.abs(p[1]) * Math.sqrt(R5 * R5 * p[1] * p[1] - (p[0] * p[1]) ** 2)) / (p[1] * p[1]), 0];
+
+    if (Number.isNaN(d[1])) throw new Error("impossible construction!");
+
+    const pG = d.add([0, 0, -Math.sqrt(q[2] * q[2] - (p[1] - d[1]) ** 2)]);
+    const coor = [pA, pB, pC]
+        .concat([1, 2, 3].map((e) => pC.roro([0, 0, 1], ((e * 2) / 5) * Math.PI)))
+        .concat([pG])
+        .concat([1, 2, 3, 4].map((e) => pG.roro([0, 0, 1], ((e * 2) / 5) * Math.PI)))
+        .concat([[0, 0, pG[2] - pA[2]]]);
+
+    return coor.map((e) => e.add([0, 0, -pG[2] / 2]));
+}
+
+function ico_axis_3(ck, iter = ITER, tol = TOL) {
+    const [a, b, c] = [ck[0].norm(), ck[1].norm(), ck[2].sub(ck[1]).norm()];
+
+    const pA = [0, a * (1 / SQRT3), 0];
+    const pB = [a / 2, -(a * (SQRT3 / 6)), 0];
+    const pC = [-(a / 2), -(a * (SQRT3 / 6)), 0];
+    const qD = [0, -(a * ((2 * SQRT3) / 3)), 0];
+
+    function fold(t) {
+        let [v, k] = [qD.uvec().mul(a * (SQRT3 / 2)), pB.sub(pC).uvec()];
+        const pD = [0, -(a * (SQRT3 / 6)), 0].add(v.roro(k, t));
+        const pF = pD.roro([0, 0, 1], (2 / 3) * Math.PI);
+        t = ck[0].angle(ck[1]);
+        [v, k] = [pD.sub(pB).uvec().mul(b), pD.cross3(pB).uvec()];
+        const o = v.roro(k, t);
+        const [p, q] = [pB.add(o.proj(v)), pB.add(o)];
+        [v, k] = [q.sub(p), pB.sub(pD).uvec()];
+        const f = (t) => c - p.add(v.roro(k, t)).sub(pF).norm();
+        t = bisection(f, ...brackets(f, 0, 2 * Math.PI, iter).next().value, tol, iter).slice(-1);
+        const pG = p.add(v.roro(k, t));
+        return [pD, pF, pG, Math.abs(pD[1]) - pG.sub([0, 0, pG[2]]).norm()];
+    }
+
+    // TODO: parameterize increment...
+    const delta = Math.PI / 180 / 10;
+    let t = 0;
+    for (let i = 0; i * delta < Math.PI / 2; i++) {
+        t = i * delta;
+        try {
+            fold(t);
+            break;
+        } catch (e) {}
+    }
+    let obj = (t) => fold(t).slice(-1)[0];
+    try {
+        t = bisection(obj, ...brackets(obj, t, Math.PI / 4, iter).next().value, tol, iter).slice(-1);
+    } catch (e) {
+        throw new Error("impossible construction!");
+    }
+
+    const [pD, pF, pG] = fold(t).slice(0, -1);
+    if (Number.isNaN(pD[0])) throw new Error("impossible construction!");
+    const k = [0, 0, 1];
+    t = (2 * Math.PI) / 3;
+    const pH = pG.roro(k, -t);
+    const pJ = pH
+        .sub([0, 0, pH[2]])
+        .roro(k, Math.PI / 3)
+        .uvec()
+        .mul(pA[1])
+        .add([0, 0, pH[2] + pD[2] - pA[2]]);
+
+    let coor = [pA, pB, pC, pD, pF.roro(k, t), pF, pG, pH, pH.roro(k, -t), pJ, pJ.roro(k, -t), pJ.roro(k, -2 * t)];
+    return coor.map((e) => e.add([0, 0, (coor[0][2] - coor.slice(-1)[0][2]) / 2]));
+}
+
+function ico_axis_2(ck, iter = ITER, tol = TOL) {
+    const [a, b, c] = [ck[0].norm(), ck[1].norm(), ck[2].sub(ck[1]).norm()];
+
+    const pA = [a / 2, 0, 0];
+    const pB = [-(a / 2), 0, 0];
+    const pC = [0, -((a * PHI) / 2), -((a * PHI - a) / 2)];
+    const pD = [0, (a * PHI) / 2, -((a * PHI - a) / 2)];
+
+    function fold(t) {
+        let p = pB.add(pC).div(2);
+        let [v, k] = [p.sub(pA), pC.sub(pB).uvec()];
+        const pE = p.add(v.roro(k, t));
+        const pF = pE.roro([0, 0, 1], Math.PI);
+
+        t = ck[0].angle(ck[1]);
+        [v, k] = [pC.sub(pA).uvec().mul(b), pC.cross3(pA).uvec()];
+        const o = v.roro(k, t);
+        p = pA.add(o.proj(v));
+        const q = pA.add(o);
+        [v, k] = [q.sub(p), pA.sub(pC).uvec()];
+        const f = (t) => c - p.add(v.roro(k, t)).sub(pF).norm();
+        t = bisection(f, ...brackets(f, 0, 2 * Math.PI, iter).next().value, tol, iter).slice(-1);
+        const pG = p.add(v.roro(k, t));
+
+        return [pE, pF, pG, pE.sub([0, 0, pE[2]]).norm() - pG.sub([0, 0, pG[2]]).norm()];
+    }
+
+    // TODO: parameterize increment...
+    const delta = Math.PI / 180 / 10;
+    let t = 0;
+    for (let i = 0; i * delta < Math.PI / 2; i++) {
+        t = i * delta;
+        try {
+            fold(t);
+            break;
+        } catch (e) {}
+    }
+    let obj = (t) => fold(t).slice(-1)[0];
+    try {
+        t = bisection(obj, ...brackets(obj, t, Math.PI / 4, iter).next().value, tol, iter).slice(-1);
+    } catch (e) {
+        throw new Error("impossible construction!");
+    }
+    const [pE, pF, pG] = fold(t).slice(0, -1);
+    if (Number.isNaN(pE[0])) throw new Error("impossible construction!");
+
+    obj = (t) =>
+        pA
+            .roro([0, 0, 1], t)
+            .add([0, 0, pG[2] + pE[2]])
+            .sub(pF)
+            .norm() - b;
+
+    try {
+        t = bisection(obj, ...brackets(obj, 0, 2 * Math.PI, iter).next().value, tol, iter).slice(-1);
+    } catch (e) {
+        throw new Error("impossible construction!");
+    }
+    const pK = pA.roro([0, 0, 1], t).add([0, 0, pG[2] + pE[2]]);
+    const pI = pK
+        .sub([0, 0, pK[2]])
+        .uvec()
+        .roro([0, 0, 1], Math.PI / 2)
+        .mul(pD[1])
+        .add([0, 0, pG[2] + pE[2] - pD[2]]);
+
+    coor = [pA, pB, pC, pD, pE, pF, pG, pG.roro([0, 0, 1], Math.PI), pI, pI.roro([0, 0, 1], Math.PI), pK, pK.roro([0, 0, 1], Math.PI)];
+
+    return coor.map((e) => e.add([0, 0, (coor[0][2] - coor.slice(-1)[0][2]) / 2]));
+}
