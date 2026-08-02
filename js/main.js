@@ -102,7 +102,6 @@ function wythoff_ui_init(papers) {
     model.gen.onMouseUp = function (event) {
         papers.model.activate();
         papers.model.project.clear();
-        render_capsid(papers.model, get_tile(model).scale(get_params().R));
     };
     return model;
 }
@@ -146,7 +145,7 @@ window.onload = function (opt) {
             papers.wythoff.project.clear();
             let lines = null;
             if (event.target.value === "snubhex") lines = calc_snub_lines();
-            else if (event.target.value === "dualsnubhex") lines = calc_snub_lines();
+            else if (event.target.value === "dualsnubhex") lines = calc_flor_lines();
             if (lines !== null) {
                 const tile = new paper.Group({
                     children: [
@@ -190,7 +189,7 @@ window.onload = function (opt) {
         if (drag) {
             const delta = event.point.subtract(drag);
             document.getElementById("param_ψ").value = (parse_number(document.getElementById("param_ψ").value) + delta.x) % 360;
-            document.getElementById("param_φ").value = (parse_number(document.getElementById("param_φ").value) + delta.y) % 360;
+            document.getElementById("param_φ").value = (parse_number(document.getElementById("param_φ").value) - delta.y) % 360;
             papers.model.activate();
             papers.model.project.clear();
             ico_preview(papers.model);
