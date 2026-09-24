@@ -1,3 +1,13 @@
+function ccw(a, b, c) {
+    // https://algs4.cs.princeton.edu/91primitives/
+    // If the area is positive, then a->b->c is counterclockwise; if the area is negative, then a->b->c is clockwise; if the area is zero then a->b->c are collinear.
+    // double area2 = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+    // if      (area2 < 0) return -1;
+    // else if (area2 > 0) return +1;
+    // else                return  0;
+    return a[0] * b[1] - a[1] * b[0] + a[1] * c[0] - a[0] * c[1] + b[0] * c[1] - b[1] * c[0];
+}
+
 class Graph {
     constructor(hasher = (e) => e) {
         this.nodes = new Map();
@@ -22,7 +32,7 @@ class Graph {
         const [keys, edge] = this.edgeify(node1, node2);
         [0, 1].forEach((i) => {
             this.add_node(keys[i], edge[i]);
-            this.neigh.getOrInsert(keys[i]).push(keys[(i + 1) % 2]);
+            this.neigh.get(keys[i]).push(keys[(i + 1) % 2]);
         });
         this.edges.set(keys.join("-"), edge);
         return this;

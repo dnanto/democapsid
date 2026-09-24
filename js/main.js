@@ -1,5 +1,11 @@
-function parse_number(value) {
-    return Number.isNaN((result = parseFloat(value))) ? value : result;
+let ftri;
+
+function get_palette() {
+    return [...this.document.querySelectorAll(".swatch")].map(
+        (e) =>
+            //
+            e.children[0].value + parseInt(e.children[1].value).toString(16).padStart(2, "0"),
+    );
 }
 
 function set_palette(name) {
@@ -8,14 +14,6 @@ function set_palette(name) {
         const colors = chroma.scale(name).colors(inputs.length);
         inputs.forEach((e, i) => (e.value = colors[i] + "FF"));
     }
-}
-
-function get_palette() {
-    return [...this.document.querySelectorAll(".swatch")].map(
-        (e) =>
-            //
-            e.children[0].value + parseInt(e.children[1].value).toString(16).padStart(2, "0"),
-    );
 }
 
 function get_params() {
@@ -29,6 +27,19 @@ function get_params() {
     );
 }
 
+function calc_tile(model) {
+    const key = document.getElementById("param_L").value;
+    let tile;
+    if (key === "snubhex") {
+        tile = calc_snub_tile();
+    } else if (key === "dualsnubhex") {
+        tile = calc_flor_tile();
+    } else {
+        tile = model.calc_tile();
+    }
+    return tile.rotate(30);
+}
+
 function ico_preview(paper) {
     const P = get_params();
     const basis = [
@@ -36,6 +47,7 @@ function ico_preview(paper) {
         [1, SQRT3],
     ];
     const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
+    console.log(P.a, ck);
     const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][P.a](ck);
     const CAMERA = camera(...[P.θ, P.ψ, P.φ].map(radians));
     const scale = paper.view.bounds.width / (2.0 * Math.max(...ico_coors.flat()));
@@ -54,33 +66,42 @@ function debounce(func, delay) {
     };
 }
 
-function get_tile(model) {
-    const key = document.getElementById("param_L").value;
-    let tile;
-    if (key === "snubhex") {
-        tile = calc_snub_tile();
-    } else if (key === "dualsnubhex") {
-        tile = calc_flor_tile();
-    } else {
-        tile = model.calc_tile();
-    }
-    return tile.rotate(30);
-}
-
-function update_papers(papers, model) {
+function update_papers(papers, model, update_facets = true) {
+    const tile = calc_tile(model);
     papers.kaleidoscope.activate();
     papers.kaleidoscope.project.clear();
-    render_lattice(papers.kaleidoscope, get_tile(model)).scale(model.mir.bounds.width / 3.25);
+    render_lattice(papers.kaleidoscope, tile).scale(model.mir.bounds.width / 3);
+
     papers.model.activate();
     papers.model.project.clear();
-    render_capsid(papers.model, get_tile(model).scale(get_params().R));
+
+    const P = get_params();
+
+    if (update_facets) {
+        ftri = render_facets(papers.model, tile.scale(P.R), P.P);
+    }
+    if (document.getElementById("param_mode").value === "icosahedron") {
+        render_capsid(papers.model, ftri);
+    } else {
+        const facets = ftri[0];
+        facets.forEach((e) => (e.position = e.position.subtract(papers.model.view.center)));
+        render_net(papers.model, facets);
+        facets.forEach((e) => e.remove());
+    }
+
+    const [h, k, H, K] = [P.h, P.k, P.H, P.K];
+    document.getElementById("console").innerText = [
+        //
+        `T-Number=(${h})²+(${h})(${k})+(${k})²=${h * h + h * k + k * k}`,
+        `Q-Number=(${H})²+(${H})(${K})+(${K})²=${H * H + H * K + K * K}`,
+    ].join("\n");
 }
 
-function wythoff_ui_init(papers) {
+function wythoff_model_init(papers) {
     const model = new Wythoff(
         //
         papers.wythoff.view.center,
-        papers.wythoff.view.bounds.width / COS30,
+        papers.wythoff.view.bounds.width / COS30 / 1.5,
     ).construct(...Wythoff.constructions["hex"]);
     [...model.mir.children, ...model.ref.children].forEach((e) => {
         e.onClick = function (event) {
@@ -96,12 +117,13 @@ function wythoff_ui_init(papers) {
         model.set_generator(t.contains(event.point) ? event.point : t.getNearestPoint(event.point));
         papers.kaleidoscope.activate();
         papers.kaleidoscope.project.clear();
-        render_lattice(papers.kaleidoscope, get_tile(model)).scale(model.mir.bounds.width / 3.25);
+        render_lattice(papers.kaleidoscope, calc_tile(model)).scale(model.mir.bounds.width / 3);
         document.getElementById("param_L").value = "custom";
     };
     model.gen.onMouseUp = function (event) {
         papers.model.activate();
         papers.model.project.clear();
+        update_papers(papers, model);
     };
     return model;
 }
@@ -131,12 +153,12 @@ window.onload = function (opt) {
 
     // init model
     papers.wythoff.activate();
-    let model = wythoff_ui_init(papers);
+    let model = wythoff_model_init(papers);
     this.document.getElementById("param_L").addEventListener("input", (event) => {
         if (Wythoff.constructions.hasOwnProperty(event.target.value)) {
             papers.wythoff.activate();
             papers.wythoff.project.clear();
-            model = wythoff_ui_init(papers);
+            model = wythoff_model_init(papers);
             model.construct(...Wythoff.constructions[event.target.value]);
             papers.model.activate();
             papers.model.project.clear();
@@ -180,25 +202,38 @@ window.onload = function (opt) {
             doninput(papers, model);
         }),
     );
+    this.document.getElementById("param_s").addEventListener("input", (event) => (this.document.getElementById("display_s").innerText = (event.target.value * 100).toFixed(1).padStart(3, "0") + "%"));
+    this.document.getElementById("param_s").dispatchEvent(new Event("input", { bubbles: true }));
+    this.document.getElementById("reverse").addEventListener("click", (event) => {
+        [...this.document.querySelectorAll(".swatch")].reverse().map((e, i) => this.document.getElementById("palette").appendChild(e));
+        update_papers(papers, model);
+    });
 
     // ico preview controller
     papers.model.activate();
     const tool = new paper.Tool();
     let drag = null;
     tool.onMouseDrag = function (event) {
-        if (drag) {
-            const delta = event.point.subtract(drag);
-            document.getElementById("param_ψ").value = (parse_number(document.getElementById("param_ψ").value) + delta.x) % 360;
-            document.getElementById("param_φ").value = (parse_number(document.getElementById("param_φ").value) - delta.y) % 360;
-            papers.model.activate();
-            papers.model.project.clear();
-            ico_preview(papers.model);
+        if (document.getElementById("param_mode").value === "icosahedron") {
+            if (drag) {
+                const delta = event.point.subtract(drag);
+                document.getElementById("param_ψ").value = (parse_number(document.getElementById("param_ψ").value) + delta.x) % 360;
+                document.getElementById("param_φ").value = (parse_number(document.getElementById("param_φ").value) - delta.y) % 360;
+                papers.model.activate();
+                papers.model.project.clear();
+                ico_preview(papers.model);
+            }
+            drag = event.point;
         }
-        drag = event.point;
     };
     tool.onMouseUp = function (event) {
-        drag = null;
-        document.getElementById("param_θ").dispatchEvent(new Event("input", { bubbles: true }));
+        if (document.getElementById("param_mode").value === "icosahedron") {
+            drag = null;
+            // update tile = false
+            console.log("hey");
+            update_papers(papers, model, (update_facets = false));
+            // document.getElementById("param_θ").dispatchEvent(new Event("input", { bubbles: true }));
+        }
     };
     tool.activate();
 
@@ -221,4 +256,12 @@ window.onload = function (opt) {
 
     // init each canvas
     update_papers(papers, model);
+
+    new ResizeObserver((e) => {
+        // Object.values(papers).forEach((e) => {
+        //     e.project.activeLayer.position = e.view.center;
+        //     paper.view = new paper.Size(e[0].target.offsetWidth, e[0].target.offsetHeight);
+        //     paper.project.getItems()[0].position = paper.view.center;
+        // });
+    }).observe(document.querySelector("body"));
 };

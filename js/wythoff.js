@@ -6,7 +6,7 @@ class Wythoff {
     ];
 
     static constructions = {
-        dualhex: [[0, 1, 1], [0, 0, 0], null],
+        dualhex: [[1, 0, 0], [0, 0, 0], null],
         dualrhombitrihex: [[1, 1, 0], [0, 0, 0], null],
         dualtrihex: [[0, 0, 1], [0, 0, 0], null],
         hex: [[0, 1, 0], [0, 0, 0], null],
@@ -75,11 +75,12 @@ class Wythoff {
     }
 
     get_state() {
+        const ref = this.ref.children.map((e) => e.data.selected);
         return [
             //
             ...this.mir.children.map((e) => e.data.selected),
-            ...this.ref.children.map((e) => e.data.selected),
-            [this.gen.position.x, this.gen.position.y],
+            ...ref,
+            ref.some((e) => e) ? [this.gen.position.x, this.gen.position.y] : [NaN, NaN],
         ];
     }
 
@@ -182,23 +183,10 @@ function calc_snub_lines() {
 }
 
 function calc_snub_tile() {
-    const p = this.snub632();
-    const q = [
-        //
-        p.add([0, COS30].sub(p).rot(Math.PI / 3)),
-        [0, COS30],
-        ...[1, 2, 3].map((e) =>
-            p.add(
-                [0, COS30]
-                    .sub(p)
-                    .rot(e * -(Math.PI / 3))
-                    .mul(2), // to reach the other edge and calculate the intersection...
-            ),
-        ),
-    ];
     const lines = new paper.Group(calc_snub_lines().map((e) => new paper.Path.Line({ from: e[0], to: e[1] })));
     return new paper.Group({
         children: Array.from({ length: 6 }, (_, i) => lines.clone().rotate(i * 60, [0, 0])).flatMap((e) => e.children),
+        insert: false,
     });
 }
 

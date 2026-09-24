@@ -77,12 +77,11 @@ function render_lattice(paper, tile, P = get_params()) {
     const grid = Array.from(tile_grid(ck, basis)).slice(1, -1);
     const lattice = new paper.Group({
         children: grid.map((e) => {
-            const x = tile.clone();
+            const x = tile.clone({ insert: false });
             x.position = e.coor;
             return x;
         }),
         position: paper.view.center,
-        strokeColor: "black",
     });
     const paths = new Graph((hasher = (e) => `[${formatter.format(e.x)}, ${formatter.format(e.y)}]`))
         .add_edges(lattice.children.flatMap((e) => e.children).map((e) => [e.segments[0].point, e.segments[1].point]))
@@ -96,27 +95,33 @@ function render_lattice(paper, tile, P = get_params()) {
                     data: {
                         key: congruent_polygon_id(e),
                     },
+                    insert: false,
                 }),
         );
     const keys = [...new Set(paths.map((e) => e.data.key))];
     const colors = new Map(keys.map((e, i) => [e, P.palette[i]]));
     paths.forEach((e) => (e.fillColor = colors.get(e.data.key)));
-    return new paper.Group({
+    const result = new paper.Group({
         children: [...paths, lattice],
         strokeCap: "round",
         strokeJoin: "round",
         strokeColor: P.palette.slice(-1)[0],
+        strokeWidth: P.width,
     });
+    lattice.remove();
+    return result;
 }
 
-function render_capsid(paper, tile, P = get_params()) {
-    const ctr = [paper.view.center.x, paper.view.center.y];
-
-    const R = P.R;
-    const basis = [
+function calculate_basis(R) {
+    return (basis = [
         [2, 0],
         [1, SQRT3],
-    ].map((e) => e.mul(R * (SQRT3 / 2)));
+    ].map((e) => e.mul(R * (SQRT3 / 2))));
+}
+
+function render_facets(paper, tile, P = get_params()) {
+    const ctr = [paper.view.center.x, paper.view.center.y];
+    const basis = calculate_basis(P.R);
     const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
     const grid = Array.from(tile_grid(ck, basis));
     const lattice = new paper.Group({
@@ -127,6 +132,7 @@ function render_capsid(paper, tile, P = get_params()) {
         }),
         strokeColor: "black",
     }).translate(ctr);
+
     const paths = new Graph((hasher = (e) => `[${formatter.format(e.x)}, ${formatter.format(e.y)}]`))
         .add_edges(lattice.children.flatMap((e) => e.children).map((e) => [e.segments[0].point, e.segments[1].point]))
         .polygonize()
@@ -138,6 +144,7 @@ function render_capsid(paper, tile, P = get_params()) {
                 data: {
                     key: congruent_polygon_id(e),
                 },
+                insert: false,
             }).reduce(),
         );
     const keys = [...new Set(paths.map((e) => e.data.key))];
@@ -160,12 +167,10 @@ function render_capsid(paper, tile, P = get_params()) {
                     data: { vectors: [ctr, ...e] },
                 }),
         );
-
-    console.time("facets");
     const facets = triangles.map(
         (e) =>
-            new paper.Group(
-                paths
+            new paper.Group({
+                children: paths
                     .flatMap((f) => {
                         const result = f.intersect(e);
                         result.data.original = path_overlaps(result, f);
@@ -194,7 +199,7 @@ function render_capsid(paper, tile, P = get_params()) {
                         return new paper.Group([
                             f,
                             ...f.segments.cycle().map((g, i) => {
-                                if (f.data.original[i]) {
+                                if (P.outline === "on" || f.data.original[i]) {
                                     return new paper.Path.Line({
                                         from: g[1].point,
                                         to: g[2].point,
@@ -208,14 +213,61 @@ function render_capsid(paper, tile, P = get_params()) {
                             }),
                         ]);
                     }),
-            ),
+                insert: false,
+            }),
     );
-    console.timeEnd("facets");
     paths.forEach((e) => e.remove());
+    triangles.forEach((e) => e.remove());
     lattice.remove();
+    return [facets, triangles];
+}
+
+function render_net(paper, facets, P = get_params()) {
+    let g = null;
+    const basis = calculate_basis(P.R);
+    const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
+    if (P.a === 5) {
+        const u = new paper.Group(facets.slice(0, 2).map((e) => e.clone()));
+        const v = u
+            .clone()
+            .rotate(180, ck[0])
+            .translate(ck[1].sub(ck[0].mul(2)));
+        g = new paper.Group({
+            children: [u, v].flatMap((e) => Array.from({ length: 5 }, (_, i) => e.clone().translate(ck[0].mul(i)))).flatMap((e) => e.children),
+            position: paper.view.center,
+        }).rotate(-degrees(Math.atan2(ck[0].dot([0, 1]), ck[0][0] * 1 - ck[0][1] * 0)));
+        [u, v].forEach((e) => e.remove());
+    } else if (P.a === 3) {
+        const centroid = [[0, 0], ck[0], ck[3]].centroid();
+        const u = new paper.Group(facets.slice(0, 1).map((e) => e.clone()));
+        const v = new paper.Group(facets.slice(0, 3).map((e) => e.clone())).translate(ck[0]).rotate(-60, ck[0]);
+        const w = new paper.Group([u.clone(), ...Array.from({ length: 3 }, (_, i) => v.clone().rotate(i * 120, centroid))]);
+        const p = ck[0].add(ck[1].rot(Math.PI / 3).rot((4 * Math.PI) / 3));
+        g = new paper.Group({
+            children: [w.clone(), w.clone().translate(ck[0].add(p)).rotate(60, p)].flatMap((e) => e.children).flatMap((e) => e.children),
+            position: paper.view.center,
+        }).rotate(-degrees(Math.atan2(ck[0].dot([0, 1]), ck[0][0] * 1 - ck[0][1] * 0)) - 30);
+        [u, v, w].forEach((e) => e.remove());
+    } else if (P.a === 2) {
+        const u = new paper.Group(facets.slice(0, 3).map((e) => e.clone()));
+        const v = new paper.Group([...u.clone().children, u.children[0].clone().rotate(60, ck[0]), u.children[2].clone().translate(ck[0])]);
+        const w = new paper.Group([v.clone(), v.clone().rotate(180, ck[3]).translate(ck[3].mul(-1))]);
+        g = new paper.Group({
+            children: [w.clone(), w.clone().translate(ck[1].mul(-1).add(ck[0].mul(-2)).add(ck[3]))].flatMap((e) => e.children).flatMap((e) => e.children),
+            position: paper.view.center,
+        }).rotate(-degrees(Math.atan2(ck[0].dot([0, 1]), ck[0][0] * 1 - ck[0][1] * 0)) - 30);
+        [u, v, w].forEach((e) => e.remove());
+    }
+    return g;
+}
+
+function render_capsid(paper, ftri, P = get_params()) {
+    const [facets, triangles] = ftri;
 
     // coordinates
     const ico_cfg = ico_config(P.a);
+    const basis = calculate_basis(P.R);
+    const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
     const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][P.a](ck, ITER, TOL);
 
     // transform
