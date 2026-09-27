@@ -5,8 +5,6 @@ npm_package_version="$2"
 
 echo "# bump" && \
 sed -i '' -E -e 's/v\.?[0-9]+\.[0-9]+\.[0-9]+/v'"$npm_package_version"'/' README.md app.dev.html && \
-echo "- clean" && \
-rm -f  "$npm_package_name".{tar.gz,zip,min.js,app.js} && \
 echo "# update" && \
 cp node_modules/chroma-js/dist/chroma.min.cjs js/lib/chroma && \
 cp node_modules/paper/dist/paper-core.min.js js/lib/paper && \
