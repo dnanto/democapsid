@@ -5,6 +5,7 @@
 - QR code generation
 - major refactor
 - planarization tiling
+- color palette simplification
 - removed fiber/knob (less is more, for now...)
 
 # v2.2.6
