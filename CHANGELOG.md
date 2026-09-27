@@ -1,3 +1,12 @@
+# v3.0.0
+
+- wythoff construction with fundamental triangle
+- UI makeover
+- QR code generation
+- major refactor
+- planarization tiling
+- removed fiber/knob (less is more, for now...)
+
 # v2.2.6
 
 - window resizing

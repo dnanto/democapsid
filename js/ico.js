@@ -1,5 +1,3 @@
-const VERSION = "2.2.6";
-
 function triangle_circumcircle_center(p, q, r) {
     // https://en.wikipedia.org/wiki/Circumcircle#Higher_dimensions
     // triangle_circumcircle_center([0, 1.73205081, 2.99162946], [0, -2.90587844, 1.38259261], [0, 2.90587844, 1.38259261])

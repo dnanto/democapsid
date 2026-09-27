@@ -1,59 +1,187 @@
-.layout {
-    display: flex;
-    height: 100vh;
-    gap: 8px;
-    flex-shrink: 0;
-  }  
-.sidebar { 
-    width: 500px;
-}
-body {
+* {
+    box-sizing: border-box;
     font-family: monospace;
-    flex-grow: 1;
+    letter-spacing: 0.25em;
 }
-fieldset{
-    margin: 0 auto;
-    display: block;
+
+.container > *,
+.subcontainer > *,
+.param > * {
+    min-width: 0;
 }
-legend{
-    font-weight: bold;
-}
-canvas {
-    height: 650px;
+
+.container {
+    box-sizing: border-box;
+    display: grid;
+    gap: 10px;
+    grid-template-areas: "controller model";
+    grid-template-columns: 40fr 60fr;
     width: 100%;
-    margin: 0 auto;
+}
+
+.subcontainer {
+    display: grid;
+    gap: 10px;
+    grid-template-areas: ". .";
+    grid-template-columns: 1fr 1fr;
+}
+
+.controller {
+    grid-area: controller;
+}
+
+.model {
+    display: flex;
+    flex-direction: column;
+    grid-area: model;
+}
+.model fieldset {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+}
+#model {
+    height: 725px;
+}
+
+.param {
+    align-items: center;
+    display: flex;
+    width: 100%;
+}
+.param label {
+    flex-shrink: 0;
+    padding-right: 5px;
+    white-space: nowrap;
+}
+.param input,
+.param select {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+.render {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+}
+
+a {
     display: block;
+    width: fit-content;
+    margin: 0 auto;
 }
-button {
-    width: 100px;
+
+button,
+fieldset,
+input,
+select,
+textarea {
+    align-items: center;
+    border-radius: 5px;
+    border-width: 1px;
+    box-sizing: border-box;
+    min-width: 0;
+    vertical-align: middle;
+    width: 100%;
 }
+
+textarea {
+    height: 100%;
+    line-height: 2;
+    padding: 10px;
+}
+
+legend {
+    box-sizing: border-box;
+    font-weight: bold;
+    overflow-wrap: break-word;
+    white-space: normal;
+    word-break: break-word;
+}
+
+hr {
+    border: none;
+    margin-top: 10px;
+    border-top: 2px dotted;
+}
+
+button,
+input,
+label,
+select {
+    margin-bottom: 5px;
+}
+
+button,
+hr,
 input,
 select {
-    box-sizing: border-box;
-    vertical-align: middle;
-    height: 25px;
-    width: 80px;
+    height: 20px;
 }
-input[type="range"] {
-    width: 375px;
+
+.swatch {
+    display: flex;
 }
-input[type="radio"], input[type="checkbox"] {
-    width: 50px;
+.swatch > input {
+    height: 35.8px;
 }
-table,
-th,
-td {
-    border: 1px solid black;
+.swatch > input[type="color"] {
+    margin-right: 5px;
+    width: 70%;
+}
+.swatch > input[type="number"] {
+    width: 30%;
     text-align: center;
 }
-th:first-child,
-td:first-child {
-    width: 100px;
+
+.choose {
+    display: flex;
 }
-th:not(:first-child),
-td:not(:first-child) {
-    width: 100px;
+.choose > button {
+    width: 45%;
+    margin-right: 5px;
 }
-td > input {
-    width: 125px;
+.choose > select {
+    width: 55%;
+}
+
+#camera > input {
+    width: 10%;
+    min-width: 70px;
+}
+
+#qr-code-container {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+}
+#qr-code-container svg {
+    height: 50% !important;
+    width: 50% !important;
+}
+
+@media (max-width: 750px) {
+    .container {
+        grid-template-areas:
+            "controller"
+            "model";
+        grid-template-columns: 1fr;
+        padding: 0 10px;
+    }
+}
+
+#header {
+    width: 100%;
+}
+#header > fieldset {
+    font-weight: bold;
+}
+#header > fieldset > legend {
+    font-size: x-large;
 }

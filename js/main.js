@@ -1,5 +1,14 @@
 let ftri;
 let mobj;
+let qr;
+
+function debounce(func, delay) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
 
 function get_palette() {
     return [...this.document.querySelectorAll(".swatch")].map(
@@ -50,37 +59,55 @@ function ico_preview(paper) {
     const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
     const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][P.a](ck);
     const CAMERA = camera(...[P.θ, P.ψ, P.φ].map(radians));
-    const scale = paper.view.bounds.width / (2.0 * Math.max(...ico_coors.flat()));
     new paper.Group({
         //
-        children: ico_coors.map((e) => new paper.Path.Circle({ center: mmul(CAMERA, e.mul(scale).concat(1).T()), radius: 4, fillColor: "black" })),
+        children: ico_coors.map((e) => new paper.Path.Circle({ center: mmul(CAMERA, e.mul(P.R).concat(1).T()), radius: 4, fillColor: "black" })),
         position: paper.view.center,
     });
 }
 
-function debounce(func, delay) {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
+function update_qr_code(papers, mode) {
+    const qr_config = {
+        width: 200,
+        height: 200,
+        type: "svg",
+        data: document.getElementById("link").href,
+        name: "qr-code.png",
+        dotsOptions: {
+            color: "#000000",
+            type: "extra-rounded",
+        },
+        cornersSquareOptions: {
+            type: "extra-rounded",
+        },
     };
+    if (mode !== "none") {
+        const bytes = new TextEncoder().encode(papers[mode].project.exportSVG({ asString: true, bounds: "content" }));
+        qr_config.image = `data:image/svg+xml;base64,${btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(""))}`;
+    }
+    qr = new QRCodeStyling(qr_config);
+    const container = document.getElementById("qr-code-container");
+    container.replaceChildren();
+    qr.append(container);
 }
 
 function update_papers(papers, model, update_facets = true) {
+    const P = get_params();
+
+    // update kaleidoscope
     const tile = calc_tile(model);
     papers.kaleidoscope.activate();
     papers.kaleidoscope.project.clear();
-    render_lattice(papers.kaleidoscope, tile).scale(model.mir.bounds.width / 3);
+    render_lattice(papers.kaleidoscope, tile).scale(model.mir.bounds.width / 2.6);
 
+    // update model
     papers.model.activate();
     papers.model.project.clear();
-
-    const P = get_params();
-
-    let error = false;
+    // expensive operation, check if necessary!
     if (update_facets) {
         ftri = render_facets(papers.model, tile.scale(P.R), P.P);
     }
+    let error = false;
     if (document.getElementById("param_mode").value === "icosahedron") {
         try {
             mobj = render_capsid(papers.model, ftri);
@@ -94,8 +121,9 @@ function update_papers(papers, model, update_facets = true) {
         facets.forEach((e) => e.remove());
     }
 
+    // update console
     if (error) {
-        document.getElementById("console").innerText = error;
+        document.getElementById("console").value = error;
     } else {
         // calculate surface area
         const cfg = ico_config(P.a);
@@ -106,7 +134,7 @@ function update_papers(papers, model, update_facets = true) {
         // calculate state
         const L = this.document.getElementById("param_L").value;
         const [mir, ref, gen] = L.indexOf("snub") > -1 ? [NaN, NaN, NaN] : model.get_state();
-        document.getElementById("console").innerText = [
+        document.getElementById("console").value = [
             //
             `T=(${h})²+(${h})(${k})+(${k})²=${h * h + h * k + k * k}`,
             `Q=(${H})²+(${H})(${K})+(${K})²=${H * H + H * K + K * K}`,
@@ -119,6 +147,7 @@ function update_papers(papers, model, update_facets = true) {
         ].join("\r\n");
     }
 
+    // update shareable link
     const href =
         location.protocol +
         "//" +
@@ -128,32 +157,15 @@ function update_papers(papers, model, update_facets = true) {
         new URLSearchParams({ ...get_params(), state: model.get_state(), palette: get_palette().map((e) => e.substring(1)) }).toString();
     document.getElementById("link").href = href;
 
-    const bytes = new TextEncoder().encode(papers.kaleidoscope.project.exportSVG({ asString: true, bounds: "content" }));
-    const qr = new QRCodeStyling({
-        width: 200,
-        height: 200,
-        type: "svg",
-        data: href,
-        image: `data:image/svg+xml;base64,${btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(""))}`,
-        dotsOptions: {
-            color: "#000000",
-            type: "extra-rounded",
-        },
-        cornersSquareOptions: {
-            type: "extra-rounded",
-        },
-    });
-
-    const container = document.getElementById("qr-code-container");
-    container.replaceChildren();
-    qr.append(container);
+    // update qr-code
+    update_qr_code(papers, document.getElementById("qr-code-image").value);
 }
 
 function wythoff_model_init(papers) {
     const model = new Wythoff(
         //
         papers.wythoff.view.center,
-        papers.wythoff.view.bounds.width / COS30 / 1.5,
+        papers.wythoff.view.bounds.width / 2.6,
     ).construct(...Wythoff.constructions["hex"]);
     [...model.mir.children, ...model.ref.children].forEach((e) => {
         e.onClick = function (event) {
@@ -169,7 +181,7 @@ function wythoff_model_init(papers) {
         model.set_generator(t.contains(event.point) ? event.point : t.getNearestPoint(event.point));
         papers.kaleidoscope.activate();
         papers.kaleidoscope.project.clear();
-        render_lattice(papers.kaleidoscope, calc_tile(model)).scale(model.mir.bounds.width / 3);
+        render_lattice(papers.kaleidoscope, calc_tile(model)).scale(model.mir.bounds.width / 2.6);
         document.getElementById("param_L").value = "custom";
     };
     model.gen.onMouseUp = function (event) {
@@ -186,6 +198,7 @@ window.onload = function (opt) {
         //
         document.getElementById("scale").add(new Option(e, e, e === "Viridis", e === "Viridis")),
     );
+
     // init lattice options
     ["custom", ...["dualsnubhex", "snubhex", ...Object.keys(Wythoff.constructions)].sort()].forEach((e) =>
         //
@@ -203,7 +216,7 @@ window.onload = function (opt) {
     // init palette
     set_palette("viridis");
 
-    // init model
+    // init wythoff model
     papers.wythoff.activate();
     let model = wythoff_model_init(papers);
     this.document.getElementById("param_L").addEventListener("input", (event) => {
@@ -233,7 +246,7 @@ window.onload = function (opt) {
                     strokeCap: "round",
                     strokeJoin: "round",
                 });
-                tile.scale(this.document.getElementById("wythoff").width / 2);
+                tile.scale(this.document.getElementById("wythoff").width);
             }
         }
     });
@@ -255,12 +268,33 @@ window.onload = function (opt) {
             doninput(papers, model, e.id === "" || /[^tlθψφ]$/.test(e.id)),
         ),
     );
-    this.document.getElementById("param_s").addEventListener("input", (event) => (this.document.getElementById("display_s").innerText = (event.target.value * 100).toFixed(2).padStart(3, "0") + "%"));
+    this.document.getElementById("param_s").addEventListener(
+        "input",
+        (event) =>
+            //
+            (this.document.getElementById("display_s").innerText = (event.target.value * 100).toFixed(2).padStart(3, "0") + "%"),
+    );
     this.document.getElementById("param_s").dispatchEvent(new Event("input", { bubbles: true }));
     this.document.getElementById("reverse").addEventListener("click", (event) => {
         [...this.document.querySelectorAll(".swatch")].reverse().map((e, i) => this.document.getElementById("palette").appendChild(e));
         update_papers(papers, model);
     });
+
+    // init resize events
+    const observer = new ResizeObserver((entries) => {
+        entries.forEach((e) => {
+            const size = e.devicePixelContentBoxSize[0];
+            const paper = papers[e.target.querySelector("canvas").id];
+            const item = paper.project.activeLayer;
+            if (item !== null && size.inlineSize > 0 && size.blockSize > 0) {
+                item.fitBounds(new paper.Size(size.inlineSize, size.blockSize).divide(2.5));
+                item.position = paper.view.bounds.center;
+            }
+        });
+    });
+    [...document.getElementsByClassName("resize")].forEach((e) => observer.observe(e));
+
+    this.document.getElementById("qr-code-image").addEventListener("change", (event) => update_qr_code(papers, event.target.value));
 
     // ico preview controller
     papers.model.activate();
@@ -282,57 +316,49 @@ window.onload = function (opt) {
     tool.onMouseUp = function (event) {
         if (document.getElementById("param_mode").value === "icosahedron") {
             drag = null;
-            // update tile = false
             update_papers(papers, model, (update_facets = false));
-            // document.getElementById("param_θ").dispatchEvent(new Event("input", { bubbles: true }));
         }
     };
     tool.activate();
 
     // download
     document.getElementById("download-btn").addEventListener("click", function () {
+        let href = null;
         const fmt = document.getElementById("download-fmt").value;
         const mode = document.getElementById("param_mode").value;
-        /****/ if (fmt === "svg") {
-            var link = document.createElement("a");
-            link.href = URL.createObjectURL(
-                new Blob(
-                    //
-                    [papers.model.project.exportSVG({ asString: true, bounds: "content" })],
-                    { type: "image/svg+xml;charset=utf-8" },
-                ),
-            );
-            link.download = "my-paperjs-project.svg";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
+        /****/ if (fmt === "model.svg") {
+            href = "data:image/svg+xml;utf8," + encodeURIComponent(papers.model.project.exportSVG({ asString: true, bounds: "content", matchShapes: true }));
+        } else if (fmt === "qr-code.svg") {
+            qr.download({ name: "qr-code", extension: "svg" });
         } else if (fmt === "csv" || fmt === "tsv") {
-            const sep = fmt === "csv" ? "," : "\t";
+            const [sep, mime] = fmt === "csv" ? [",", "csv"] : ["\t", "tab-separated-values"];
+            let arr = [];
             if (mode === "icosahedron") {
-                console.log(
-                    mobj.children
-                        .map((e, i) =>
-                            e.children
-                                .filter((e) => e.closed)
-                                .map((e, j) => e.data.segments_3D.map((e, k) => [...e, i + 1, j + 1, k + 1].join(sep)).join("\r\n"))
-                                .join("\r\n"),
+                arr = mobj.children.map((e, i) =>
+                    e.children
+                        .filter((e) => e.closed)
+                        .map((e, j) => e.data.segments_3D.map((e, k) => [...e, i + 1, j + 1, k + 1].join(sep)).join("\r\n"))
+                        .join("\r\n"),
+                );
+            } else if (mode === "lattice") {
+                arr = mobj.children.map((e, i) =>
+                    e.children
+                        .map((e, j) =>
+                            //
+                            e.children[0].segments.map((e, k) => [...p2c(e.point), i + 1, j + 1, k + 1].join(sep)).join("\r\n"),
                         )
                         .join("\r\n"),
                 );
-            } else if (mode === "lattice") {
-                console.log(
-                    mobj.children
-                        .map((e, i) => e.children.map((e, j) => e.children[0].segments.map((e, k) => [...p2c(e.point), i + 1, j + 1, k + 1].join(sep)).join("\r\n")).join("\r\n"))
-                        .join("\r\n"),
-                );
             }
+            href = `data:text/${mime};charset=utf-8,` + encodeURIComponent([["x", "y", "z", "facet", "polygon", "segment"].join(sep)].concat(arr).join("\r\n"));
         } else if (fmt === "json") {
+            let obj;
             if (mode === "icosahedron") {
-                console.log(mobj.children.map((e) => e.children.filter((e) => e.closed).map((e) => e.data.segments_3D)));
+                obj = mobj.children.map((e) => e.children.filter((e) => e.closed).map((e) => e.data.segments_3D));
             } else if (mode === "lattice") {
-                console.log(mobj.children.map((e) => e.children.map((e) => e.children[0].segments.map((e) => p2c(e.point)))));
+                obj = mobj.children.map((e) => e.children.map((e) => e.children[0].segments.map((e) => p2c(e.point))));
             }
+            href = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj, null, 4));
         } else if (fmt == "py") {
             let data;
             if (mode === "icosahedron") {
@@ -340,49 +366,52 @@ window.onload = function (opt) {
             } else if (mode === "lattice") {
                 data = mobj.children.map((e) => e.children.map((e) => e.children[0].segments.map((e) => p2c(e.point))));
             }
-            console.log(data);
-            console.log(
-                [
-                    ["import bpy"],
-                    ["facets = " + JSON.stringify(data, null, 4)],
-                    ["n = 1"],
-                    ["for i, facet in enumerate(facets, start = 1):"],
-                    ['    collection = bpy.data.collections.new(f"facet-{i}")'],
-                    ["    bpy.context.scene.collection.children.link(collection)"],
-                    ["    for j, polygon in enumerate(facet, start = 1):"],
-                    ['        mesh = bpy.data.meshes.new(name=f"polygon_msh-{n}")'],
-                    ["        mesh.from_pydata(polygon, [], [list(range(len(polygon)))])"],
-                    ["        mesh.validate(verbose=True)"],
-                    ['        obj = bpy.data.objects.new(f"polygon_obj-{n}", mesh)'],
-                    ["        collection.objects.link(obj)"],
-                    ["        n += 1"],
-                ].join("\r\n"),
-            );
+            href =
+                "data:text/x-python;charset=utf-8," +
+                encodeURIComponent(
+                    [
+                        ["import bpy"],
+                        ["facets = " + JSON.stringify(data, null, 4)],
+                        ["n = 1"],
+                        ["for i, facet in enumerate(facets, start = 1):"],
+                        ['    collection = bpy.data.collections.new(f"facet-{i}")'],
+                        ["    bpy.context.scene.collection.children.link(collection)"],
+                        ["    for j, polygon in enumerate(facet, start = 1):"],
+                        ['        mesh = bpy.data.meshes.new(name=f"polygon_msh-{n}")'],
+                        ["        mesh.from_pydata(polygon, [], [list(range(len(polygon)))])"],
+                        ["        mesh.validate(verbose=True)"],
+                        ['        obj = bpy.data.objects.new(f"polygon_obj-{n}", mesh)'],
+                        ["        collection.objects.link(obj)"],
+                        ["        n += 1"],
+                    ].join("\r\n"),
+                );
+        } else if (fmt === "bib") {
+            href =
+                "data:text/x-bibtex;charset=utf-8," +
+                encodeURI(
+                    [
+                        ["@misc{negronDemocapsid2026,"],
+                        ["    title = {Democapsid},"],
+                        ["    url = {http://arxiv.org/abs/2606.28969},"],
+                        ["    doi = {10.48550/arXiv.2606.28969},"],
+                        ["    urldate = {2026-06-30},"],
+                        ["    publisher = {arXiv},"],
+                        ["    author = {Negrón, Daniel Antonio and Luque, Antoni},"],
+                        ["    month = jun,"],
+                        ["    year = {2026},"],
+                        ["    note = {arXiv:2606.28969 [q-bio.QM]"],
+                        ["version: 1},"],
+                        ["    keywords = {Quantitative Biology - Quantitative Methods},"],
+                        ["}"],
+                    ].join("\r\n"),
+                );
         }
-    });
-
-    document.getElementById("citation-btn").addEventListener("click", function () {
-        const fmt = document.getElementById("citation-fmt").value;
-        /****/ if (fmt === "bib") {
-            console.log(
-                [
-                    ["@misc{negronDemocapsid2026,"],
-                    ["    title = {Democapsid},"],
-                    ["    url = {http://arxiv.org/abs/2606.28969},"],
-                    ["    doi = {10.48550/arXiv.2606.28969},"],
-                    ["    urldate = {2026-06-30},"],
-                    ["    publisher = {arXiv},"],
-                    ["    author = {Negrón, Daniel Antonio and Luque, Antoni},"],
-                    ["    month = jun,"],
-                    ["    year = {2026},"],
-                    ["    note = {arXiv:2606.28969 [q-bio.QM]"],
-                    ["version: 1},"],
-                    ["    keywords = {Quantitative Biology - Quantitative Methods},"],
-                    ["}"],
-                ].join("\r\n"),
-            );
-        } else if (fmt === "txt") {
-            console.log("Negrón, D. A., & Luque, A. (2026). Democapsid (arXiv:2606.28969; Version 1). arXiv. https://doi.org/10.48550/arXiv.2606.28969");
+        if (href !== null) {
+            const ele = document.getElementById("download-fmt");
+            var link = document.createElement("a");
+            link.download = ele.options[ele.selectedIndex].text;
+            link.href = href;
+            link.click();
         }
     });
 
@@ -418,15 +447,4 @@ window.onload = function (opt) {
             );
         }
     }
-    // init each canvas
-    update_papers(papers, model);
-
-    new ResizeObserver((e) => {
-        Object.values(papers).forEach((e) => {
-            // console.log("hey");
-            // e.project.activeLayer.position = e.view.center;
-            // paper.view = new paper.Size(e[0].target.offsetWidth, e[0].target.offsetHeight);
-            // paper.project.getItems()[0].position = paper.view.center;
-        });
-    }).observe(document.querySelector("body"));
 };
