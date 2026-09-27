@@ -11,10 +11,7 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 # build
 
 ```bash
-npm run bump && npm run clean && npm run update && \
-npm run minify && npm run minapp && npm run standalone && \
-npm run zip && npm run tar && \
-npm install
+npm run deploy && npm install
 ```
 
 # Preprint
