@@ -95,7 +95,7 @@ class Graph {
         let paths = [];
         for (const [key, val] of this.edges) {
             let [path, closed] = this.loopback(val[0], val[1]);
-            path = path.map((e) => [e.x, e.y]); // TODO: generalize
+            path = path.map((e) => [e.x, e.y]); // TODO: generalize to be js-library agnostic
             if (closed) {
                 const centroid_value = path.centroid();
                 const area_value = path.shoelace();

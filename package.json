@@ -15,7 +15,8 @@
     },
     "dependencies": {
         "chroma-js": "^3.2.0",
-        "paper": "^0.12.18"
+        "paper": "^0.12.18",
+        "qr-code-styling": "^1.9.2"
     },
     "devDependencies": {
         "terser": "^5.31.6"

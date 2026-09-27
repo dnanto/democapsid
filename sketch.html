@@ -12,14 +12,13 @@
             .container {
                 display: grid;
                 grid-template-columns: 2.5% 30% 65% 2.5%;
-                grid-template-areas:
-                    ". controller model ."
-                    ". console model .";
+                grid-template-areas: ". controller model .";
             }
             .subcontainer {
                 display: grid;
                 grid-template-columns: 50% 50%;
                 grid-template-areas: ". .";
+                overflow: hidden;
             }
             .subcontainer > * {
                 min-width: 0;
@@ -30,9 +29,8 @@
             .model {
                 grid-area: model;
             }
-            .console {
-                grid-area: console;
-                height: 200px;
+            #console {
+                font-size: x-small;
             }
 
             fieldset {
@@ -100,12 +98,21 @@
                 width: 100%;
             }
 
+            #header {
+                font-weight: bold;
+                text-align: center;
+            }
+            .qr {
+                align-items: center;
+                text-align: center;
+            }
             div.subcontainer:nth-child(3) {
                 height: 250px;
             }
         </style>
         <script type="text/javascript" src="js/lib/chroma/chroma.min.cjs"></script>
         <script type="text/javascript" src="js/lib/paper/paper-core.min.js"></script>
+        <script type="text/javascript" src="js/lib/qr-code-styling/qr-code-styling.js"></script>
         <script type="text/javascript" src="js/array.js"></script>
         <script type="text/javascript" src="js/numerical.js"></script>
         <script type="text/javascript" src="js/util.js"></script>
@@ -118,7 +125,7 @@
     <body>
         <div class="container">
             <div class="controller">
-                <div>
+                <div id="header">
                     <fieldset>
                         <legend>&#11041;&#11042;</legend>
                         <a href="https://github.com/dnanto/democapsid">democapsid v0.0.0</a>
@@ -255,8 +262,34 @@
                     </fieldset>
                     <fieldset>
                         <legend>export</legend>
-                        <button id="download-btn">Download</button>
-                        <button id="download-btn">Citation</button>
+                        <div class="inlined">
+                            <button id="download-btn">Download</button>
+                            <select id="download-fmt">
+                                <option value="svg">.svg</option>
+                                <option value="csv">.csv</option>
+                                <option value="tsv">.tsv</option>
+                                <option value="json">.json</option>
+                                <option value="py">.py</option>
+                            </select>
+                        </div>
+                        <div class="inlined">
+                            <button id="citation-btn">Citation</button>
+                            <select id="citation-fmt">
+                                <option value="bib">.bib</option>
+                                <option value="txt">.txt</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="subcontainer">
+                    <fieldset class="console">
+                        <legend>console</legend>
+                        <div id="console"></div>
+                    </fieldset>
+                    <fieldset class="qr">
+                        <legend>qr-code</legend>
+                        <div id="qr-code-container"></div>
+                        <a id="link" href="">&lt;link&gt;</a>
                     </fieldset>
                 </div>
             </div>
@@ -267,12 +300,6 @@
                         <canvas id="model">Your browser does not support the HTML canvas tag.</canvas>
                     </fieldset>
                 </div>
-            </div>
-            <div class="console">
-                <fieldset>
-                    <legend>console</legend>
-                    <div id="console"></div>
-                </fieldset>
             </div>
         </div>
     </body>

@@ -76,11 +76,13 @@ class Wythoff {
 
     get_state() {
         const ref = this.ref.children.map((e) => e.data.selected);
+        const [width, height, topleft] = [this.mir.bounds.width, this.mir.bounds.height, this.mir.bounds.topLeft];
+        const gen = [((this.gen.position.x - topleft.x) / width) * 0.5, ((this.gen.position.y - topleft.y) / height) * COS30];
         return [
             //
-            ...this.mir.children.map((e) => e.data.selected),
-            ...ref,
-            ref.some((e) => e) ? [this.gen.position.x, this.gen.position.y] : [NaN, NaN],
+            [this.mir.children.map((e) => e.data.selected)],
+            [ref],
+            ref.some((e) => e) ? gen : [NaN, NaN],
         ];
     }
 
@@ -104,7 +106,7 @@ class Wythoff {
             this.ref.children[i].data.selected = e;
             this.ref.children[i].strokeColor = e ? this.color_on : this.color_off;
         });
-        if (generator) {
+        if (generator && generator.length == 2 && generator.every((e) => !Number.isNaN(e))) {
             this.set_generator(this.mir.bounds.topLeft.add(generator.mul(this.scale)));
         }
         return this;

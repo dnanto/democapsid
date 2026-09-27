@@ -1,4 +1,5 @@
 let ftri;
+let mobj;
 
 function get_palette() {
     return [...this.document.querySelectorAll(".swatch")].map(
@@ -47,7 +48,6 @@ function ico_preview(paper) {
         [1, SQRT3],
     ];
     const ck = ck_vectors(basis, P.h, P.k, P.H, P.K, P.t === "levo");
-    console.log(P.a, ck);
     const ico_coors = ["", "", ico_axis_2, ico_axis_3, "", ico_axis_5][P.a](ck);
     const CAMERA = camera(...[P.θ, P.ψ, P.φ].map(radians));
     const scale = paper.view.bounds.width / (2.0 * Math.max(...ico_coors.flat()));
@@ -77,24 +77,76 @@ function update_papers(papers, model, update_facets = true) {
 
     const P = get_params();
 
+    let error = false;
     if (update_facets) {
         ftri = render_facets(papers.model, tile.scale(P.R), P.P);
     }
     if (document.getElementById("param_mode").value === "icosahedron") {
-        render_capsid(papers.model, ftri);
+        try {
+            mobj = render_capsid(papers.model, ftri);
+        } catch (e) {
+            error = e;
+        }
     } else {
         const facets = ftri[0];
         facets.forEach((e) => (e.position = e.position.subtract(papers.model.view.center)));
-        render_net(papers.model, facets);
+        mobj = render_net(papers.model, facets);
         facets.forEach((e) => e.remove());
     }
 
-    const [h, k, H, K] = [P.h, P.k, P.H, P.K];
-    document.getElementById("console").innerText = [
-        //
-        `T-Number=(${h})²+(${h})(${k})+(${k})²=${h * h + h * k + k * k}`,
-        `Q-Number=(${H})²+(${H})(${K})+(${K})²=${H * H + H * K + K * K}`,
-    ].join("\n");
+    if (error) {
+        document.getElementById("console").innerText = error;
+    } else {
+        // calculate surface area
+        const cfg = ico_config(P.a);
+        const sa_exp = cfg.t_idx.map((e, i) => cfg.t_rep[i] * ftri[1][e - 1].area).reduce((a, b) => a + b);
+        const sa_obs = mobj.children.map((e) => e.data.area).reduce((a, b) => a + b);
+        // calculate T/Q-numbers
+        const [h, k, H, K] = [P.h, P.k, P.H, P.K];
+        // calculate state
+        const L = this.document.getElementById("param_L").value;
+        const [mir, ref, gen] = L.indexOf("snub") > -1 ? [NaN, NaN, NaN] : model.get_state();
+        document.getElementById("console").innerText = [
+            //
+            `T=(${h})²+(${h})(${k})+(${k})²=${h * h + h * k + k * k}`,
+            `Q=(${H})²+(${H})(${K})+(${K})²=${H * H + H * K + K * K}`,
+            `sa_exp=${sa_exp.toFixed(3)}`,
+            `sa_obs=${sa_obs.toFixed(3)}`,
+            `sa_err=${(Math.abs(1 - sa_obs / sa_exp) * 100).toFixed(3)}%`,
+            `tri.mir=[${mir}]`,
+            `tri.ref=[${ref}]`,
+            `tri.gen=[${Number.isNaN(gen) ? gen : gen.map((e) => e.toFixed(3))}]`,
+        ].join("\r\n");
+    }
+
+    const href =
+        location.protocol +
+        "//" +
+        location.host +
+        location.pathname +
+        "?" +
+        new URLSearchParams({ ...get_params(), state: model.get_state(), palette: get_palette().map((e) => e.substring(1)) }).toString();
+    document.getElementById("link").href = href;
+
+    const bytes = new TextEncoder().encode(papers.kaleidoscope.project.exportSVG({ asString: true, bounds: "content" }));
+    const qr = new QRCodeStyling({
+        width: 200,
+        height: 200,
+        type: "svg",
+        data: href,
+        image: `data:image/svg+xml;base64,${btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(""))}`,
+        dotsOptions: {
+            color: "#000000",
+            type: "extra-rounded",
+        },
+        cornersSquareOptions: {
+            type: "extra-rounded",
+        },
+    });
+
+    const container = document.getElementById("qr-code-container");
+    container.replaceChildren();
+    qr.append(container);
 }
 
 function wythoff_model_init(papers) {
@@ -105,7 +157,7 @@ function wythoff_model_init(papers) {
     ).construct(...Wythoff.constructions["hex"]);
     [...model.mir.children, ...model.ref.children].forEach((e) => {
         e.onClick = function (event) {
-            this.data.selected = !this.data.selected;
+            this.data.selected = +!this.data.selected;
             this.strokeColor = this.data.selected ? model.color_on : model.color_off;
             update_papers(papers, model);
             document.getElementById("param_L").value = "custom";
@@ -198,11 +250,12 @@ window.onload = function (opt) {
     );
     const doninput = debounce(update_papers, 250);
     document.querySelectorAll('[id^="param_"], .swatch > input').forEach((e) =>
-        e.addEventListener("input", (event) => {
-            doninput(papers, model);
-        }),
+        e.addEventListener("input", (event) =>
+            //
+            doninput(papers, model, e.id === "" || /[^tlθψφ]$/.test(e.id)),
+        ),
     );
-    this.document.getElementById("param_s").addEventListener("input", (event) => (this.document.getElementById("display_s").innerText = (event.target.value * 100).toFixed(1).padStart(3, "0") + "%"));
+    this.document.getElementById("param_s").addEventListener("input", (event) => (this.document.getElementById("display_s").innerText = (event.target.value * 100).toFixed(2).padStart(3, "0") + "%"));
     this.document.getElementById("param_s").dispatchEvent(new Event("input", { bubbles: true }));
     this.document.getElementById("reverse").addEventListener("click", (event) => {
         [...this.document.querySelectorAll(".swatch")].reverse().map((e, i) => this.document.getElementById("palette").appendChild(e));
@@ -230,7 +283,6 @@ window.onload = function (opt) {
         if (document.getElementById("param_mode").value === "icosahedron") {
             drag = null;
             // update tile = false
-            console.log("hey");
             update_papers(papers, model, (update_facets = false));
             // document.getElementById("param_θ").dispatchEvent(new Event("input", { bubbles: true }));
         }
@@ -239,29 +291,142 @@ window.onload = function (opt) {
 
     // download
     document.getElementById("download-btn").addEventListener("click", function () {
-        var link = document.createElement("a");
-        link.href = URL.createObjectURL(
-            new Blob(
-                //
-                [papers.model.project.exportSVG({ asString: true })],
-                { type: "image/svg+xml;charset=utf-8" },
-            ),
-        );
-        link.download = "my-paperjs-project.svg";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
+        const fmt = document.getElementById("download-fmt").value;
+        const mode = document.getElementById("param_mode").value;
+        /****/ if (fmt === "svg") {
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(
+                new Blob(
+                    //
+                    [papers.model.project.exportSVG({ asString: true, bounds: "content" })],
+                    { type: "image/svg+xml;charset=utf-8" },
+                ),
+            );
+            link.download = "my-paperjs-project.svg";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        } else if (fmt === "csv" || fmt === "tsv") {
+            const sep = fmt === "csv" ? "," : "\t";
+            if (mode === "icosahedron") {
+                console.log(
+                    mobj.children
+                        .map((e, i) =>
+                            e.children
+                                .filter((e) => e.closed)
+                                .map((e, j) => e.data.segments_3D.map((e, k) => [...e, i + 1, j + 1, k + 1].join(sep)).join("\r\n"))
+                                .join("\r\n"),
+                        )
+                        .join("\r\n"),
+                );
+            } else if (mode === "lattice") {
+                console.log(
+                    mobj.children
+                        .map((e, i) => e.children.map((e, j) => e.children[0].segments.map((e, k) => [...p2c(e.point), i + 1, j + 1, k + 1].join(sep)).join("\r\n")).join("\r\n"))
+                        .join("\r\n"),
+                );
+            }
+        } else if (fmt === "json") {
+            if (mode === "icosahedron") {
+                console.log(mobj.children.map((e) => e.children.filter((e) => e.closed).map((e) => e.data.segments_3D)));
+            } else if (mode === "lattice") {
+                console.log(mobj.children.map((e) => e.children.map((e) => e.children[0].segments.map((e) => p2c(e.point)))));
+            }
+        } else if (fmt == "py") {
+            let data;
+            if (mode === "icosahedron") {
+                data = mobj.children.map((e) => e.children.filter((e) => e.closed).map((e) => e.data.segments_3D));
+            } else if (mode === "lattice") {
+                data = mobj.children.map((e) => e.children.map((e) => e.children[0].segments.map((e) => p2c(e.point))));
+            }
+            console.log(data);
+            console.log(
+                [
+                    ["import bpy"],
+                    ["facets = " + JSON.stringify(data, null, 4)],
+                    ["n = 1"],
+                    ["for i, facet in enumerate(facets, start = 1):"],
+                    ['    collection = bpy.data.collections.new(f"facet-{i}")'],
+                    ["    bpy.context.scene.collection.children.link(collection)"],
+                    ["    for j, polygon in enumerate(facet, start = 1):"],
+                    ['        mesh = bpy.data.meshes.new(name=f"polygon_msh-{n}")'],
+                    ["        mesh.from_pydata(polygon, [], [list(range(len(polygon)))])"],
+                    ["        mesh.validate(verbose=True)"],
+                    ['        obj = bpy.data.objects.new(f"polygon_obj-{n}", mesh)'],
+                    ["        collection.objects.link(obj)"],
+                    ["        n += 1"],
+                ].join("\r\n"),
+            );
+        }
     });
 
+    document.getElementById("citation-btn").addEventListener("click", function () {
+        const fmt = document.getElementById("citation-fmt").value;
+        /****/ if (fmt === "bib") {
+            console.log(
+                [
+                    ["@misc{negronDemocapsid2026,"],
+                    ["    title = {Democapsid},"],
+                    ["    url = {http://arxiv.org/abs/2606.28969},"],
+                    ["    doi = {10.48550/arXiv.2606.28969},"],
+                    ["    urldate = {2026-06-30},"],
+                    ["    publisher = {arXiv},"],
+                    ["    author = {Negrón, Daniel Antonio and Luque, Antoni},"],
+                    ["    month = jun,"],
+                    ["    year = {2026},"],
+                    ["    note = {arXiv:2606.28969 [q-bio.QM]"],
+                    ["version: 1},"],
+                    ["    keywords = {Quantitative Biology - Quantitative Methods},"],
+                    ["}"],
+                ].join("\r\n"),
+            );
+        } else if (fmt === "txt") {
+            console.log("Negrón, D. A., & Luque, A. (2026). Democapsid (arXiv:2606.28969; Version 1). arXiv. https://doi.org/10.48550/arXiv.2606.28969");
+        }
+    });
+
+    // get parameters
+    const params = new URLSearchParams(window.location.search);
+    if (params.size > 0) {
+        // lattice/ico
+        [...document.querySelectorAll('[id^="param_"]')].forEach((e) => {
+            const tokens = e.id.split("_");
+            const value = params.get(tokens[1]);
+            if (value !== null) {
+                e.value = value;
+            }
+        });
+        // palette
+        const palette = params.get("palette");
+        if (palette !== null) {
+            const colors = this.document.querySelectorAll(".swatch > input[type='color']");
+            const alphas = this.document.querySelectorAll(".swatch > input[type='number']");
+            palette.split(",").forEach((e, i) => {
+                colors[i].value = "#" + e.substring(0, 6);
+                alphas[i].value = parseInt(e.substring(6, 8), 16);
+            });
+        }
+        // wythoff
+        const state = params.get("state");
+        if (state !== undefined) {
+            const tokens = state.split(",");
+            model.construct(
+                tokens.slice(0, 3).map((e) => parseInt(e)),
+                tokens.slice(3, 6).map((e) => parseInt(e)),
+                tokens.slice(6, 8).map((e) => parseFloat(e)),
+            );
+        }
+    }
     // init each canvas
     update_papers(papers, model);
 
     new ResizeObserver((e) => {
-        // Object.values(papers).forEach((e) => {
-        //     e.project.activeLayer.position = e.view.center;
-        //     paper.view = new paper.Size(e[0].target.offsetWidth, e[0].target.offsetHeight);
-        //     paper.project.getItems()[0].position = paper.view.center;
-        // });
+        Object.values(papers).forEach((e) => {
+            // console.log("hey");
+            // e.project.activeLayer.position = e.view.center;
+            // paper.view = new paper.Size(e[0].target.offsetWidth, e[0].target.offsetHeight);
+            // paper.project.getItems()[0].position = paper.view.center;
+        });
     }).observe(document.querySelector("body"));
 };

@@ -281,6 +281,7 @@ function render_capsid(paper, ftri, P = get_params()) {
         const trr = triangles[ico_cfg.t_idx[idx] - 1];
         const A = inv3(T(trr.data.vectors.map((e) => e.concat(1))));
         const V = [0, 1, 2].map((e) => ico_coors[ico_cfg.v_idx[idx][e]]);
+        const area = V[1].sub(V[0]).cross3(V[2].sub(V[0])).norm() / 2;
         for (let i = 0; i < ico_cfg.t_rep[idx]; i++, id++) {
             const X = V.map((e) => e.roro([0, 0, 1], i * th));
             const M = mmul(T(X), A);
@@ -303,8 +304,8 @@ function render_capsid(paper, ftri, P = get_params()) {
                         data: Object.assign({}, E.data, {
                             id: id,
                             centroid: centroid,
-                            segments_3D: segments,
                             normal: segments.length > 2 ? segments[1].sub(segments[0]).cross3(segments[2].sub(segments[0])).uvec() : [],
+                            segments_3D: segments,
                         }),
                         style: E.style,
                     });
@@ -314,8 +315,9 @@ function render_capsid(paper, ftri, P = get_params()) {
                 new paper.Group({
                     children: xfacet,
                     data: {
-                        type: "facet",
+                        area: area,
                         centroid: mmul(CAMERA, inflater(X.centroid()).concat(1).T()).flat(),
+                        type: "facet",
                     },
                 }),
             );
@@ -328,5 +330,6 @@ function render_capsid(paper, ftri, P = get_params()) {
     return new paper.Group({
         children: results,
         position: paper.view.center,
+        data: { ico_coors: ico_coors },
     });
 }
