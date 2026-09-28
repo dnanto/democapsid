@@ -66,13 +66,22 @@ function ico_preview(paper) {
     });
 }
 
+function model_to_coors(model, mode) {
+    let obj;
+    if (mode === "ico") {
+        obj = model.children.map((e) => e.children.filter((e) => e.closed).map((e) => e.data.segments_3D));
+    } else if (mode === "net") {
+        obj = model.children.map((e) => e.children.map((e) => e.children[0].segments.map((e) => [...p2c(e.point), 1])));
+    }
+    return obj;
+}
+
 function update_qr_code(papers, mode) {
     const qr_config = {
         width: 200,
         height: 200,
         type: "svg",
         data: document.getElementById("link").href,
-        name: "qr-code.png",
         dotsOptions: {
             color: "#000000",
             type: "extra-rounded",
@@ -108,7 +117,7 @@ function update_papers(papers, model, update_facets = true) {
         ftri = render_facets(papers.model, tile.scale(P.R), P.P);
     }
     let error = false;
-    if (document.getElementById("param_mode").value === "icosahedron") {
+    if (document.getElementById("param_mode").value === "ico") {
         try {
             mobj = render_capsid(papers.model, ftri);
         } catch (e) {
@@ -301,7 +310,7 @@ window.onload = function (opt) {
     const tool = new paper.Tool();
     let drag = null;
     tool.onMouseDrag = function (event) {
-        if (document.getElementById("param_mode").value === "icosahedron") {
+        if (document.getElementById("param_mode").value === "ico") {
             if (drag) {
                 const delta = event.point.subtract(drag);
                 document.getElementById("param_ψ").value = (parse_number(document.getElementById("param_ψ").value) + delta.x) % 360;
@@ -314,7 +323,7 @@ window.onload = function (opt) {
         }
     };
     tool.onMouseUp = function (event) {
-        if (document.getElementById("param_mode").value === "icosahedron") {
+        if (document.getElementById("param_mode").value === "ico") {
             drag = null;
             update_papers(papers, model, (update_facets = false));
         }
@@ -328,50 +337,39 @@ window.onload = function (opt) {
         const mode = document.getElementById("param_mode").value;
         /****/ if (fmt === "model.svg") {
             href = "data:image/svg+xml;utf8," + encodeURIComponent(papers.model.project.exportSVG({ asString: true, bounds: "content", matchShapes: true }));
-        } else if (fmt === "qr-code.svg") {
-            qr.download({ name: "qr-code", extension: "svg" });
+        } else if (fmt === "qr.svg") {
+            const img = document.getElementById("qr-code-image").value;
+            qr.download({ name: `${mode}-${img === "none" ? "" : img + "-"}qr`, extension: "svg" });
         } else if (fmt === "csv" || fmt === "tsv") {
             const [sep, mime] = fmt === "csv" ? [",", "csv"] : ["\t", "tab-separated-values"];
             let arr = [];
-            if (mode === "icosahedron") {
+            if (mode === "ico") {
                 arr = mobj.children.map((e, i) =>
                     e.children
                         .filter((e) => e.closed)
                         .map((e, j) => e.data.segments_3D.map((e, k) => [...e, i + 1, j + 1, k + 1].join(sep)).join("\r\n"))
                         .join("\r\n"),
                 );
-            } else if (mode === "lattice") {
+            } else if (mode === "net") {
                 arr = mobj.children.map((e, i) =>
                     e.children
                         .map((e, j) =>
                             //
-                            e.children[0].segments.map((e, k) => [...p2c(e.point), i + 1, j + 1, k + 1].join(sep)).join("\r\n"),
+                            e.children[0].segments.map((e, k) => [...p2c(e.point), 1, i + 1, j + 1, k + 1].join(sep)).join("\r\n"),
                         )
                         .join("\r\n"),
                 );
             }
             href = `data:text/${mime};charset=utf-8,` + encodeURIComponent([["x", "y", "z", "facet", "polygon", "segment"].join(sep)].concat(arr).join("\r\n"));
         } else if (fmt === "json") {
-            let obj;
-            if (mode === "icosahedron") {
-                obj = mobj.children.map((e) => e.children.filter((e) => e.closed).map((e) => e.data.segments_3D));
-            } else if (mode === "lattice") {
-                obj = mobj.children.map((e) => e.children.map((e) => e.children[0].segments.map((e) => p2c(e.point))));
-            }
-            href = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj, null, 4));
+            href = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(model_to_coors(mobj, mode), null, 4));
         } else if (fmt == "py") {
-            let data;
-            if (mode === "icosahedron") {
-                data = mobj.children.map((e) => e.children.filter((e) => e.closed).map((e) => e.data.segments_3D));
-            } else if (mode === "lattice") {
-                data = mobj.children.map((e) => e.children.map((e) => e.children[0].segments.map((e) => p2c(e.point))));
-            }
             href =
                 "data:text/x-python;charset=utf-8," +
                 encodeURIComponent(
                     [
                         ["import bpy"],
-                        ["facets = " + JSON.stringify(data, null, 4)],
+                        ["facets = " + JSON.stringify(model_to_coors(mobj, mode), null, 4)],
                         ["n = 1"],
                         ["for i, facet in enumerate(facets, start = 1):"],
                         ['    collection = bpy.data.collections.new(f"facet-{i}")'],
@@ -409,7 +407,7 @@ window.onload = function (opt) {
         if (href !== null) {
             const ele = document.getElementById("download-fmt");
             var link = document.createElement("a");
-            link.download = ele.options[ele.selectedIndex].text;
+            link.download = `${mode}-${ele.options[ele.selectedIndex].text}`;
             link.href = href;
             link.click();
         }

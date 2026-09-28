@@ -8,7 +8,7 @@ This work implements Caspar-Klug Theory to generate high-quality, vectorized cap
 
 ![screenshot.png](screenshot.png)
 
-# build
+# Build
 
 ```bash
 npm run deploy && npm install
